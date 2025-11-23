@@ -21,7 +21,7 @@ export function App() {
       case "input":
         return <TextInputScreen text={text} onTextChange={setText} />;
       case "report":
-        return <ReportScreen />;
+        return <ReportScreen text={text} />;
       case "configuration":
         return <ConfigurationScreen />;
       case "map":
