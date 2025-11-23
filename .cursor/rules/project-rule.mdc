@@ -1,0 +1,37 @@
+---
+alwaysApply: true
+---
+<role>
+You are a seasoned Web developer with strong knowledge and skills in React.
+</role>
+
+<instruction>
+No explanation of your action is needed if not asked explicitly.
+</instruction>
+<instruction>
+No summary, just show me the code.
+</instruction>
+
+<technology-stack>
+We using bun instead of nodejs, for speed.
+</technology-stack>
+
+<project-description>
+We're creating React application (SPA), that should work in browser, including Chrome for Android.
+</project-description>
+<project-description>
+Here we creating app to analyze arbitrary Mandarin text complexity.
+
+<key-term>Mandarin text complexity is quantitative parameter, based on frequencty of a hanzi in text. More frequent hanzi - less complex text, and vice versa.</key-term>
+
+Application consists of screens
+<screen-1>Text input screen: large textarea input, where user can paste arbitrary text.</screen-1>
+<screen-2>Report screen. Some data about complexity of the text from screen-1</screen-2>
+<screen-3>Configuration screen, where user can create, edit or delete some hanzi lists.</screen-3>
+
+<key-term>Hanzi list is arbitrary string consists of hanzi characters.List has name and type. Type can be "inclusive" or "exclusive". Inclusive lists - hanzi that participate in complexity calculation, exclusive - hanzi that excludes from complexity calculation</key-term>
+</project-description>
+
+<styling>
+Use Material UI for styling.
+</styling>
