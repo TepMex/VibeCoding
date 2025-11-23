@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Box, CssBaseline } from "@mui/material";
+import { Box, CssBaseline, ThemeProvider, createTheme } from "@mui/material";
 import { TextInputScreen } from "./screens/TextInputScreen";
 import { ReportScreen } from "./screens/ReportScreen";
 import { ConfigurationScreen } from "./screens/ConfigurationScreen";
@@ -8,6 +8,8 @@ import {
   Screen,
 } from "./components/BottomNavigation";
 import "./index.css";
+
+const theme = createTheme();
 
 export function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>("input");
@@ -26,7 +28,7 @@ export function App() {
   };
 
   return (
-    <>
+    <ThemeProvider theme={theme}>
       <CssBaseline />
       <Box
         sx={{
@@ -42,7 +44,7 @@ export function App() {
           onScreenChange={setCurrentScreen}
         />
       </Box>
-    </>
+    </ThemeProvider>
   );
 }
 
