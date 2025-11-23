@@ -4,6 +4,7 @@ import { TextInputScreen } from "./screens/TextInputScreen";
 import { ReportScreen } from "./screens/ReportScreen";
 import { ConfigurationScreen } from "./screens/ConfigurationScreen";
 import { HanziMapScreen } from "./screens/HanziMapScreen";
+import { ReaderScreen } from "./screens/ReaderScreen";
 import {
   BottomNavigationPanel,
   Screen,
@@ -26,6 +27,8 @@ export function App() {
         return <ConfigurationScreen />;
       case "map":
         return <HanziMapScreen text={text} />;
+      case "reader":
+        return <ReaderScreen text={text} />;
       default:
         return <TextInputScreen text={text} onTextChange={setText} />;
     }

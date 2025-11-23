@@ -1,7 +1,7 @@
 import { Paper, BottomNavigation, BottomNavigationAction } from "@mui/material";
-import { TextFields, Assessment, Settings, Map } from "@mui/icons-material";
+import { TextFields, Assessment, Settings, Map, MenuBook } from "@mui/icons-material";
 
-export type Screen = "input" | "report" | "configuration" | "map";
+export type Screen = "input" | "report" | "configuration" | "map" | "reader";
 
 interface BottomNavigationPanelProps {
   currentScreen: Screen;
@@ -41,6 +41,11 @@ export function BottomNavigationPanel({
           label="Map"
           value="map"
           icon={<Map />}
+        />
+        <BottomNavigationAction
+          label="Reader"
+          value="reader"
+          icon={<MenuBook />}
         />
       </BottomNavigation>
     </Paper>
