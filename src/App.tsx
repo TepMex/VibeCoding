@@ -3,6 +3,7 @@ import { Box, CssBaseline, ThemeProvider, createTheme } from "@mui/material";
 import { TextInputScreen } from "./screens/TextInputScreen";
 import { ReportScreen } from "./screens/ReportScreen";
 import { ConfigurationScreen } from "./screens/ConfigurationScreen";
+import { HanziMapScreen } from "./screens/HanziMapScreen";
 import {
   BottomNavigationPanel,
   Screen,
@@ -13,17 +14,20 @@ const theme = createTheme();
 
 export function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>("input");
+  const [text, setText] = useState("");
 
   const renderScreen = () => {
     switch (currentScreen) {
       case "input":
-        return <TextInputScreen />;
+        return <TextInputScreen text={text} onTextChange={setText} />;
       case "report":
         return <ReportScreen />;
       case "configuration":
         return <ConfigurationScreen />;
+      case "map":
+        return <HanziMapScreen text={text} />;
       default:
-        return <TextInputScreen />;
+        return <TextInputScreen text={text} onTextChange={setText} />;
     }
   };
 
