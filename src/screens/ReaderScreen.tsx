@@ -1,5 +1,5 @@
 import { useMemo, useEffect, useState } from "react";
-import { Box, Typography } from "@mui/material";
+import { Box, Typography, Tooltip } from "@mui/material";
 import { pinyin } from "pinyin";
 import { HanziListStore } from "../store/HanziListStore";
 import { PREDEFINED_LISTS } from "../store/predefinedLists";
@@ -67,7 +67,7 @@ export function ReaderScreen({ text }: ReaderScreenProps) {
     return [...PREDEFINED_LISTS, ...userLists];
   }, [userLists]);
 
-  const hanziToLists = useMemo(() => {
+  const hanziToColors = useMemo(() => {
     const map = new Map<string, string[]>();
     allLists.forEach((list) => {
       if (list.color) {
@@ -78,6 +78,19 @@ export function ReaderScreen({ text }: ReaderScreenProps) {
           map.get(hanzi)!.push(list.color!);
         });
       }
+    });
+    return map;
+  }, [allLists]);
+
+  const hanziToListNames = useMemo(() => {
+    const map = new Map<string, string[]>();
+    allLists.forEach((list) => {
+      Array.from(list.data).forEach((hanzi) => {
+        if (!map.has(hanzi)) {
+          map.set(hanzi, []);
+        }
+        map.get(hanzi)!.push(list.name);
+      });
     });
     return map;
   }, [allLists]);
@@ -98,9 +111,13 @@ export function ReaderScreen({ text }: ReaderScreenProps) {
   };
 
   const getColor = (hanzi: string): string | null => {
-    const colors = hanziToLists.get(hanzi);
+    const colors = hanziToColors.get(hanzi);
     if (!colors || colors.length === 0) return null;
     return mixColors(colors);
+  };
+
+  const getListNames = (hanzi: string): string[] => {
+    return hanziToListNames.get(hanzi) || [];
   };
 
   return (
@@ -131,43 +148,51 @@ export function ReaderScreen({ text }: ReaderScreenProps) {
           const isHanzi = /[\u4e00-\u9fff]/.test(char);
           const color = isHanzi ? getColor(char) : null;
           const pinyinText = isHanzi ? getPinyin(char) : "";
+          const listNames = isHanzi ? getListNames(char) : [];
 
           if (isHanzi) {
+            const tooltipTitle =
+              listNames.length > 0
+                ? `Lists: ${listNames.join(", ")}`
+                : "Not in any list";
+
             return (
-              <Box
-                key={index}
-                sx={{
-                  display: "inline-flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "flex-start",
-                  verticalAlign: "top",
-                  position: "relative",
-                }}
-              >
-                <Typography
-                  variant="caption"
-                  sx={{
-                    fontSize: "0.35em",
-                    lineHeight: 1,
-                    mb: "0.1em",
-                    color: "text.secondary",
-                    fontFamily: "sans-serif",
-                  }}
-                >
-                  {pinyinText}
-                </Typography>
+              <Tooltip key={index} title={tooltipTitle} arrow>
                 <Box
-                  component="span"
                   sx={{
-                    color: color || "inherit",
-                    fontSize: "1em",
-                    lineHeight: 1,
+                    display: "inline-flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "flex-start",
+                    verticalAlign: "top",
+                    position: "relative",
+                    cursor: "help",
                   }}
                 >
-                  {char}
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      fontSize: "0.35em",
+                      lineHeight: 1,
+                      mb: "0.1em",
+                      color: "text.secondary",
+                      fontFamily: "sans-serif",
+                    }}
+                  >
+                    {pinyinText}
+                  </Typography>
+                  <Box
+                    component="span"
+                    sx={{
+                      color: color || "inherit",
+                      fontSize: "1em",
+                      lineHeight: 1,
+                    }}
+                  >
+                    {char}
+                  </Box>
                 </Box>
-              </Box>
+              </Tooltip>
             );
           } else {
             return (
