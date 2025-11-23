@@ -20,7 +20,10 @@ import {
   Divider,
   IconButton,
   ListItemSecondaryAction,
+  Chip,
+  Collapse,
 } from "@mui/material";
+import { ExpandMore, ExpandLess } from "@mui/icons-material";
 import { Add, Delete, Edit, ContentCopy } from "@mui/icons-material";
 import { HanziList, HanziListType } from "../store/types/HanziList";
 import { HanziListStore } from "../store/HanziListStore";
@@ -34,7 +37,9 @@ export function ConfigurationScreen() {
     HanziListType.Inclusive
   );
   const [newListData, setNewListData] = useState("");
+  const [newListColor, setNewListColor] = useState("#1976d2");
   const [userLists, setUserLists] = useState<HanziList[]>([]);
+  const [expandedLists, setExpandedLists] = useState<Set<string>>(new Set());
   const store = useMemo(() => new HanziListStore(), []);
 
   useEffect(() => {
@@ -52,6 +57,7 @@ export function ConfigurationScreen() {
     setNewListName("");
     setNewListType(HanziListType.Inclusive);
     setNewListData("");
+    setNewListColor("#1976d2");
     setOpen(true);
   };
 
@@ -64,6 +70,7 @@ export function ConfigurationScreen() {
       setNewListName(list.name);
       setNewListType(list.type);
       setNewListData(list.data);
+      setNewListColor(list.color || "#1976d2");
       setOpen(true);
     }
   };
@@ -90,6 +97,7 @@ export function ConfigurationScreen() {
     setNewListName("");
     setNewListType(HanziListType.Inclusive);
     setNewListData("");
+    setNewListColor("#1976d2");
   };
 
   const handleSave = () => {
@@ -101,6 +109,7 @@ export function ConfigurationScreen() {
       name: newListName.trim(),
       type: newListType,
       data: newListData.trim(),
+      color: newListColor,
     };
 
     let updatedLists: HanziList[];
@@ -114,6 +123,20 @@ export function ConfigurationScreen() {
     store.save(updatedLists);
     setUserLists(updatedLists);
     handleClose();
+  };
+
+  const toggleListExpansion = (listKey: string) => {
+    const newExpanded = new Set(expandedLists);
+    if (newExpanded.has(listKey)) {
+      newExpanded.delete(listKey);
+    } else {
+      newExpanded.add(listKey);
+    }
+    setExpandedLists(newExpanded);
+  };
+
+  const getListKey = (list: HanziList, index: number) => {
+    return `${list.name}-${list.type}-${index}`;
   };
 
   const inclusiveLists = userLists.filter(
@@ -135,26 +158,88 @@ export function ConfigurationScreen() {
         </Typography>
         <Paper variant="outlined" sx={{ mb: 3 }}>
           <List>
-            {PREDEFINED_LISTS.map((list, index) => (
-              <div key={index}>
-                <ListItem>
-                  <ListItemText
-                    primary={list.name}
-                    secondary={`Type: ${list.type} | Characters: ${list.data.length}`}
-                  />
-                  <ListItemSecondaryAction>
-                    <IconButton
-                      edge="end"
-                      aria-label="copy"
-                      onClick={() => handleCopy(list)}
-                    >
-                      <ContentCopy />
-                    </IconButton>
-                  </ListItemSecondaryAction>
-                </ListItem>
-                {index < PREDEFINED_LISTS.length - 1 && <Divider />}
-              </div>
-            ))}
+            {PREDEFINED_LISTS.map((list, index) => {
+              const listKey = `predefined-${index}`;
+              const isExpanded = expandedLists.has(listKey);
+              return (
+                <div key={index}>
+                  <ListItem>
+                    {list.color && (
+                      <Box
+                        sx={{
+                          width: 16,
+                          height: 16,
+                          borderRadius: "50%",
+                          backgroundColor: list.color,
+                          mr: 1,
+                          border: "1px solid",
+                          borderColor: "divider",
+                        }}
+                        aria-label={`Color: ${list.color}`}
+                      />
+                    )}
+                    <ListItemText
+                      primary={list.name}
+                      secondary={`Type: ${list.type} | Characters: ${list.data.length}`}
+                    />
+                    <ListItemSecondaryAction>
+                      <IconButton
+                        edge="end"
+                        aria-label={isExpanded ? "collapse" : "expand"}
+                        onClick={() => toggleListExpansion(listKey)}
+                        sx={{ mr: 1 }}
+                      >
+                        {isExpanded ? <ExpandLess /> : <ExpandMore />}
+                      </IconButton>
+                      <IconButton
+                        edge="end"
+                        aria-label="copy"
+                        onClick={() => handleCopy(list)}
+                      >
+                        <ContentCopy />
+                      </IconButton>
+                    </ListItemSecondaryAction>
+                  </ListItem>
+                  <Collapse in={isExpanded} timeout="auto" unmountOnExit>
+                    <Box sx={{ p: 2, pt: 0 }}>
+                      <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: "block" }}>
+                        All characters in this list:
+                      </Typography>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          flexWrap: "wrap",
+                          gap: 0.5,
+                          maxHeight: "300px",
+                          overflowY: "auto",
+                        }}
+                        role="list"
+                        aria-label={`Characters in ${list.name}`}
+                      >
+                        {Array.from(list.data).map((char, charIndex) => (
+                          <Chip
+                            key={`${listKey}-char-${charIndex}`}
+                            label={char}
+                            size="small"
+                            sx={{
+                              backgroundColor: list.color
+                                ? `${list.color}20`
+                                : "action.selected",
+                              border: `1px solid ${list.color || "#1976d2"}`,
+                              fontSize: "1.2rem",
+                              minWidth: "2.5rem",
+                              height: "2.5rem",
+                            }}
+                            aria-label={`Character: ${char}`}
+                          />
+                        ))}
+                      </Box>
+                    </Box>
+                  </Collapse>
+                  {index < PREDEFINED_LISTS.length - 1 && <Divider />}
+                </div>
+              );
+            })}
           </List>
         </Paper>
 
@@ -168,14 +253,37 @@ export function ConfigurationScreen() {
             </Box>
           ) : (
             <List>
-              {inclusiveLists.map((list, index) => (
-                <div key={`${list.name}-${list.type}-${index}`}>
+              {inclusiveLists.map((list, index) => {
+              const listKey = getListKey(list, index);
+              const isExpanded = expandedLists.has(listKey);
+              return (
+                <div key={listKey}>
                   <ListItem>
+                    <Box
+                      sx={{
+                        width: 16,
+                        height: 16,
+                        borderRadius: "50%",
+                        backgroundColor: list.color || "#1976d2",
+                        mr: 1,
+                        border: "1px solid",
+                        borderColor: "divider",
+                      }}
+                      aria-label={`Color: ${list.color || "#1976d2"}`}
+                    />
                     <ListItemText
                       primary={list.name}
                       secondary={`Characters: ${list.data.length}`}
                     />
                     <ListItemSecondaryAction>
+                      <IconButton
+                        edge="end"
+                        aria-label={isExpanded ? "collapse" : "expand"}
+                        onClick={() => toggleListExpansion(listKey)}
+                        sx={{ mr: 1 }}
+                      >
+                        {isExpanded ? <ExpandLess /> : <ExpandMore />}
+                      </IconButton>
                       <IconButton
                         edge="end"
                         aria-label="copy"
@@ -202,9 +310,46 @@ export function ConfigurationScreen() {
                       </IconButton>
                     </ListItemSecondaryAction>
                   </ListItem>
+                  <Collapse in={isExpanded} timeout="auto" unmountOnExit>
+                    <Box sx={{ p: 2, pt: 0 }}>
+                      <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: "block" }}>
+                        All characters in this list:
+                      </Typography>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          flexWrap: "wrap",
+                          gap: 0.5,
+                          maxHeight: "300px",
+                          overflowY: "auto",
+                        }}
+                        role="list"
+                        aria-label={`Characters in ${list.name}`}
+                      >
+                        {Array.from(list.data).map((char, charIndex) => (
+                          <Chip
+                            key={`${listKey}-char-${charIndex}`}
+                            label={char}
+                            size="small"
+                            sx={{
+                              backgroundColor: list.color
+                                ? `${list.color}20`
+                                : "action.selected",
+                              border: `1px solid ${list.color || "#1976d2"}`,
+                              fontSize: "1.2rem",
+                              minWidth: "2.5rem",
+                              height: "2.5rem",
+                            }}
+                            aria-label={`Character: ${char}`}
+                          />
+                        ))}
+                      </Box>
+                    </Box>
+                  </Collapse>
                   {index < inclusiveLists.length - 1 && <Divider />}
                 </div>
-              ))}
+              );
+            })}
             </List>
           )}
         </Paper>
@@ -219,14 +364,37 @@ export function ConfigurationScreen() {
             </Box>
           ) : (
             <List>
-              {exclusiveLists.map((list, index) => (
-                <div key={`${list.name}-${list.type}-${index}`}>
+              {exclusiveLists.map((list, index) => {
+              const listKey = getListKey(list, index);
+              const isExpanded = expandedLists.has(listKey);
+              return (
+                <div key={listKey}>
                   <ListItem>
+                    <Box
+                      sx={{
+                        width: 16,
+                        height: 16,
+                        borderRadius: "50%",
+                        backgroundColor: list.color || "#1976d2",
+                        mr: 1,
+                        border: "1px solid",
+                        borderColor: "divider",
+                      }}
+                      aria-label={`Color: ${list.color || "#1976d2"}`}
+                    />
                     <ListItemText
                       primary={list.name}
                       secondary={`Characters: ${list.data.length}`}
                     />
                     <ListItemSecondaryAction>
+                      <IconButton
+                        edge="end"
+                        aria-label={isExpanded ? "collapse" : "expand"}
+                        onClick={() => toggleListExpansion(listKey)}
+                        sx={{ mr: 1 }}
+                      >
+                        {isExpanded ? <ExpandLess /> : <ExpandMore />}
+                      </IconButton>
                       <IconButton
                         edge="end"
                         aria-label="copy"
@@ -253,9 +421,46 @@ export function ConfigurationScreen() {
                       </IconButton>
                     </ListItemSecondaryAction>
                   </ListItem>
+                  <Collapse in={isExpanded} timeout="auto" unmountOnExit>
+                    <Box sx={{ p: 2, pt: 0 }}>
+                      <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: "block" }}>
+                        All characters in this list:
+                      </Typography>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          flexWrap: "wrap",
+                          gap: 0.5,
+                          maxHeight: "300px",
+                          overflowY: "auto",
+                        }}
+                        role="list"
+                        aria-label={`Characters in ${list.name}`}
+                      >
+                        {Array.from(list.data).map((char, charIndex) => (
+                          <Chip
+                            key={`${listKey}-char-${charIndex}`}
+                            label={char}
+                            size="small"
+                            sx={{
+                              backgroundColor: list.color
+                                ? `${list.color}20`
+                                : "action.selected",
+                              border: `1px solid ${list.color || "#1976d2"}`,
+                              fontSize: "1.2rem",
+                              minWidth: "2.5rem",
+                              height: "2.5rem",
+                            }}
+                            aria-label={`Character: ${char}`}
+                          />
+                        ))}
+                      </Box>
+                    </Box>
+                  </Collapse>
                   {index < exclusiveLists.length - 1 && <Divider />}
                 </div>
-              ))}
+              );
+            })}
             </List>
           )}
         </Paper>
@@ -304,6 +509,35 @@ export function ConfigurationScreen() {
               placeholder="Enter hanzi characters..."
               required
             />
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+              <Typography variant="body2">Color:</Typography>
+              <TextField
+                type="color"
+                value={newListColor}
+                onChange={(e) => setNewListColor(e.target.value)}
+                sx={{
+                  width: 80,
+                  "& input": {
+                    height: 40,
+                    cursor: "pointer",
+                  },
+                }}
+                inputProps={{
+                  "aria-label": "List color",
+                }}
+              />
+              <Box
+                sx={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 1,
+                  backgroundColor: newListColor,
+                  border: "1px solid",
+                  borderColor: "divider",
+                }}
+                aria-label={`Selected color: ${newListColor}`}
+              />
+            </Box>
           </Box>
         </DialogContent>
         <DialogActions>

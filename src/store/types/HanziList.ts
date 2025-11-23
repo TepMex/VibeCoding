@@ -7,5 +7,6 @@ export interface HanziList {
   name: string;
   type: HanziListType;
   data: string;
+  color?: string;
 }
 
