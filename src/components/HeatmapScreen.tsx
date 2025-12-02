@@ -3,15 +3,17 @@ import { Box, Typography, Container, TextField, Stack } from '@mui/material';
 
 interface HeatmapScreenProps {
   text: string;
+  exceptions: string;
 }
 
-export const HeatmapScreen = ({ text }: HeatmapScreenProps) => {
+export const HeatmapScreen = ({ text, exceptions }: HeatmapScreenProps) => {
   const [logBase, setLogBase] = useState(10);
   const [maxLogValue, setMaxLogValue] = useState(3);
 
   const coloredText = useMemo(() => {
     if (!text) return null;
 
+    const exceptionSet = new Set(exceptions.split('').filter(char => char.trim()));
     const charOccurrences = new Map<string, number>();
     const charPositions: Array<{ char: string; occurrence: number }> = [];
 
@@ -23,6 +25,14 @@ export const HeatmapScreen = ({ text }: HeatmapScreenProps) => {
     }
 
     return charPositions.map((item, index) => {
+      if (exceptionSet.has(item.char)) {
+        return (
+          <span key={index} style={{ color: 'rgb(200, 200, 200)' }}>
+            {item.char}
+          </span>
+        );
+      }
+
       const logValue = Math.log(item.occurrence) / Math.log(logBase);
       const normalizedValue = Math.min(logValue / maxLogValue, 1);
       
@@ -38,7 +48,7 @@ export const HeatmapScreen = ({ text }: HeatmapScreenProps) => {
         </span>
       );
     });
-  }, [text, logBase, maxLogValue]);
+  }, [text, exceptions, logBase, maxLogValue]);
 
   return (
     <Container maxWidth="lg" sx={{ py: 4, pb: 10 }}>

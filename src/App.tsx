@@ -11,14 +11,22 @@ const theme = createTheme()
 
 function App() {
   const [text, setText] = useState('')
+  const [exceptions, setExceptions] = useState('')
   const [currentScreen, setCurrentScreen] = useState(0)
 
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <Box sx={{ pb: 7 }}>
-        {currentScreen === 0 && <TextInputScreen text={text} onTextChange={setText} />}
-        {currentScreen === 1 && <HeatmapScreen text={text} />}
+        {currentScreen === 0 && (
+          <TextInputScreen 
+            text={text} 
+            onTextChange={setText}
+            exceptions={exceptions}
+            onExceptionsChange={setExceptions}
+          />
+        )}
+        {currentScreen === 1 && <HeatmapScreen text={text} exceptions={exceptions} />}
       </Box>
       <BottomNavigation currentScreen={currentScreen} onScreenChange={setCurrentScreen} />
     </ThemeProvider>
