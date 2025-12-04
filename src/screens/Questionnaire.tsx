@@ -19,7 +19,18 @@ export default function Questionnaire() {
   const navigate = useNavigate();
   const { getHabit, updateHabit } = useHabits();
   const habit = getHabit(habitId!);
-  const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
+  
+  const isAllQuestionsAnswered = (answers: Record<string, string>) => {
+    const allQuestions = questionnaireTemplate.sections.flatMap((section) => section.questions);
+    return allQuestions.every((question) => answers[question.id]?.trim());
+  };
+
+  const [currentSectionIndex, setCurrentSectionIndex] = useState(() => {
+    if (habit && isAllQuestionsAnswered(habit.answers)) {
+      return questionnaireTemplate.sections.length;
+    }
+    return 0;
+  });
   const [answers, setAnswers] = useState<Record<string, string>>(habit?.answers || {});
 
   useEffect(() => {
