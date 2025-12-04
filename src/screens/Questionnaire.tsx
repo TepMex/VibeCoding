@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -12,13 +12,21 @@ import {
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { questionnaireTemplate } from '../data/questionnaireTemplate';
-import type { Answer } from '../types/questionnaire';
+import { useHabits } from '../contexts/HabitsContext';
 
 export default function Questionnaire() {
   const { habitId } = useParams();
   const navigate = useNavigate();
+  const { getHabit, updateHabit } = useHabits();
+  const habit = getHabit(habitId!);
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
-  const [answers, setAnswers] = useState<Answer[]>([]);
+  const [answers, setAnswers] = useState<Record<string, string>>(habit?.answers || {});
+
+  useEffect(() => {
+    if (!habit) {
+      navigate('/');
+    }
+  }, [habit, navigate]);
 
   const currentSection = questionnaireTemplate.sections[currentSectionIndex];
   const totalSections = questionnaireTemplate.sections.length;
@@ -27,20 +35,15 @@ export default function Questionnaire() {
   const isCompleted = currentSectionIndex >= totalSections;
 
   const getAnswer = (questionId: string): string => {
-    const answer = answers.find((a) => a.questionId === questionId);
-    return answer?.value || '';
+    return answers[questionId] || '';
   };
 
   const handleAnswerChange = (questionId: string, value: string) => {
-    setAnswers((prev) => {
-      const existing = prev.find((a) => a.questionId === questionId);
-      if (existing) {
-        return prev.map((a) =>
-          a.questionId === questionId ? { ...a, value } : a
-        );
-      }
-      return [...prev, { questionId, value }];
-    });
+    const newAnswers = { ...answers, [questionId]: value };
+    setAnswers(newAnswers);
+    if (habitId) {
+      updateHabit(habitId, { answers: newAnswers });
+    }
   };
 
   const handleNext = () => {
@@ -69,6 +72,10 @@ export default function Questionnaire() {
     }));
   };
 
+  if (!habit) {
+    return null;
+  }
+
   if (isCompleted) {
     const summary = getSummary();
     return (
@@ -83,11 +90,11 @@ export default function Questionnaire() {
           </Button>
 
           <Typography variant="h4" component="h1" gutterBottom>
-            Резюме
+            {habit.name}
           </Typography>
 
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            Habit ID: {habitId}
+          <Typography variant="h6" color="text.secondary" sx={{ mb: 3 }}>
+            Резюме
           </Typography>
 
           {summary.map((section, idx) => (
@@ -135,6 +142,10 @@ export default function Questionnaire() {
           </Typography>
           <LinearProgress variant="determinate" value={progress} sx={{ my: 1 }} />
         </Box>
+
+        <Typography variant="h6" color="text.secondary" gutterBottom>
+          {habit.name}
+        </Typography>
 
         <Typography variant="h4" component="h1" gutterBottom>
           {currentSection.title}
