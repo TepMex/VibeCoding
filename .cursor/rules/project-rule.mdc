@@ -28,7 +28,7 @@ Application consists of screens
 <screen-1>Text input screen: large textarea input, where user can paste arbitrary text.</screen-1>
 <screen-2>Heatmap screen. Renders text from screen-1, but with color markings applied to each symbol. Need good performance optimization, because of possible large text to render.</screen-2>
 
-<definition>Color for each character should be specified as arbitrary-number-based logarithm of number of which occurence of this hanzi in text. Color is in range (gradiently) from red (for first occurence) to light gray (for logarith of occurence equals 10).</definition>
+<definition>Color for each character should be specified as arbitrary-number-based logarithm of number of which occurence of this hanzi in text. Color is in range (gradiently) from red (for first occurence) to light gray (based on max value from user).</definition>
 </project-description>
 
 <styling>

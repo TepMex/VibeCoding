@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Box, Typography, Container, TextField, Stack } from '@mui/material';
+import { Box, Typography, Container, TextField } from '@mui/material';
 
 interface HeatmapScreenProps {
   text: string;
@@ -7,8 +7,7 @@ interface HeatmapScreenProps {
 }
 
 export const HeatmapScreen = ({ text, exceptions }: HeatmapScreenProps) => {
-  const [logBase, setLogBase] = useState(10);
-  const [maxLogValue, setMaxLogValue] = useState(3);
+  const [maxOccurrences, setMaxOccurrences] = useState(100);
 
   const coloredText = useMemo(() => {
     if (!text) return null;
@@ -33,8 +32,7 @@ export const HeatmapScreen = ({ text, exceptions }: HeatmapScreenProps) => {
         );
       }
 
-      const logValue = Math.log(item.occurrence) / Math.log(logBase);
-      const normalizedValue = Math.min(logValue / maxLogValue, 1);
+      const normalizedValue = Math.min((item.occurrence - 1) / (maxOccurrences - 1), 1);
       
       const red = Math.round(255 - normalizedValue * 55);
       const green = Math.round(0 + normalizedValue * 200);
@@ -48,7 +46,7 @@ export const HeatmapScreen = ({ text, exceptions }: HeatmapScreenProps) => {
         </span>
       );
     });
-  }, [text, exceptions, logBase, maxLogValue]);
+  }, [text, exceptions, maxOccurrences]);
 
   return (
     <Container maxWidth="lg" sx={{ py: 4, pb: 10 }}>
@@ -56,24 +54,16 @@ export const HeatmapScreen = ({ text, exceptions }: HeatmapScreenProps) => {
         Hanzi Frequency Heatmap
       </Typography>
       
-      <Stack direction="row" spacing={2} sx={{ mt: 2, mb: 3 }}>
+      <Box sx={{ mt: 2, mb: 3 }}>
         <TextField
-          label="Logarithm Base"
+          label="Max Occurrences (Light Gray)"
           type="number"
-          value={logBase}
-          onChange={(e) => setLogBase(Number(e.target.value) || 10)}
+          value={maxOccurrences}
+          onChange={(e) => setMaxOccurrences(Number(e.target.value) || 10)}
           inputProps={{ min: 2, step: 1 }}
-          sx={{ width: 150 }}
+          sx={{ width: 250 }}
         />
-        <TextField
-          label="Max Log Value"
-          type="number"
-          value={maxLogValue}
-          onChange={(e) => setMaxLogValue(Number(e.target.value) || 3)}
-          inputProps={{ min: 1, step: 0.5 }}
-          sx={{ width: 150 }}
-        />
-      </Stack>
+      </Box>
 
       <Box sx={{ mt: 3 }}>
         <Typography 
