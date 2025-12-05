@@ -15,15 +15,19 @@ import {
   DialogActions,
   TextField,
   Button,
+  IconButton,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
+import DeleteIcon from '@mui/icons-material/Delete';
 import { useHabits } from '../contexts/HabitsContext';
 
 export default function HabitsList() {
   const navigate = useNavigate();
-  const { habits, addHabit } = useHabits();
+  const { habits, addHabit, deleteHabit } = useHabits();
   const [open, setOpen] = useState(false);
   const [habitName, setHabitName] = useState('');
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [habitToDelete, setHabitToDelete] = useState<string | null>(null);
 
   const handleOpenDialog = () => {
     setOpen(true);
@@ -53,6 +57,25 @@ export default function HabitsList() {
     }
   };
 
+  const handleDeleteClick = (habitId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setHabitToDelete(habitId);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (habitToDelete) {
+      deleteHabit(habitToDelete);
+      setDeleteDialogOpen(false);
+      setHabitToDelete(null);
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteDialogOpen(false);
+    setHabitToDelete(null);
+  };
+
   return (
     <Container maxWidth="sm">
       <Box sx={{ py: 4 }}>
@@ -62,7 +85,19 @@ export default function HabitsList() {
         
         <List>
           {habits.map((habit) => (
-            <ListItem key={habit.id} disablePadding>
+            <ListItem
+              key={habit.id}
+              disablePadding
+              secondaryAction={
+                <IconButton
+                  edge="end"
+                  aria-label="delete"
+                  onClick={(e) => handleDeleteClick(habit.id, e)}
+                >
+                  <DeleteIcon />
+                </IconButton>
+              }
+            >
               <ListItemButton onClick={() => handleHabitClick(habit.id)}>
                 <ListItemText primary={habit.name} />
               </ListItemButton>
@@ -104,6 +139,21 @@ export default function HabitsList() {
           <Button onClick={handleCloseDialog}>Отмена</Button>
           <Button onClick={handleAddHabit} variant="contained" disabled={!habitName.trim()}>
             Создать
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={deleteDialogOpen} onClose={handleDeleteCancel}>
+        <DialogTitle>Удалить привычку?</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Вы уверены, что хотите удалить эту привычку? Все данные будут потеряны безвозвратно.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleDeleteCancel}>Отмена</Button>
+          <Button onClick={handleDeleteConfirm} color="error" variant="contained">
+            Удалить
           </Button>
         </DialogActions>
       </Dialog>

@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { HashRouter, Routes, Route } from 'react-router-dom';
 import { CssBaseline, ThemeProvider, createTheme } from '@mui/material';
 import { HabitsProvider } from './contexts/HabitsContext';
 import HabitsList from './screens/HabitsList';
@@ -15,12 +15,12 @@ function App() {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <HabitsProvider>
-        <BrowserRouter>
+        <HashRouter>
           <Routes>
             <Route path="/" element={<HabitsList />} />
             <Route path="/questionnaire/:habitId" element={<Questionnaire />} />
           </Routes>
-        </BrowserRouter>
+        </HashRouter>
       </HabitsProvider>
     </ThemeProvider>
   );
