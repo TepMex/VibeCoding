@@ -12,8 +12,10 @@ import {
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import SendIcon from '@mui/icons-material/Send';
 import { questionnaireTemplate } from '../data/questionnaireTemplate';
 import { useHabits } from '../contexts/HabitsContext';
+import { formatSummaryForTelegram } from '../utils/formatSummary';
 
 export default function Questionnaire() {
   const { habitId } = useParams();
@@ -84,6 +86,16 @@ export default function Questionnaire() {
     }));
   };
 
+  const handleSendToTelegram = () => {
+    if (!habit) return;
+    const summary = getSummary();
+    const formattedMessage = formatSummaryForTelegram(habit.name, summary);
+    const currentUrl = window.location.href;
+    
+    const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(currentUrl)}&text=${encodeURIComponent(formattedMessage)}`;
+    window.open(shareUrl, '_blank');
+  };
+
   if (isLoading) {
     return (
       <Container maxWidth="sm">
@@ -137,6 +149,17 @@ export default function Questionnaire() {
 
           <Button
             variant="contained"
+            color="primary"
+            startIcon={<SendIcon />}
+            onClick={handleSendToTelegram}
+            fullWidth
+            sx={{ mb: 2 }}
+          >
+            Поделиться в Telegram
+          </Button>
+
+          <Button
+            variant="outlined"
             onClick={() => setCurrentSectionIndex(0)}
             fullWidth
           >
