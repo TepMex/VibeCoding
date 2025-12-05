@@ -16,6 +16,7 @@ import {
   TextField,
   Button,
   IconButton,
+  CircularProgress,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -23,7 +24,7 @@ import { useHabits } from '../contexts/HabitsContext';
 
 export default function HabitsList() {
   const navigate = useNavigate();
-  const { habits, addHabit, deleteHabit } = useHabits();
+  const { habits, addHabit, deleteHabit, isLoading } = useHabits();
   const [open, setOpen] = useState(false);
   const [habitName, setHabitName] = useState('');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -75,6 +76,16 @@ export default function HabitsList() {
     setDeleteDialogOpen(false);
     setHabitToDelete(null);
   };
+
+  if (isLoading) {
+    return (
+      <Container maxWidth="sm">
+        <Box sx={{ py: 4, display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
+          <CircularProgress />
+        </Box>
+      </Container>
+    );
+  }
 
   return (
     <Container maxWidth="sm">

@@ -8,6 +8,7 @@ import {
   TextField,
   Paper,
   LinearProgress,
+  CircularProgress,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
@@ -17,7 +18,7 @@ import { useHabits } from '../contexts/HabitsContext';
 export default function Questionnaire() {
   const { habitId } = useParams();
   const navigate = useNavigate();
-  const { getHabit, updateHabit } = useHabits();
+  const { getHabit, updateHabit, isLoading } = useHabits();
   const habit = getHabit(habitId!);
   
   const isAllQuestionsAnswered = (answers: Record<string, string>) => {
@@ -34,10 +35,10 @@ export default function Questionnaire() {
   const [answers, setAnswers] = useState<Record<string, string>>(habit?.answers || {});
 
   useEffect(() => {
-    if (!habit) {
+    if (!isLoading && !habit) {
       navigate('/');
     }
-  }, [habit, navigate]);
+  }, [habit, navigate, isLoading]);
 
   const currentSection = questionnaireTemplate.sections[currentSectionIndex];
   const totalSections = questionnaireTemplate.sections.length;
@@ -82,6 +83,16 @@ export default function Questionnaire() {
       })),
     }));
   };
+
+  if (isLoading) {
+    return (
+      <Container maxWidth="sm">
+        <Box sx={{ py: 4, display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
+          <CircularProgress />
+        </Box>
+      </Container>
+    );
+  }
 
   if (!habit) {
     return null;

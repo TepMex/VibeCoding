@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import { storage, STORAGE_KEY } from '../utils/storage';
 
 export interface Habit {
   id: string;
@@ -13,21 +14,38 @@ interface HabitsContextType {
   updateHabit: (id: string, updates: Partial<Habit>) => void;
   deleteHabit: (id: string) => void;
   getHabit: (id: string) => Habit | undefined;
+  isLoading: boolean;
 }
 
 const HabitsContext = createContext<HabitsContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'habits-app-data';
-
 export function HabitsProvider({ children }: { children: ReactNode }) {
-  const [habits, setHabits] = useState<Habit[]>(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    return stored ? JSON.parse(stored) : [];
-  });
+  const [habits, setHabits] = useState<Habit[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(habits));
-  }, [habits]);
+    const loadHabits = async () => {
+      try {
+        const stored = await storage.getItem(STORAGE_KEY);
+        if (stored) {
+          setHabits(JSON.parse(stored));
+        }
+      } catch (error) {
+        console.error('Failed to load habits:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadHabits();
+  }, []);
+
+  useEffect(() => {
+    if (!isLoading) {
+      storage.setItem(STORAGE_KEY, JSON.stringify(habits)).catch((error) => {
+        console.error('Failed to save habits:', error);
+      });
+    }
+  }, [habits, isLoading]);
 
   const addHabit = (name: string): Habit => {
     const newHabit: Habit = {
@@ -58,7 +76,7 @@ export function HabitsProvider({ children }: { children: ReactNode }) {
 
   return (
     <HabitsContext.Provider
-      value={{ habits, addHabit, updateHabit, deleteHabit, getHabit }}
+      value={{ habits, addHabit, updateHabit, deleteHabit, getHabit, isLoading }}
     >
       {children}
     </HabitsContext.Provider>
