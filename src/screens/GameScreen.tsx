@@ -57,6 +57,23 @@ export const GameScreen = () => {
     setSwipeOffset(0);
   }, [currentCard, cardStartTime, streak, generateCard]);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+        e.preventDefault();
+        handleAnswer(false);
+      } else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+        e.preventDefault();
+        handleAnswer(true);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [handleAnswer]);
+
   const handleTouchStart = (e: React.TouchEvent) => {
     const touch = e.touches[0];
     touchStartX.current = touch.clientX;
