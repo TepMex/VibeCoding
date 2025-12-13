@@ -25,7 +25,9 @@ function App() {
       {currentScreen === 'start' && (
         <StartScreen onStart={handleStart} onSettings={handleOpenSettings} />
       )}
-      {currentScreen === 'game' && <GameScreen onSettings={handleOpenSettings} />}
+      {currentScreen === 'game' && (
+        <GameScreen onSettings={handleOpenSettings} onGameEnd={() => setCurrentScreen('start')} />
+      )}
       {currentScreen === 'settings' && <SettingsScreen onBack={handleBackFromSettings} />}
     </>
   );

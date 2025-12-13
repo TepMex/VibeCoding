@@ -44,5 +44,23 @@ export const deletePair = (index: number): void => {
   }
 };
 
+const HIGHSCORE_KEY = 'hanzi-mistaken-pairs-highscore';
+
+export const getHighscore = (): number => {
+  const stored = localStorage.getItem(HIGHSCORE_KEY);
+  if (stored) {
+    try {
+      return parseInt(stored, 10);
+    } catch {
+      return 0;
+    }
+  }
+  return 0;
+};
+
+export const setHighscore = (score: number): void => {
+  localStorage.setItem(HIGHSCORE_KEY, score.toString());
+};
+
 
 

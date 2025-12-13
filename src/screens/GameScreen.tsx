@@ -1,22 +1,28 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Container, Box, Typography, Card, CardContent, IconButton } from '@mui/material';
+import { Container, Box, Typography, Card, CardContent, IconButton, Snackbar, Alert } from '@mui/material';
 import SettingsIcon from '@mui/icons-material/Settings';
 import type { MistakenPair, GameCard } from '../types';
 import { calculateScore } from '../utils/score';
-import { getPairs } from '../utils/pairsStorage';
+import { getPairs, getHighscore, setHighscore } from '../utils/pairsStorage';
 
 interface GameScreenProps {
   onSettings: () => void;
+  onGameEnd?: () => void;
 }
 
-export const GameScreen = ({ onSettings }: GameScreenProps) => {
+const MAX_SWIPES = 50;
+
+export const GameScreen = ({ onSettings, onGameEnd }: GameScreenProps) => {
   const [pairs, setPairs] = useState<MistakenPair[]>([]);
   const [currentCard, setCurrentCard] = useState<GameCard | null>(null);
   const [score, setScore] = useState(0);
   const [streak, setStreak] = useState(0);
+  const [swipeCount, setSwipeCount] = useState(0);
   const [cardStartTime, setCardStartTime] = useState<number>(0);
   const [swipeOffset, setSwipeOffset] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+  const [showHighscoreBanner, setShowHighscoreBanner] = useState(false);
+  const [gameOver, setGameOver] = useState(false);
   const touchStartX = useRef<number>(0);
   const touchStartY = useRef<number>(0);
   const cardRef = useRef<HTMLDivElement>(null);
@@ -64,6 +70,11 @@ export const GameScreen = ({ onSettings }: GameScreenProps) => {
 
   useEffect(() => {
     if (pairs.length > 0) {
+      setScore(0);
+      setStreak(0);
+      setSwipeCount(0);
+      setGameOver(false);
+      setShowHighscoreBanner(false);
       const card = generateCard();
       setCurrentCard(card);
       setCardStartTime(Date.now());
@@ -71,7 +82,7 @@ export const GameScreen = ({ onSettings }: GameScreenProps) => {
   }, [pairs, generateCard]);
 
   const handleAnswer = useCallback((answer: boolean) => {
-    if (!currentCard) return;
+    if (!currentCard || gameOver) return;
 
     const timeToAnswer = Date.now() - cardStartTime;
     const isCorrect = answer === currentCard.isCorrect;
@@ -82,16 +93,37 @@ export const GameScreen = ({ onSettings }: GameScreenProps) => {
       streak
     );
 
-    setScore((prev) => prev + pointsEarned);
+    const newSwipeCount = swipeCount + 1;
+    setSwipeCount(newSwipeCount);
+    
+    const newScore = score + pointsEarned;
+    setScore(newScore);
     setStreak(streakContinues ? streak + 1 : 0);
+
+    if (newSwipeCount >= MAX_SWIPES) {
+      setGameOver(true);
+      const currentHighscore = getHighscore();
+      if (newScore > currentHighscore) {
+        setHighscore(newScore);
+        setShowHighscoreBanner(true);
+      }
+      if (onGameEnd) {
+        setTimeout(() => {
+          onGameEnd();
+        }, 2000);
+      }
+      return;
+    }
 
     const newCard = generateCard();
     setCurrentCard(newCard);
     setCardStartTime(Date.now());
     setSwipeOffset(0);
-  }, [currentCard, cardStartTime, streak, generateCard]);
+  }, [currentCard, cardStartTime, streak, generateCard, swipeCount, score, onGameEnd, gameOver]);
 
   useEffect(() => {
+    if (gameOver) return;
+    
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
         e.preventDefault();
@@ -106,7 +138,7 @@ export const GameScreen = ({ onSettings }: GameScreenProps) => {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [handleAnswer]);
+  }, [handleAnswer, gameOver]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     const touch = e.touches[0];
@@ -116,7 +148,7 @@ export const GameScreen = ({ onSettings }: GameScreenProps) => {
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    if (!isDragging) return;
+    if (!isDragging || gameOver) return;
 
     const touch = e.touches[0];
     const deltaX = touch.clientX - touchStartX.current;
@@ -147,7 +179,7 @@ export const GameScreen = ({ onSettings }: GameScreenProps) => {
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging) return;
+    if (!isDragging || gameOver) return;
 
     const deltaX = e.clientX - touchStartX.current;
     const deltaY = Math.abs(e.clientY - touchStartY.current);
@@ -213,21 +245,38 @@ export const GameScreen = ({ onSettings }: GameScreenProps) => {
             <SettingsIcon />
           </IconButton>
         </Box>
-        {streak > 0 && (
+        <Box
+          sx={{
+            position: 'absolute',
+            top: 16,
+            left: 16,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 1,
+          }}
+        >
+          {streak > 0 && (
+            <Typography
+              variant="h6"
+              component="div"
+              sx={{
+                fontWeight: 'bold',
+                color: 'success.main',
+              }}
+            >
+              🔥 {streak}x
+            </Typography>
+          )}
           <Typography
-            variant="h6"
+            variant="body1"
             component="div"
             sx={{
-              position: 'absolute',
-              top: 16,
-              left: 16,
-              fontWeight: 'bold',
-              color: 'success.main',
+              color: 'text.secondary',
             }}
           >
-            🔥 {streak}x
+            {swipeCount}/{MAX_SWIPES}
           </Typography>
-        )}
+        </Box>
 
         <Box
           sx={{
@@ -274,12 +323,28 @@ export const GameScreen = ({ onSettings }: GameScreenProps) => {
               <Typography variant="h4" component="div" sx={{ color: 'text.secondary' }}>
                 {currentCard.pinyin}
               </Typography>
-              <Typography variant="body2" sx={{ mt: 4, color: 'text.disabled' }}>
-                Swipe right if correct, left if incorrect
-              </Typography>
+              {gameOver ? (
+                <Typography variant="h5" sx={{ mt: 4, color: 'primary.main', fontWeight: 'bold' }}>
+                  Game Over! Final Score: {score}
+                </Typography>
+              ) : (
+                <Typography variant="body2" sx={{ mt: 4, color: 'text.disabled' }}>
+                  Swipe right if correct, left if incorrect
+                </Typography>
+              )}
             </CardContent>
           </Card>
         </Box>
+        <Snackbar
+          open={showHighscoreBanner}
+          autoHideDuration={3000}
+          onClose={() => setShowHighscoreBanner(false)}
+          anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        >
+          <Alert severity="success" sx={{ fontSize: '1.2rem', padding: 2 }}>
+            🎉 New Highscore: {score}!
+          </Alert>
+        </Snackbar>
       </Box>
     </Container>
   );
