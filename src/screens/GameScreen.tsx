@@ -2,11 +2,13 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { Container, Box, Typography, Card, CardContent } from '@mui/material';
 import pairsData from '../assets/pairs.json';
 import type { MistakenPair, GameCard } from '../types';
+import { calculateScore } from '../utils/score';
 
 export const GameScreen = () => {
   const [pairs] = useState<MistakenPair[]>(pairsData as MistakenPair[]);
   const [currentCard, setCurrentCard] = useState<GameCard | null>(null);
   const [score, setScore] = useState(0);
+  const [streak, setStreak] = useState(0);
   const [cardStartTime, setCardStartTime] = useState<number>(0);
   const [swipeOffset, setSwipeOffset] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
@@ -37,20 +39,23 @@ export const GameScreen = () => {
   const handleAnswer = useCallback((answer: boolean) => {
     if (!currentCard) return;
 
-    const timeElapsed = Date.now() - cardStartTime;
-    const timeBonus = Math.max(0, 3000 - timeElapsed);
-    const speedMultiplier = timeBonus / 3000;
+    const timeToAnswer = Date.now() - cardStartTime;
+    const isCorrect = answer === currentCard.isCorrect;
+    
+    const { score: pointsEarned, streakContinues } = calculateScore(
+      isCorrect,
+      timeToAnswer,
+      streak
+    );
 
-    if (answer === currentCard.isCorrect) {
-      const points = Math.floor(100 + speedMultiplier * 200);
-      setScore((prev) => prev + points);
-    }
+    setScore((prev) => prev + pointsEarned);
+    setStreak(streakContinues ? streak + 1 : 0);
 
     const newCard = generateCard();
     setCurrentCard(newCard);
     setCardStartTime(Date.now());
     setSwipeOffset(0);
-  }, [currentCard, cardStartTime, generateCard]);
+  }, [currentCard, cardStartTime, streak, generateCard]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     const touch = e.touches[0];
@@ -146,6 +151,21 @@ export const GameScreen = () => {
         >
           {score}
         </Typography>
+        {streak > 0 && (
+          <Typography
+            variant="h6"
+            component="div"
+            sx={{
+              position: 'absolute',
+              top: 16,
+              left: 16,
+              fontWeight: 'bold',
+              color: 'success.main',
+            }}
+          >
+            🔥 {streak}x
+          </Typography>
+        )}
 
         <Box
           sx={{
