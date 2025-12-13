@@ -1,10 +1,12 @@
-import { Button, Container, Typography, Box } from '@mui/material';
+import { Button, Container, Typography, Box, IconButton } from '@mui/material';
+import SettingsIcon from '@mui/icons-material/Settings';
 
 interface StartScreenProps {
   onStart: () => void;
+  onSettings: () => void;
 }
 
-export const StartScreen = ({ onStart }: StartScreenProps) => {
+export const StartScreen = ({ onStart, onSettings }: StartScreenProps) => {
   return (
     <Container maxWidth="sm">
       <Box
@@ -15,8 +17,19 @@ export const StartScreen = ({ onStart }: StartScreenProps) => {
           justifyContent: 'center',
           minHeight: '100vh',
           gap: 4,
+          position: 'relative',
         }}
       >
+        <IconButton
+          onClick={onSettings}
+          sx={{
+            position: 'absolute',
+            top: 16,
+            right: 16,
+          }}
+        >
+          <SettingsIcon />
+        </IconButton>
         <Typography variant="h3" component="h1" align="center" gutterBottom>
           Hanzi Training
         </Typography>

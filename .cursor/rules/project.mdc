@@ -27,6 +27,7 @@ Here we creating app (game) to test user agains pairs of some Mandarin Chinese w
 Application consists of screens
 <screen-1>Starting screen, with big "Start" button.</screen-1>
 <screen-2>Game screen. Appears when user press "Start" button. Game loop is following: we randomly show a card with hanzi text with correct pinyin or pinyin from paired hanzi text. User should swipe right if pinyin is correct or swipe left if incorrect. We should count user score based on correct answers and the speed of answering. User score should be presented as large integer in the screen corner. </screen-2>
+<screen-3>Settings screen. List of pairs, user can edit each pair by pressing the pencil button or delet by pressing trash button. Editing is implemented as modal with fields Hanzi1, Pinyin1, Hanzi2, Pinyin2. Also user add new pairs by clicking add button on this screen. </screen-3>
 </project-description>
 
 <styling>

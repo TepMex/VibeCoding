@@ -1,11 +1,16 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Container, Box, Typography, Card, CardContent } from '@mui/material';
-import pairsData from '../assets/pairs.json';
+import { Container, Box, Typography, Card, CardContent, IconButton } from '@mui/material';
+import SettingsIcon from '@mui/icons-material/Settings';
 import type { MistakenPair, GameCard } from '../types';
 import { calculateScore } from '../utils/score';
+import { getPairs } from '../utils/pairsStorage';
 
-export const GameScreen = () => {
-  const [pairs] = useState<MistakenPair[]>(pairsData as MistakenPair[]);
+interface GameScreenProps {
+  onSettings: () => void;
+}
+
+export const GameScreen = ({ onSettings }: GameScreenProps) => {
+  const [pairs, setPairs] = useState<MistakenPair[]>([]);
   const [currentCard, setCurrentCard] = useState<GameCard | null>(null);
   const [score, setScore] = useState(0);
   const [streak, setStreak] = useState(0);
@@ -16,7 +21,34 @@ export const GameScreen = () => {
   const touchStartY = useRef<number>(0);
   const cardRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => {
+    const loadPairs = () => {
+      setPairs(getPairs());
+    };
+    
+    loadPairs();
+    
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'hanzi-mistaken-pairs') {
+        loadPairs();
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
+
   const generateCard = useCallback((): GameCard => {
+    if (pairs.length === 0) {
+      return {
+        hanzi: '',
+        pinyin: '',
+        isCorrect: false,
+      };
+    }
     const pair = pairs[Math.floor(Math.random() * pairs.length)];
     const selectFirst = Math.random() < 0.5;
     const isCorrect = Math.random() < 0.5;
@@ -31,10 +63,12 @@ export const GameScreen = () => {
   }, [pairs]);
 
   useEffect(() => {
-    const card = generateCard();
-    setCurrentCard(card);
-    setCardStartTime(Date.now());
-  }, [generateCard]);
+    if (pairs.length > 0) {
+      const card = generateCard();
+      setCurrentCard(card);
+      setCardStartTime(Date.now());
+    }
+  }, [pairs, generateCard]);
 
   const handleAnswer = useCallback((answer: boolean) => {
     if (!currentCard) return;
@@ -155,19 +189,30 @@ export const GameScreen = () => {
           padding: 2,
         }}
       >
-        <Typography
-          variant="h2"
-          component="div"
+        <Box
           sx={{
             position: 'absolute',
             top: 16,
             right: 16,
-            fontWeight: 'bold',
-            color: 'primary.main',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 2,
           }}
         >
-          {score}
-        </Typography>
+          <Typography
+            variant="h2"
+            component="div"
+            sx={{
+              fontWeight: 'bold',
+              color: 'primary.main',
+            }}
+          >
+            {score}
+          </Typography>
+          <IconButton onClick={onSettings}>
+            <SettingsIcon />
+          </IconButton>
+        </Box>
         {streak > 0 && (
           <Typography
             variant="h6"

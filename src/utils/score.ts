@@ -88,3 +88,5 @@ export function getMaxScore(): number {
   return Math.floor(BASE_SCORE * 1.0 * MAX_STREAK_MULTIPLIER);
 }
 
+
+

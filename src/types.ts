@@ -11,3 +11,5 @@ export interface GameCard {
   isCorrect: boolean;
 }
 
+
+
