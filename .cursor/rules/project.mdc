@@ -1,0 +1,34 @@
+---
+alwaysApply: true
+---
+<role>
+You are a seasoned Web developer with strong knowledge and skills in React.
+</role>
+
+<instruction>
+No explanation of your action is needed if not asked explicitly.
+</instruction>
+<instruction>
+No summary, just show me the code.
+</instruction>
+
+<technology-stack>
+We using bun instead of nodejs, for speed.
+</technology-stack>
+
+<project-description>
+We're creating React application (SPA), that should work in browser, including Chrome for Android.
+</project-description>
+<project-description>
+Here we creating app (game) to test user agains pairs of some Mandarin Chinese words and hanzi's.
+
+<key-term>Mistaken pair is a pair of two words or two hanzi, that user can easily confuse one with other. Technically, for each pair we have data tuple - (hanzi1, pinyin1, hanzi2, pinyin2), where hanzi is Chinese charecters of word/hanzi 1 or 2, and pinyin is pinyin with tone mark. So, in our game we train user to tell the difference by showing randomly hanzi with correct or incorrect pinyin and get user to check. </key-term>
+
+Application consists of screens
+<screen-1>Starting screen, with big "Start" button.</screen-1>
+<screen-2>Game screen. Appears when user press "Start" button. Game loop is following: we randomly show a card with hanzi text with correct pinyin or pinyin from paired hanzi text. User should swipe right if pinyin is correct or swipe left if incorrect. We should count user score based on correct answers and the speed of answering. User score should be presented as large integer in the screen corner. </screen-2>
+</project-description>
+
+<styling>
+Use Material UI for styling.
+</styling>

@@ -1,0 +1,101 @@
+[
+    { "hanzi1": "那", "pinyin1": "nà", "hanzi2": "哪", "pinyin2": "nǎ" },
+    { "hanzi1": "跟", "pinyin1": "gēn", "hanzi2": "路", "pinyin2": "lù" },
+    { "hanzi1": "午", "pinyin1": "wǔ", "hanzi2": "牛", "pinyin2": "niú" },
+    { "hanzi1": "看", "pinyin1": "kàn", "hanzi2": "着", "pinyin2": "zhe" },
+    { "hanzi1": "然", "pinyin1": "rán", "hanzi2": "热", "pinyin2": "rè" },
+    {
+      "hanzi1": "教室",
+      "pinyin1": "jiàoshì",
+      "hanzi2": "介绍",
+      "pinyin2": "jièshào"
+    },
+    { "hanzi1": "关", "pinyin1": "guān", "hanzi2": "笑", "pinyin2": "xiào" },
+    { "hanzi1": "给", "pinyin1": "gěi", "hanzi2": "跟", "pinyin2": "gēn" },
+    { "hanzi1": "为", "pinyin1": "wéi", "hanzi2": "办", "pinyin2": "bàn" },
+    { "hanzi1": "借", "pinyin1": "jiè", "hanzi2": "甜", "pinyin2": "tián" },
+    { "hanzi1": "角", "pinyin1": "jiǎo", "hanzi2": "用", "pinyin2": "yòng" },
+    { "hanzi1": "做", "pinyin1": "zuò", "hanzi2": "故", "pinyin2": "gù" },
+    { "hanzi1": "光", "pinyin1": "guāng", "hanzi2": "元", "pinyin2": "yuán" },
+    {
+      "hanzi1": "李箱",
+      "pinyin1": "lǐxiāng",
+      "hanzi2": "举行",
+      "pinyin2": "jǔxíng"
+    },
+    { "hanzi1": "腿", "pinyin1": "tuǐ", "hanzi2": "脚", "pinyin2": "jiǎo" },
+    { "hanzi1": "蓝", "pinyin1": "lán", "hanzi2": "盘", "pinyin2": "pán" },
+    { "hanzi1": "东", "pinyin1": "dōng", "hanzi2": "乐", "pinyin2": "lè" },
+    { "hanzi1": "与", "pinyin1": "yǔ", "hanzi2": "写", "pinyin2": "xiě" },
+    { "hanzi1": "到", "pinyin1": "dào", "hanzi2": "街", "pinyin2": "jiē" },
+    { "hanzi1": "差", "pinyin1": "chā", "hanzi2": "着", "pinyin2": "zhe" },
+    { "hanzi1": "错", "pinyin1": "cuò", "hanzi2": "借", "pinyin2": "jiè" },
+    { "hanzi1": "该", "pinyin1": "gāi", "hanzi2": "刻", "pinyin2": "kè" },
+    { "hanzi1": "船", "pinyin1": "chuán", "hanzi2": "般", "pinyin2": "bān" },
+    {
+      "hanzi1": "练习",
+      "pinyin1": "liànxí",
+      "hanzi2": "联系",
+      "pinyin2": "liánxì"
+    },
+    { "hanzi1": "能", "pinyin1": "néng", "hanzi2": "指", "pinyin2": "zhǐ" },
+    {
+      "hanzi1": "注意",
+      "pinyin1": "zhùyì",
+      "hanzi2": "主意",
+      "pinyin2": "zhǔyi"
+    },
+    { "hanzi1": "李", "pinyin1": "lǐ", "hanzi2": "季", "pinyin2": "jì" },
+    { "hanzi1": "成", "pinyin1": "chéng", "hanzi2": "超", "pinyin2": "chāo" },
+    { "hanzi1": "意", "pinyin1": "yì", "hanzi2": "息", "pinyin2": "xī" },
+    { "hanzi1": "总", "pinyin1": "zǒng", "hanzi2": "只", "pinyin2": "zhǐ" },
+    { "hanzi1": "段", "pinyin1": "duàn", "hanzi2": "假", "pinyin2": "jiǎ" },
+    { "hanzi1": "台", "pinyin1": "tái", "hanzi2": "合", "pinyin2": "hé" },
+    {
+      "hanzi1": "收到",
+      "pinyin1": "shōudào",
+      "hanzi2": "受到",
+      "pinyin2": "shòudào"
+    },
+    { "hanzi1": "受", "pinyin1": "shòu", "hanzi2": "爱", "pinyin2": "ài" },
+    { "hanzi1": "怕", "pinyin1": "pà", "hanzi2": "咱", "pinyin2": "zán" },
+    {
+      "hanzi1": "恐怕",
+      "pinyin1": "kǒngpà",
+      "hanzi2": "害怕",
+      "pinyin2": "hàipà"
+    },
+    { "hanzi1": "爷爷", "pinyin1": "yéye", "hanzi2": "爸爸", "pinyin2": "bàba" },
+    { "hanzi1": "洞", "pinyin1": "dòng", "hanzi2": "河", "pinyin2": "hé" },
+    { "hanzi1": "交", "pinyin1": "jiāo", "hanzi2": "校", "pinyin2": "xiào" },
+    { "hanzi1": "矮", "pinyin1": "ǎi", "hanzi2": "短", "pinyin2": "duǎn" },
+    { "hanzi1": "村", "pinyin1": "cūn", "hanzi2": "树", "pinyin2": "shù" },
+    { "hanzi1": "光", "pinyin1": "guāng", "hanzi2": "兴", "pinyin2": "xīng" },
+    {
+      "hanzi1": "解决",
+      "pinyin1": "jiějué",
+      "hanzi2": "解释",
+      "pinyin2": "jiěshì"
+    },
+    { "hanzi1": "例如", "pinyin1": "lìrú", "hanzi2": "比如", "pinyin2": "bǐrú" },
+    { "hanzi1": "答案", "pinyin1": "dáàn", "hanzi2": "符合", "pinyin2": "fúhé" },
+    {
+      "hanzi1": "合适",
+      "pinyin1": "héshì",
+      "hanzi2": "适合",
+      "pinyin2": "shìhé"
+    },
+    {
+      "hanzi1": "影响",
+      "pinyin1": "yǐngxiǎng",
+      "hanzi2": "印象",
+      "pinyin2": "yìnxiàng"
+    },
+    {
+      "hanzi1": "锻炼",
+      "pinyin1": "duànliàn",
+      "hanzi2": "骄傲",
+      "pinyin2": "jiāoào"
+    }
+  ]
+  
