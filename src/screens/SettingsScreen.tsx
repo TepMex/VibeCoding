@@ -14,11 +14,13 @@ import {
   Button,
   TextField,
   Paper,
+  Fab,
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import AddIcon from '@mui/icons-material/Add';
 import type { MistakenPair } from '../types';
-import { getPairs, updatePair, deletePair } from '../utils/pairsStorage';
+import { getPairs, updatePair, deletePair, addPair } from '../utils/pairsStorage';
 
 interface SettingsScreenProps {
   onBack: () => void;
@@ -27,6 +29,7 @@ interface SettingsScreenProps {
 export const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
   const [pairs, setPairs] = useState<MistakenPair[]>([]);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [isAdding, setIsAdding] = useState(false);
   const [editForm, setEditForm] = useState<MistakenPair>({
     hanzi1: '',
     pinyin1: '',
@@ -40,7 +43,14 @@ export const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
 
   const handleEdit = (index: number) => {
     setEditingIndex(index);
+    setIsAdding(false);
     setEditForm(pairs[index]);
+  };
+
+  const handleAdd = () => {
+    setIsAdding(true);
+    setEditingIndex(null);
+    setEditForm({ hanzi1: '', pinyin1: '', hanzi2: '', pinyin2: '' });
   };
 
   const handleDelete = (index: number) => {
@@ -49,7 +59,12 @@ export const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
   };
 
   const handleSave = () => {
-    if (editingIndex !== null) {
+    if (isAdding) {
+      addPair(editForm);
+      setPairs(getPairs());
+      setIsAdding(false);
+      setEditForm({ hanzi1: '', pinyin1: '', hanzi2: '', pinyin2: '' });
+    } else if (editingIndex !== null) {
       updatePair(editingIndex, editForm);
       setPairs(getPairs());
       setEditingIndex(null);
@@ -59,6 +74,7 @@ export const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
 
   const handleCancel = () => {
     setEditingIndex(null);
+    setIsAdding(false);
     setEditForm({ hanzi1: '', pinyin1: '', hanzi2: '', pinyin2: '' });
   };
 
@@ -113,8 +129,17 @@ export const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
           </Button>
         </Box>
 
-        <Dialog open={editingIndex !== null} onClose={handleCancel} maxWidth="sm" fullWidth>
-          <DialogTitle>Edit Pair</DialogTitle>
+        <Fab
+          color="primary"
+          aria-label="add"
+          sx={{ position: 'fixed', bottom: 24, right: 24 }}
+          onClick={handleAdd}
+        >
+          <AddIcon />
+        </Fab>
+
+        <Dialog open={editingIndex !== null || isAdding} onClose={handleCancel} maxWidth="sm" fullWidth>
+          <DialogTitle>{isAdding ? 'Add Pair' : 'Edit Pair'}</DialogTitle>
           <DialogContent>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
               <TextField
