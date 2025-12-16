@@ -16,8 +16,6 @@ import {
   ListItem,
   ListItemButton,
   ListItemText,
-  useMediaQuery,
-  useTheme,
 } from '@mui/material';
 import { Close as CloseIcon, Menu as MenuIcon } from '@mui/icons-material';
 import {
@@ -35,7 +33,6 @@ import {
 } from '../utils/wordOccurrences';
 import {
   splitIntoChapters,
-  type Chapter,
 } from '../utils/chapterSplitting';
 import { segmentText } from '../utils/wordSegmentation';
 import type { WorkerMessage, WorkerResponse } from '../workers/textProcessor.worker';
@@ -112,13 +109,10 @@ export const ChaptersScreen = ({
   const [selectedChapterIndex, setSelectedChapterIndex] = useState<number | null>(null);
   const [selectedWord, setSelectedWord] = useState<string | null>(null);
   const [wordOccurrences, setWordOccurrences] = useState<WordOccurrence[]>([]);
-  const [chapterFrequenciesCache, setChapterFrequenciesCache] = useState<Map<number, WordFrequency[]>>(new Map());
   const [isChapterPanelOpen, setIsChapterPanelOpen] = useState(true);
   const workerRef = useRef<Worker | null>(null);
   const debounceTimerRef = useRef<number | null>(null);
   const chapterFrequenciesCacheRef = useRef<Map<number, WordFrequency[]>>(new Map());
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const exclusionSet = useMemo(
     () => normalizeExclusionList(exclusionList),
@@ -193,7 +187,6 @@ export const ChaptersScreen = ({
         setIsProcessing(false);
         setError(null);
         const newCache = new Map();
-        setChapterFrequenciesCache(newCache);
         chapterFrequenciesCacheRef.current = newCache;
       }, 0);
       return;
@@ -204,7 +197,6 @@ export const ChaptersScreen = ({
       setIsProcessing(true);
       setError(null);
       const newCache = new Map(); // Clear chapter cache when text changes
-      setChapterFrequenciesCache(newCache);
       chapterFrequenciesCacheRef.current = newCache;
       
       if (workerRef.current) {
@@ -254,12 +246,9 @@ export const ChaptersScreen = ({
       .then(words => {
         if (cancelled) return;
         const frequencies = calculateWordFrequencies(words);
-        setChapterFrequenciesCache(prev => {
-          const newCache = new Map(prev);
-          newCache.set(selectedChapter.index, frequencies);
-          chapterFrequenciesCacheRef.current = newCache;
-          return newCache;
-        });
+        const newCache = new Map(chapterFrequenciesCacheRef.current);
+        newCache.set(selectedChapter.index, frequencies);
+        chapterFrequenciesCacheRef.current = newCache;
         setCurrentChapterFrequencies(frequencies);
       })
       .catch(err => {
