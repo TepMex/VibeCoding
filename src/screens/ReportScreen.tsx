@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -14,18 +14,19 @@ import {
   Divider,
 } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
-import { segmentText } from '../utils/wordSegmentation';
 import {
-  calculateWordFrequencies,
   normalizeExclusionList,
   type WordFrequency,
 } from '../utils/frequencyAnalysis';
 import type { Language } from '../utils/languageDetection';
 import {
-  findWordOccurrences,
+  findWordOccurrencesWithIndex,
+  createSentenceIndex,
   highlightWordInSentence,
   type WordOccurrence,
+  type SentenceIndex,
 } from '../utils/wordOccurrences';
+import type { WorkerMessage, WorkerResponse } from '../workers/textProcessor.worker';
 
 interface ReportScreenProps {
   text: string;
@@ -58,14 +59,35 @@ const extractKnownHanzi = (exclusionList: string): Set<string> => {
   return knownHanziSet;
 };
 
-// Calculate the percentage of known hanzi in a Chinese word
-const getKnownHanziPercentage = (word: string, knownHanziSet: Set<string>): number => {
-  const hanziChars = word.split('').filter(isHanzi);
+// Cache for hanzi characters per word to avoid repeated splitting
+const getHanziChars = (word: string): string[] => {
+  return word.split('').filter(isHanzi);
+};
+
+// Calculate the percentage of known hanzi in a Chinese word (optimized with caching)
+const calculateKnownHanziPercentage = (
+  word: string,
+  knownHanziSet: Set<string>,
+  hanziCache: Map<string, string[]>
+): number => {
+  let hanziChars = hanziCache.get(word);
+  if (!hanziChars) {
+    hanziChars = getHanziChars(word);
+    hanziCache.set(word, hanziChars);
+  }
+  
   if (hanziChars.length === 0) return 0;
   
   const knownHanzi = hanziChars.filter(char => knownHanziSet.has(char.toLowerCase()));
   return knownHanzi.length / hanziChars.length;
 };
+
+interface ChipStyle {
+  color: 'default' | 'success' | 'error';
+  variant: 'outlined' | 'filled';
+  sx: object;
+  knownHanziPercentage?: number;
+}
 
 export const ReportScreen = ({
   text,
@@ -77,6 +99,8 @@ export const ReportScreen = ({
   const [wordFrequencies, setWordFrequencies] = useState<WordFrequency[]>([]);
   const [selectedWord, setSelectedWord] = useState<string | null>(null);
   const [wordOccurrences, setWordOccurrences] = useState<WordOccurrence[]>([]);
+  const workerRef = useRef<Worker | null>(null);
+  const debounceTimerRef = useRef<number | null>(null);
 
   const exclusionSet = useMemo(
     () => normalizeExclusionList(exclusionList),
@@ -91,29 +115,83 @@ export const ReportScreen = ({
     return new Set<string>();
   }, [exclusionList, language]);
 
+  // Cache for hanzi characters per word
+  const hanziCache = useMemo(() => new Map<string, string[]>(), []);
+
+  // Pre-compute sentence index for efficient word occurrence searches
+  const sentenceIndex = useMemo<SentenceIndex | null>(() => {
+    if (!text.trim()) return null;
+    return createSentenceIndex(text, language);
+  }, [text, language]);
+
+  // Initialize Web Worker
   useEffect(() => {
-    if (!text.trim()) {
-      setWordFrequencies([]);
-      return;
-    }
+    workerRef.current = new Worker(
+      new URL('../workers/textProcessor.worker.ts', import.meta.url),
+      { type: 'module' }
+    );
 
-    setIsProcessing(true);
-    setError(null);
-
-    const processText = async () => {
-      try {
-        const words = await segmentText(text, language);
-        const frequencies = calculateWordFrequencies(words);
-        setWordFrequencies(frequencies);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to process text');
+    workerRef.current.onmessage = (e: MessageEvent<WorkerResponse>) => {
+      if (e.data.type === 'result' && e.data.frequencies) {
+        setWordFrequencies(e.data.frequencies);
+        setIsProcessing(false);
+      } else if (e.data.type === 'error') {
+        setError(e.data.error || 'Failed to process text');
         setWordFrequencies([]);
-      } finally {
         setIsProcessing(false);
       }
     };
 
-    processText();
+    workerRef.current.onerror = (err) => {
+      setError('Worker error: ' + err.message);
+      setIsProcessing(false);
+    };
+
+    return () => {
+      if (workerRef.current) {
+        workerRef.current.terminate();
+        workerRef.current = null;
+      }
+    };
+  }, []);
+
+  // Debounced text processing with Web Worker
+  useEffect(() => {
+    // Clear previous debounce timer
+    if (debounceTimerRef.current !== null) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    if (!text.trim()) {
+      // Use setTimeout to avoid synchronous setState in effect
+      debounceTimerRef.current = window.setTimeout(() => {
+        setWordFrequencies([]);
+        setIsProcessing(false);
+        setError(null);
+      }, 0);
+      return;
+    }
+
+    // Debounce processing by 400ms
+    debounceTimerRef.current = window.setTimeout(() => {
+      setIsProcessing(true);
+      setError(null);
+      
+      if (workerRef.current) {
+        const message: WorkerMessage = {
+          type: 'process',
+          text,
+          language,
+        };
+        workerRef.current.postMessage(message);
+      }
+    }, 400);
+
+    return () => {
+      if (debounceTimerRef.current !== null) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
   }, [text, language]);
 
   // Filter Chinese words to only show hanzi words
@@ -124,66 +202,94 @@ export const ReportScreen = ({
     return wordFrequencies.filter(({ word }) => containsOnlyHanzi(word));
   }, [wordFrequencies, language]);
 
-  const getChipColor = (word: string, frequency: number): 'default' | 'success' | 'error' => {
-    if (exclusionSet.has(word.toLowerCase())) {
-      return 'default';
-    }
+  // Pre-compute and memoize all chip styles (O(n) once instead of O(n) per render)
+  const chipStyles = useMemo(() => {
+    const styles = new Map<string, ChipStyle>();
     
-    // For Chinese, if word has any known hanzi, use gray highlighting instead of green/red
-    if (language === 'chinese') {
-      const knownPercentage = getKnownHanziPercentage(word, knownHanziSet);
-      if (knownPercentage > 0) {
-        return 'default';
+    filteredWordFrequencies.forEach(({ word, frequency }) => {
+      const lowerWord = word.toLowerCase();
+      const isExcluded = exclusionSet.has(lowerWord);
+      
+      let color: 'default' | 'success' | 'error' = 'default';
+      let knownHanziPercentage: number | undefined = undefined;
+      
+      if (!isExcluded) {
+        // For Chinese, check known hanzi percentage
+        if (language === 'chinese') {
+          knownHanziPercentage = calculateKnownHanziPercentage(word, knownHanziSet, hanziCache);
+          if (knownHanziPercentage === 0) {
+            color = frequency >= 5 ? 'success' : 'error';
+          }
+        } else {
+          color = frequency >= 5 ? 'success' : 'error';
+        }
       }
-    }
-    
-    return frequency >= 5 ? 'success' : 'error';
-  };
+      
+      const isSelected = selectedWord === word;
+      const baseSx = {
+        fontSize: '0.875rem',
+        height: 'auto',
+        py: 0.5,
+        cursor: 'pointer',
+        border: isSelected ? '2px solid' : 'none',
+        borderColor: isSelected ? 'primary.main' : 'transparent',
+        '&:hover': {
+          opacity: 0.8,
+        },
+      };
 
-  const getChipSx = (word: string) => {
-    const isSelected = selectedWord === word;
-    const baseSx = {
-      fontSize: '0.875rem',
-      height: 'auto',
-      py: 0.5,
-      cursor: 'pointer',
-      border: isSelected ? '2px solid' : 'none',
-      borderColor: isSelected ? 'primary.main' : 'transparent',
-      '&:hover': {
-        opacity: 0.8,
-      },
-    };
-
-    // Chinese-specific gray highlighting for words with known hanzi
-    // Gray highlighting has priority over green/red
-    if (language === 'chinese' && !exclusionSet.has(word.toLowerCase())) {
-      const knownPercentage = getKnownHanziPercentage(word, knownHanziSet);
-      if (knownPercentage > 0) {
-        // Gray intensity: more known hanzi = darker gray
-        // Scale from 0.1 (light gray) to 0.7 (dark gray) based on percentage
-        const grayIntensity = 0.1 + (knownPercentage * 0.6);
+      let sx: object = baseSx;
+      
+      // Chinese-specific gray highlighting for words with known hanzi
+      if (language === 'chinese' && !isExcluded && knownHanziPercentage && knownHanziPercentage > 0) {
+        const grayIntensity = 0.1 + (knownHanziPercentage * 0.6);
         const backgroundColor = `rgba(128, 128, 128, ${grayIntensity})`;
-        return {
+        sx = {
           ...baseSx,
-          backgroundColor,
+          backgroundColor: backgroundColor,
           color: 'text.primary',
-        };
+        } as object;
+      }
+      
+      styles.set(word, {
+        color,
+        variant: isExcluded ? 'outlined' : 'filled',
+        sx,
+        knownHanziPercentage,
+      });
+    });
+    
+    return styles;
+  }, [filteredWordFrequencies, exclusionSet, knownHanziSet, language, selectedWord, hanziCache]);
+
+  const handleWordClick = useCallback((word: string) => {
+    setSelectedWord(word);
+    
+    if (sentenceIndex) {
+      const occurrences = findWordOccurrencesWithIndex(sentenceIndex, word);
+      setWordOccurrences(occurrences);
+    } else {
+      setWordOccurrences([]);
+    }
+  }, [sentenceIndex]);
+
+  // Event delegation handler for chip clicks
+  const handleContainerClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    const target = e.target as HTMLElement;
+    const chip = target.closest('[data-word]') as HTMLElement;
+    
+    if (chip) {
+      const word = chip.getAttribute('data-word');
+      if (word) {
+        handleWordClick(word);
       }
     }
+  }, [handleWordClick]);
 
-    return baseSx;
-  };
-
-  const handleWordClick = (word: string) => {
-    setSelectedWord(word);
-    const occurrences = findWordOccurrences(text, word, language);
-    setWordOccurrences(occurrences);
-  };
-
-  const handleCloseDrawer = () => {
+  const handleCloseDrawer = useCallback(() => {
     setSelectedWord(null);
     setWordOccurrences([]);
-  };
+  }, []);
 
   return (
     <Box sx={{ display: 'flex', width: '100%', height: '100%', position: 'relative' }}>
@@ -228,23 +334,31 @@ export const ReportScreen = ({
                   Total unique words: {filteredWordFrequencies.length}
                 </Typography>
                 <Box
+                  onClick={handleContainerClick}
                   sx={{
                     display: 'flex',
                     flexWrap: 'wrap',
                     gap: 1,
                     mb: 2,
+                    maxHeight: 600,
+                    overflow: 'auto',
                   }}
                 >
-                  {filteredWordFrequencies.map(({ word, frequency }) => (
-                    <Chip
-                      key={word}
-                      label={`${word} (${frequency})`}
-                      color={getChipColor(word, frequency)}
-                      variant={exclusionSet.has(word.toLowerCase()) ? 'outlined' : 'filled'}
-                      sx={getChipSx(word)}
-                      onClick={() => handleWordClick(word)}
-                    />
-                  ))}
+                  {filteredWordFrequencies.map(({ word, frequency }) => {
+                    const chipStyle = chipStyles.get(word);
+                    if (!chipStyle) return null;
+                    
+                    return (
+                      <Chip
+                        key={word}
+                        data-word={word}
+                        label={`${word} (${frequency})`}
+                        color={chipStyle.color}
+                        variant={chipStyle.variant}
+                        sx={chipStyle.sx}
+                      />
+                    );
+                  })}
                 </Box>
                 <Paper sx={{ p: 2, mt: 2, bgcolor: 'background.default' }}>
                   <Typography variant="caption" component="div" sx={{ mb: 1 }}>
