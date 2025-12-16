@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { Box, BottomNavigation, BottomNavigationAction } from '@mui/material';
-import { TextFields, Assessment } from '@mui/icons-material';
+import { TextFields, Assessment, MenuBook } from '@mui/icons-material';
 import { TextInputScreen } from './screens/TextInputScreen';
 import { ReportScreen } from './screens/ReportScreen';
+import { ChaptersScreen } from './screens/ChaptersScreen';
 import type { Language } from './utils/languageDetection';
 
-type Screen = 'input' | 'report';
+type Screen = 'input' | 'report' | 'chapters';
 
 function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>('input');
@@ -33,6 +34,13 @@ function App() {
             exclusionList={exclusionList}
           />
         )}
+        {currentScreen === 'chapters' && (
+          <ChaptersScreen
+            text={text}
+            language={language}
+            exclusionList={exclusionList}
+          />
+        )}
       </Box>
       <BottomNavigation
         value={currentScreen}
@@ -53,6 +61,11 @@ function App() {
           label="Report"
           value="report"
           icon={<Assessment />}
+        />
+        <BottomNavigationAction
+          label="Chapters"
+          value="chapters"
+          icon={<MenuBook />}
         />
       </BottomNavigation>
     </Box>
