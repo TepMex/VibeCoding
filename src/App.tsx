@@ -26,7 +26,13 @@ function App() {
             onExclusionListChange={setExclusionList}
           />
         )}
-        {currentScreen === 'report' && <ReportScreen />}
+        {currentScreen === 'report' && (
+          <ReportScreen
+            text={text}
+            language={language}
+            exclusionList={exclusionList}
+          />
+        )}
       </Box>
       <BottomNavigation
         value={currentScreen}
