@@ -333,6 +333,41 @@ export const ReportScreen = ({
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                   Total unique words: {filteredWordFrequencies.length}
                 </Typography>
+                <Paper sx={{ p: 2, mb: 2, bgcolor: 'background.default' }}>
+                  <Typography variant="caption" component="div" sx={{ mb: 1 }}>
+                    <strong>Legend:</strong>
+                  </Typography>
+                  <Stack direction="row" spacing={2} flexWrap="wrap">
+                    <Chip
+                      label="Frequent (≥5 occurrences)"
+                      color="success"
+                      size="small"
+                      variant="filled"
+                    />
+                    <Chip
+                      label="Rare (<5 occurrences)"
+                      color="error"
+                      size="small"
+                      variant="filled"
+                    />
+                    {language === 'chinese' && (
+                      <Chip
+                        label="Contains known hanzi"
+                        size="small"
+                        variant="filled"
+                        sx={{
+                          backgroundColor: 'rgba(128, 128, 128, 0.4)',
+                          color: 'text.primary',
+                        }}
+                      />
+                    )}
+                    <Chip
+                      label="Known (in exclusion list)"
+                      size="small"
+                      variant="outlined"
+                    />
+                  </Stack>
+                </Paper>
                 <Box
                   onClick={handleContainerClick}
                   sx={{
@@ -360,30 +395,6 @@ export const ReportScreen = ({
                     );
                   })}
                 </Box>
-                <Paper sx={{ p: 2, mt: 2, bgcolor: 'background.default' }}>
-                  <Typography variant="caption" component="div" sx={{ mb: 1 }}>
-                    <strong>Legend:</strong>
-                  </Typography>
-                  <Stack direction="row" spacing={2} flexWrap="wrap">
-                    <Chip
-                      label="Frequent (≥5 occurrences)"
-                      color="success"
-                      size="small"
-                      variant="filled"
-                    />
-                    <Chip
-                      label="Rare (<5 occurrences)"
-                      color="error"
-                      size="small"
-                      variant="filled"
-                    />
-                    <Chip
-                      label="Known (in exclusion list)"
-                      size="small"
-                      variant="outlined"
-                    />
-                  </Stack>
-                </Paper>
               </>
             )}
           </>
