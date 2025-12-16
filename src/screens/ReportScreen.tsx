@@ -22,6 +22,40 @@ interface ReportScreenProps {
   exclusionList: string;
 }
 
+// Check if a character is a hanzi (Chinese character)
+const isHanzi = (char: string): boolean => {
+  return /[\u4e00-\u9fff]/.test(char);
+};
+
+// Check if a word contains only hanzi characters
+const containsOnlyHanzi = (word: string): boolean => {
+  return word.split('').every(char => isHanzi(char));
+};
+
+// Extract all hanzi characters from exclusion list entries
+const extractKnownHanzi = (exclusionList: string): Set<string> => {
+  const knownHanziSet = new Set<string>();
+  const entries = exclusionList.split('\n').map(entry => entry.trim()).filter(entry => entry.length > 0);
+  
+  for (const entry of entries) {
+    const hanziChars = entry.split('').filter(isHanzi);
+    for (const hanzi of hanziChars) {
+      knownHanziSet.add(hanzi.toLowerCase());
+    }
+  }
+  
+  return knownHanziSet;
+};
+
+// Calculate the percentage of known hanzi in a Chinese word
+const getKnownHanziPercentage = (word: string, knownHanziSet: Set<string>): number => {
+  const hanziChars = word.split('').filter(isHanzi);
+  if (hanziChars.length === 0) return 0;
+  
+  const knownHanzi = hanziChars.filter(char => knownHanziSet.has(char.toLowerCase()));
+  return knownHanzi.length / hanziChars.length;
+};
+
 export const ReportScreen = ({
   text,
   language,
@@ -35,6 +69,14 @@ export const ReportScreen = ({
     () => normalizeExclusionList(exclusionList),
     [exclusionList]
   );
+
+  // For Chinese, extract individual hanzi characters from exclusion list
+  const knownHanziSet = useMemo(() => {
+    if (language === 'chinese') {
+      return extractKnownHanzi(exclusionList);
+    }
+    return new Set<string>();
+  }, [exclusionList, language]);
 
   useEffect(() => {
     if (!text.trim()) {
@@ -61,11 +103,55 @@ export const ReportScreen = ({
     processText();
   }, [text, language]);
 
+  // Filter Chinese words to only show hanzi words
+  const filteredWordFrequencies = useMemo(() => {
+    if (language !== 'chinese') {
+      return wordFrequencies;
+    }
+    return wordFrequencies.filter(({ word }) => containsOnlyHanzi(word));
+  }, [wordFrequencies, language]);
+
   const getChipColor = (word: string, frequency: number): 'default' | 'success' | 'error' => {
     if (exclusionSet.has(word.toLowerCase())) {
       return 'default';
     }
+    
+    // For Chinese, if word has any known hanzi, use gray highlighting instead of green/red
+    if (language === 'chinese') {
+      const knownPercentage = getKnownHanziPercentage(word, knownHanziSet);
+      if (knownPercentage > 0) {
+        return 'default';
+      }
+    }
+    
     return frequency >= 5 ? 'success' : 'error';
+  };
+
+  const getChipSx = (word: string) => {
+    const baseSx = {
+      fontSize: '0.875rem',
+      height: 'auto',
+      py: 0.5,
+    };
+
+    // Chinese-specific gray highlighting for words with known hanzi
+    // Gray highlighting has priority over green/red
+    if (language === 'chinese' && !exclusionSet.has(word.toLowerCase())) {
+      const knownPercentage = getKnownHanziPercentage(word, knownHanziSet);
+      if (knownPercentage > 0) {
+        // Gray intensity: more known hanzi = darker gray
+        // Scale from 0.1 (light gray) to 0.7 (dark gray) based on percentage
+        const grayIntensity = 0.1 + (knownPercentage * 0.6);
+        const backgroundColor = `rgba(128, 128, 128, ${grayIntensity})`;
+        return {
+          ...baseSx,
+          backgroundColor,
+          color: 'text.primary',
+        };
+      }
+    }
+
+    return baseSx;
   };
 
   return (
@@ -88,7 +174,7 @@ export const ReportScreen = ({
 
       {!isProcessing && !error && (
         <>
-          {wordFrequencies.length === 0 ? (
+          {filteredWordFrequencies.length === 0 ? (
             <Paper sx={{ p: 3, textAlign: 'center' }}>
               <Typography variant="body1" color="text.secondary">
                 No words found. Please add some text on the Text Input screen.
@@ -97,7 +183,7 @@ export const ReportScreen = ({
           ) : (
             <>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                Total unique words: {wordFrequencies.length}
+                Total unique words: {filteredWordFrequencies.length}
               </Typography>
               <Box
                 sx={{
@@ -107,17 +193,13 @@ export const ReportScreen = ({
                   mb: 2,
                 }}
               >
-                {wordFrequencies.map(({ word, frequency }) => (
+                {filteredWordFrequencies.map(({ word, frequency }) => (
                   <Chip
                     key={word}
                     label={`${word} (${frequency})`}
                     color={getChipColor(word, frequency)}
                     variant={exclusionSet.has(word.toLowerCase()) ? 'outlined' : 'filled'}
-                    sx={{
-                      fontSize: '0.875rem',
-                      height: 'auto',
-                      py: 0.5,
-                    }}
+                    sx={getChipSx(word)}
                   />
                 ))}
               </Box>
