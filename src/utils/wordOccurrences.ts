@@ -75,7 +75,10 @@ function findWordMatchesInSentence(
     
     // Escape special regex characters
     const escapedWord = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const searchRegex = new RegExp(`\\b${escapedWord}\\b`, 'gi');
+    // Use Unicode-aware word boundary: match word that is not preceded/followed by letter or digit
+    // This works with Cyrillic, Latin, and other Unicode scripts
+    // Using (^|[^\p{L}\p{N}]) and ([^\p{L}\p{N}]|$) for compatibility (no lookbehind)
+    const searchRegex = new RegExp(`(^|[^\\p{L}\\p{N}])${escapedWord}([^\\p{L}\\p{N}]|$)`, 'gui');
     
     const matches = sentence.matchAll(searchRegex);
     return Array.from(matches).length;
@@ -135,15 +138,27 @@ export function highlightWordInSentence(
   const escapedWord = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   
   // For Chinese, search for the exact word (no word boundaries needed)
-  // For space-separated languages, match whole words with word boundaries
+  // For space-separated languages, match whole words with Unicode-aware word boundaries
+  // Using (^|[^\p{L}\p{N}]) and ([^\p{L}\p{N}]|$) for compatibility (no lookbehind)
   const searchRegex =
     language === 'chinese'
       ? new RegExp(escapedWord, 'gi')
-      : new RegExp(`\\b${escapedWord}\\b`, 'gi');
+      : new RegExp(`(^|[^\\p{L}\\p{N}])${escapedWord}([^\\p{L}\\p{N}]|$)`, 'gui');
   
   // Replace matches with highlighted version
-  return sentence.replace(searchRegex, (match) => {
-    return `<mark style="background-color: #ffeb3b; padding: 2px 0; font-weight: 500;">${match}</mark>`;
-  });
+  if (language === 'chinese') {
+    return sentence.replace(searchRegex, (match) => {
+      return `<mark style="background-color: #ffeb3b; padding: 2px 0; font-weight: 500;">${match}</mark>`;
+    });
+  } else {
+    // For space-separated: match includes boundaries, groups capture before and after boundaries
+    // Extract the actual matched word (preserving original case) from the match
+    return sentence.replace(searchRegex, (match, before, after) => {
+      // The word is in the middle: extract it by removing boundaries
+      const wordInMatch = match.slice((before || '').length, match.length - (after || '').length);
+      const highlightedWord = `<mark style="background-color: #ffeb3b; padding: 2px 0; font-weight: 500;">${wordInMatch}</mark>`;
+      return (before || '') + highlightedWord + (after || '');
+    });
+  }
 }
 
