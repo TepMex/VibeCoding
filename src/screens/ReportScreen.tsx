@@ -418,7 +418,7 @@ export const ReportScreen = ({
               No occurrences found.
             </Typography>
           ) : (
-            <Stack spacing={2}>
+            <Stack spacing={3}>
               {wordOccurrences.map((occurrence, index) => {
                 const highlightedSentence = highlightWordInSentence(
                   occurrence.sentence,
@@ -426,8 +426,23 @@ export const ReportScreen = ({
                   language
                 );
                 return (
-                  <Card key={index} variant="outlined">
-                    <CardContent>
+                  <Card 
+                    key={index} 
+                    variant="elevation"
+                    elevation={2}
+                    sx={{
+                      backgroundColor: 'background.paper',
+                      border: '1px solid',
+                      borderColor: 'divider',
+                      borderRadius: 2,
+                      transition: 'box-shadow 0.2s ease-in-out',
+                      '&:hover': {
+                        elevation: 4,
+                        boxShadow: 4,
+                      },
+                    }}
+                  >
+                    <CardContent sx={{ p: 2.5 }}>
                       <Typography
                         variant="body2"
                         sx={{ whiteSpace: 'pre-wrap' }}
