@@ -7,7 +7,13 @@ import {
   Alert,
   Stack,
   Paper,
+  Drawer,
+  IconButton,
+  Card,
+  CardContent,
+  Divider,
 } from '@mui/material';
+import { Close as CloseIcon } from '@mui/icons-material';
 import { segmentText } from '../utils/wordSegmentation';
 import {
   calculateWordFrequencies,
@@ -15,6 +21,7 @@ import {
   type WordFrequency,
 } from '../utils/frequencyAnalysis';
 import type { Language } from '../utils/languageDetection';
+import { findWordOccurrences, type WordOccurrence } from '../utils/wordOccurrences';
 
 interface ReportScreenProps {
   text: string;
@@ -64,6 +71,8 @@ export const ReportScreen = ({
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [wordFrequencies, setWordFrequencies] = useState<WordFrequency[]>([]);
+  const [selectedWord, setSelectedWord] = useState<string | null>(null);
+  const [wordOccurrences, setWordOccurrences] = useState<WordOccurrence[]>([]);
 
   const exclusionSet = useMemo(
     () => normalizeExclusionList(exclusionList),
@@ -132,6 +141,10 @@ export const ReportScreen = ({
       fontSize: '0.875rem',
       height: 'auto',
       py: 0.5,
+      cursor: 'pointer',
+      '&:hover': {
+        opacity: 0.8,
+      },
     };
 
     // Chinese-specific gray highlighting for words with known hanzi
@@ -152,6 +165,17 @@ export const ReportScreen = ({
     }
 
     return baseSx;
+  };
+
+  const handleWordClick = (word: string) => {
+    setSelectedWord(word);
+    const occurrences = findWordOccurrences(text, word, language);
+    setWordOccurrences(occurrences);
+  };
+
+  const handleCloseDrawer = () => {
+    setSelectedWord(null);
+    setWordOccurrences([]);
   };
 
   return (
@@ -200,6 +224,7 @@ export const ReportScreen = ({
                     color={getChipColor(word, frequency)}
                     variant={exclusionSet.has(word.toLowerCase()) ? 'outlined' : 'filled'}
                     sx={getChipSx(word)}
+                    onClick={() => handleWordClick(word)}
                   />
                 ))}
               </Box>
@@ -231,6 +256,47 @@ export const ReportScreen = ({
           )}
         </>
       )}
+
+      <Drawer
+        anchor="right"
+        open={selectedWord !== null}
+        onClose={handleCloseDrawer}
+        sx={{
+          '& .MuiDrawer-paper': {
+            width: { xs: '100%', sm: 400, md: 500 },
+            p: 2,
+          },
+        }}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+          <Typography variant="h6">
+            Occurrences of "{selectedWord}"
+          </Typography>
+          <IconButton onClick={handleCloseDrawer}>
+            <CloseIcon />
+          </IconButton>
+        </Box>
+        <Divider sx={{ mb: 2 }} />
+        <Box sx={{ overflow: 'auto' }}>
+          {wordOccurrences.length === 0 ? (
+            <Typography variant="body2" color="text.secondary">
+              No occurrences found.
+            </Typography>
+          ) : (
+            <Stack spacing={2}>
+              {wordOccurrences.map((occurrence, index) => (
+                <Card key={index} variant="outlined">
+                  <CardContent>
+                    <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+                      {occurrence.sentence}
+                    </Typography>
+                  </CardContent>
+                </Card>
+              ))}
+            </Stack>
+          )}
+        </Box>
+      </Drawer>
     </Box>
   );
 };
