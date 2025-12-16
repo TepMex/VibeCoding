@@ -33,9 +33,15 @@ export async function segmentText(text: string, language: Language): Promise<str
   } else {
     // For space-separated languages, split by whitespace and punctuation
     // Keep words that contain at least one letter or number
+    // Exclude one-letter and two-letter words (feature-2)
     const words = text
       .split(/[\s\p{P}\p{Z}]+/u)
-      .filter(word => word.trim().length > 0 && /[\p{L}\p{N}]/u.test(word));
+      .filter(word => {
+        const trimmed = word.trim();
+        return trimmed.length > 0 && 
+               trimmed.length > 2 && 
+               /[\p{L}\p{N}]/u.test(word);
+      });
     return words;
   }
 }
