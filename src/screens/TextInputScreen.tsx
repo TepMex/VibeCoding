@@ -15,7 +15,7 @@ import {
 } from '@mui/material';
 import { CloudUpload, Clear } from '@mui/icons-material';
 import { extractTextFromFile } from '../utils/textExtraction';
-import { detectLanguage } from '../utils/languageDetection';
+import { detectLanguage, LANGUAGES } from '../utils/languageDetection';
 import type { Language } from '../utils/languageDetection';
 
 interface TextInputScreenProps {
@@ -177,10 +177,11 @@ export const TextInputScreen = ({
             label="Language"
             onChange={(e) => onLanguageChange(e.target.value as Language)}
           >
-            <MenuItem value="chinese">Chinese</MenuItem>
-            <MenuItem value="english">English</MenuItem>
-            <MenuItem value="polish">Polish</MenuItem>
-            <MenuItem value="other">Other</MenuItem>
+            {LANGUAGES.map((lang) => (
+              <MenuItem key={lang} value={lang}>
+                {lang.charAt(0).toUpperCase() + lang.slice(1)}
+              </MenuItem>
+            ))}
           </Select>
         </FormControl>
 
