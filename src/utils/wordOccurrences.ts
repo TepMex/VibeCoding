@@ -6,6 +6,31 @@ export interface WordOccurrence {
 }
 
 /**
+ * Highlight a word in a sentence by wrapping it in a span with highlighting
+ * Returns JSX-ready string with highlighted word
+ */
+export function highlightWordInSentence(
+  sentence: string,
+  word: string,
+  language: Language
+): string {
+  // Escape special regex characters
+  const escapedWord = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  
+  // For Chinese, search for the exact word (no word boundaries needed)
+  // For space-separated languages, match whole words with word boundaries
+  const searchRegex =
+    language === 'chinese'
+      ? new RegExp(escapedWord, 'gi')
+      : new RegExp(`\\b${escapedWord}\\b`, 'gi');
+  
+  // Replace matches with highlighted version
+  return sentence.replace(searchRegex, (match) => {
+    return `<mark style="background-color: #ffeb3b; padding: 2px 0; font-weight: 500;">${match}</mark>`;
+  });
+}
+
+/**
  * Split text into sentences based on language
  * Chinese: split by Chinese full stop (。)
  * Space-separated languages: split by western period (.)

@@ -21,7 +21,11 @@ import {
   type WordFrequency,
 } from '../utils/frequencyAnalysis';
 import type { Language } from '../utils/languageDetection';
-import { findWordOccurrences, type WordOccurrence } from '../utils/wordOccurrences';
+import {
+  findWordOccurrences,
+  highlightWordInSentence,
+  type WordOccurrence,
+} from '../utils/wordOccurrences';
 
 interface ReportScreenProps {
   text: string;
@@ -137,11 +141,14 @@ export const ReportScreen = ({
   };
 
   const getChipSx = (word: string) => {
+    const isSelected = selectedWord === word;
     const baseSx = {
       fontSize: '0.875rem',
       height: 'auto',
       py: 0.5,
       cursor: 'pointer',
+      border: isSelected ? '2px solid' : 'none',
+      borderColor: isSelected ? 'primary.main' : 'transparent',
       '&:hover': {
         opacity: 0.8,
       },
@@ -179,92 +186,106 @@ export const ReportScreen = ({
   };
 
   return (
-    <Box sx={{ p: 3, maxWidth: 1200, mx: 'auto' }}>
-      <Typography variant="h4" gutterBottom>
-        Frequency Dictionary Report
-      </Typography>
+    <Box sx={{ display: 'flex', width: '100%', height: '100%', position: 'relative' }}>
+      <Box
+        sx={{
+          flexGrow: 1,
+          p: 3,
+          width: selectedWord ? { xs: '100%', sm: 'calc(100% - 400px)', md: 'calc(100% - 500px)' } : '100%',
+          maxWidth: selectedWord ? 'none' : 1200,
+          mx: selectedWord ? 0 : 'auto',
+          transition: 'width 0.3s ease-in-out, max-width 0.3s ease-in-out',
+          overflow: 'auto',
+        }}
+      >
+        <Typography variant="h4" gutterBottom>
+          Frequency Dictionary Report
+        </Typography>
 
-      {isProcessing && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
-          <CircularProgress />
-        </Box>
-      )}
+        {isProcessing && (
+          <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
+            <CircularProgress />
+          </Box>
+        )}
 
-      {error && (
-        <Alert severity="error" sx={{ mb: 3 }}>
-          {error}
-        </Alert>
-      )}
+        {error && (
+          <Alert severity="error" sx={{ mb: 3 }}>
+            {error}
+          </Alert>
+        )}
 
-      {!isProcessing && !error && (
-        <>
-          {filteredWordFrequencies.length === 0 ? (
-            <Paper sx={{ p: 3, textAlign: 'center' }}>
-              <Typography variant="body1" color="text.secondary">
-                No words found. Please add some text on the Text Input screen.
-              </Typography>
-            </Paper>
-          ) : (
-            <>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                Total unique words: {filteredWordFrequencies.length}
-              </Typography>
-              <Box
-                sx={{
-                  display: 'flex',
-                  flexWrap: 'wrap',
-                  gap: 1,
-                  mb: 2,
-                }}
-              >
-                {filteredWordFrequencies.map(({ word, frequency }) => (
-                  <Chip
-                    key={word}
-                    label={`${word} (${frequency})`}
-                    color={getChipColor(word, frequency)}
-                    variant={exclusionSet.has(word.toLowerCase()) ? 'outlined' : 'filled'}
-                    sx={getChipSx(word)}
-                    onClick={() => handleWordClick(word)}
-                  />
-                ))}
-              </Box>
-              <Paper sx={{ p: 2, mt: 2, bgcolor: 'background.default' }}>
-                <Typography variant="caption" component="div" sx={{ mb: 1 }}>
-                  <strong>Legend:</strong>
+        {!isProcessing && !error && (
+          <>
+            {filteredWordFrequencies.length === 0 ? (
+              <Paper sx={{ p: 3, textAlign: 'center' }}>
+                <Typography variant="body1" color="text.secondary">
+                  No words found. Please add some text on the Text Input screen.
                 </Typography>
-                <Stack direction="row" spacing={2} flexWrap="wrap">
-                  <Chip
-                    label="Frequent (≥5 occurrences)"
-                    color="success"
-                    size="small"
-                    variant="filled"
-                  />
-                  <Chip
-                    label="Rare (<5 occurrences)"
-                    color="error"
-                    size="small"
-                    variant="filled"
-                  />
-                  <Chip
-                    label="Known (in exclusion list)"
-                    size="small"
-                    variant="outlined"
-                  />
-                </Stack>
               </Paper>
-            </>
-          )}
-        </>
-      )}
+            ) : (
+              <>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  Total unique words: {filteredWordFrequencies.length}
+                </Typography>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    gap: 1,
+                    mb: 2,
+                  }}
+                >
+                  {filteredWordFrequencies.map(({ word, frequency }) => (
+                    <Chip
+                      key={word}
+                      label={`${word} (${frequency})`}
+                      color={getChipColor(word, frequency)}
+                      variant={exclusionSet.has(word.toLowerCase()) ? 'outlined' : 'filled'}
+                      sx={getChipSx(word)}
+                      onClick={() => handleWordClick(word)}
+                    />
+                  ))}
+                </Box>
+                <Paper sx={{ p: 2, mt: 2, bgcolor: 'background.default' }}>
+                  <Typography variant="caption" component="div" sx={{ mb: 1 }}>
+                    <strong>Legend:</strong>
+                  </Typography>
+                  <Stack direction="row" spacing={2} flexWrap="wrap">
+                    <Chip
+                      label="Frequent (≥5 occurrences)"
+                      color="success"
+                      size="small"
+                      variant="filled"
+                    />
+                    <Chip
+                      label="Rare (<5 occurrences)"
+                      color="error"
+                      size="small"
+                      variant="filled"
+                    />
+                    <Chip
+                      label="Known (in exclusion list)"
+                      size="small"
+                      variant="outlined"
+                    />
+                  </Stack>
+                </Paper>
+              </>
+            )}
+          </>
+        )}
+      </Box>
 
       <Drawer
         anchor="right"
         open={selectedWord !== null}
         onClose={handleCloseDrawer}
+        variant="persistent"
         sx={{
           '& .MuiDrawer-paper': {
             width: { xs: '100%', sm: 400, md: 500 },
             p: 2,
+            boxSizing: 'border-box',
           },
         }}
       >
@@ -284,15 +305,24 @@ export const ReportScreen = ({
             </Typography>
           ) : (
             <Stack spacing={2}>
-              {wordOccurrences.map((occurrence, index) => (
-                <Card key={index} variant="outlined">
-                  <CardContent>
-                    <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
-                      {occurrence.sentence}
-                    </Typography>
-                  </CardContent>
-                </Card>
-              ))}
+              {wordOccurrences.map((occurrence, index) => {
+                const highlightedSentence = highlightWordInSentence(
+                  occurrence.sentence,
+                  selectedWord!,
+                  language
+                );
+                return (
+                  <Card key={index} variant="outlined">
+                    <CardContent>
+                      <Typography
+                        variant="body2"
+                        sx={{ whiteSpace: 'pre-wrap' }}
+                        dangerouslySetInnerHTML={{ __html: highlightedSentence }}
+                      />
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </Stack>
           )}
         </Box>
