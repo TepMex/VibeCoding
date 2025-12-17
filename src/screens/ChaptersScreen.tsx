@@ -17,6 +17,7 @@ import {
   ListItemButton,
   ListItemText,
   Button,
+  Link,
 } from '@mui/material';
 import { Close as CloseIcon, Menu as MenuIcon, Download as DownloadIcon } from '@mui/icons-material';
 import {
@@ -25,6 +26,7 @@ import {
   calculateWordFrequencies,
 } from '../utils/frequencyAnalysis';
 import type { Language } from '../utils/languageDetection';
+import { getDictionaryUrl } from '../utils/languageDetection';
 import {
   findWordOccurrencesWithIndex,
   createSentenceIndex,
@@ -692,6 +694,18 @@ export const ChaptersScreen = ({
             <CloseIcon />
           </IconButton>
         </Box>
+        {selectedWord && (
+          <Box sx={{ mb: 2 }}>
+            <Link
+              href={getDictionaryUrl(language, selectedWord)}
+              target="_blank"
+              rel="noopener noreferrer"
+              sx={{ fontSize: '0.875rem' }}
+            >
+              Look up in dictionary
+            </Link>
+          </Box>
+        )}
         <Divider sx={{ mb: 2 }} />
         <Box sx={{ overflow: 'auto' }}>
           {wordOccurrences.length === 0 ? (

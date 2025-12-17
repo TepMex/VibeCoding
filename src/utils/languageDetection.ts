@@ -148,3 +148,67 @@ export function detectLanguage(text: string): Language {
   return 'english';
 }
 
+// Map our language identifiers to Google Translate language codes (ISO 639-1)
+const LANGUAGE_TO_GOOGLE_CODE: Record<Language, string> = {
+  'chinese': 'zh',
+  'english': 'en',
+  'hindi': 'hi',
+  'spanish': 'es',
+  'french': 'fr',
+  'bengali': 'bn',
+  'portuguese': 'pt',
+  'russian': 'ru',
+  'punjabi': 'pa',
+  'german': 'de',
+  'javanese': 'jv',
+  'indonesian': 'id',
+  'telugu': 'te',
+  'turkish': 'tr',
+  'vietnamese': 'vi',
+  'italian': 'it',
+  'tamil': 'ta',
+  'urdu': 'ur',
+  'polish': 'pl',
+  'ukrainian': 'uk',
+  'gujarati': 'gu',
+  'kannada': 'kn',
+  'marathi': 'mr',
+  'oriya': 'or',
+  'persian': 'fa',
+  'pashto': 'ps',
+  'romanian': 'ro',
+  'dutch': 'nl',
+  'greek': 'el',
+  'czech': 'cs',
+  'swedish': 'sv',
+  'hungarian': 'hu',
+  'bulgarian': 'bg',
+  'serbian': 'sr',
+  'croatian': 'hr',
+  'slovak': 'sk',
+  'danish': 'da',
+  'finnish': 'fi',
+  'norwegian': 'no',
+  'catalan': 'ca',
+  'slovenian': 'sl',
+  'lithuanian': 'lt',
+  'latvian': 'lv',
+  'estonian': 'et',
+  'swahili': 'sw',
+  'hausa': 'ha',
+  'yoruba': 'yo',
+  'igbo': 'ig',
+  'tagalog': 'tl',
+  'malayalam': 'ml',
+  'other': 'en', // Default to English for 'other'
+};
+
+export function getDictionaryUrl(language: Language, word: string): string {
+  if (language === 'chinese') {
+    return `plecoapi://x-callback-url/s?q=${encodeURIComponent(word)}`;
+  }
+  
+  const languageCode = LANGUAGE_TO_GOOGLE_CODE[language] || 'en';
+  return `https://translate.google.ru/?sl=${languageCode}&tl=en&text=${encodeURIComponent(word)}&op=translate`;
+}
+
