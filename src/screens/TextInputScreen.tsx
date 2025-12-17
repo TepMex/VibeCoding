@@ -17,6 +17,7 @@ import { CloudUpload, Clear } from '@mui/icons-material';
 import { extractTextFromFile } from '../utils/textExtraction';
 import { detectLanguage, LANGUAGES } from '../utils/languageDetection';
 import type { Language } from '../utils/languageDetection';
+import type { ChapterBoundary } from '../utils/textExtraction';
 
 interface TextInputScreenProps {
   text: string;
@@ -25,6 +26,7 @@ interface TextInputScreenProps {
   onTextChange: (text: string) => void;
   onLanguageChange: (language: Language) => void;
   onExclusionListChange: (exclusionList: string) => void;
+  onChapterBoundariesChange: (boundaries: ChapterBoundary[] | undefined) => void;
 }
 
 export const TextInputScreen = ({
@@ -34,6 +36,7 @@ export const TextInputScreen = ({
   onTextChange,
   onLanguageChange,
   onExclusionListChange,
+  onChapterBoundariesChange,
 }: TextInputScreenProps) => {
   const [isDragging, setIsDragging] = useState(false);
   const [isExtracting, setIsExtracting] = useState(false);
@@ -46,6 +49,7 @@ export const TextInputScreen = ({
     try {
       const result = await extractTextFromFile(file);
       onTextChange(result.text);
+      onChapterBoundariesChange(result.chapterBoundaries);
       
       // Auto-detect language
       const detectedLanguage = detectLanguage(result.text);
@@ -55,7 +59,7 @@ export const TextInputScreen = ({
     } finally {
       setIsExtracting(false);
     }
-  }, [onTextChange, onLanguageChange]);
+  }, [onTextChange, onLanguageChange, onChapterBoundariesChange]);
 
   const handleFileInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

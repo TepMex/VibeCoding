@@ -37,11 +37,13 @@ import {
 } from '../utils/chapterSplitting';
 import { segmentText } from '../utils/wordSegmentation';
 import type { WorkerMessage, WorkerResponse } from '../workers/textProcessor.worker';
+import type { ChapterBoundary } from '../utils/textExtraction';
 
 interface ChaptersScreenProps {
   text: string;
   language: Language;
   exclusionList: string;
+  chapterBoundaries?: ChapterBoundary[];
 }
 
 // Check if a character is a hanzi (Chinese character)
@@ -103,6 +105,7 @@ export const ChaptersScreen = ({
   text,
   language,
   exclusionList,
+  chapterBoundaries,
 }: ChaptersScreenProps) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -134,8 +137,8 @@ export const ChaptersScreen = ({
   // Split text into chapters (memoized)
   const chapters = useMemo(() => {
     if (!text.trim()) return [];
-    return splitIntoChapters(text, language);
-  }, [text, language]);
+    return splitIntoChapters(text, language, chapterBoundaries);
+  }, [text, language, chapterBoundaries]);
 
   // Auto-select first chapter when chapters are available
   useEffect(() => {
@@ -509,7 +512,7 @@ export const ChaptersScreen = ({
                     onClick={() => handleChapterSelect(chapter.index)}
                   >
                     <ListItemText
-                      primary={`Chapter ${chapter.index + 1}`}
+                      primary={chapter.name || `Chapter ${chapter.index + 1}`}
                       secondary={`${chapter.text.length.toLocaleString()} chars`}
                     />
                   </ListItemButton>
@@ -583,7 +586,9 @@ export const ChaptersScreen = ({
               <>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                   <Typography variant="body2" color="text.secondary">
-                    Chapter {selectedChapterIndex + 1} of {chapters.length} • Total unique words: {filteredMergedFrequencies.length}
+                    {selectedChapter && selectedChapter.name 
+                      ? `${selectedChapter.name} (${selectedChapterIndex + 1} of ${chapters.length})`
+                      : `Chapter ${selectedChapterIndex + 1} of ${chapters.length}`} • Total unique words: {filteredMergedFrequencies.length}
                   </Typography>
                   <Button
                     variant="contained"

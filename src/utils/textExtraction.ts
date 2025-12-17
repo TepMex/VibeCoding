@@ -6,9 +6,16 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = `${import.meta.env.BASE_URL}pdf.worker.
 
 export type FileType = 'txt' | 'pdf' | 'epub' | 'fb2' | 'html';
 
+export interface ChapterBoundary {
+  startIndex: number;
+  endIndex: number;
+  name?: string;
+}
+
 export interface ExtractionResult {
   text: string;
   encoding?: string;
+  chapterBoundaries?: ChapterBoundary[];
 }
 
 export async function extractTextFromFile(file: File): Promise<ExtractionResult> {
@@ -171,17 +178,75 @@ async function extractTextFromEpub(file: File): Promise<ExtractionResult> {
       }
     });
 
-    let fullText = '';
+    const chapterData: Array<{ text: string; name?: string }> = [];
+    
     for (const htmlPath of htmlFiles) {
       const htmlContent = await zip.file(htmlPath)?.async('string');
       if (htmlContent) {
         const htmlDoc = parser.parseFromString(htmlContent, 'text/html');
         const text = htmlDoc.body?.textContent || '';
-        fullText += text + '\n';
+        const chapterText = text.trim();
+        
+        if (chapterText.length > 0) {
+          // Try to extract chapter name from headings (h1-h6) or title tag
+          let chapterName: string | undefined;
+          
+          // Check for headings (h1-h6), prioritizing h1
+          const headings = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
+          for (const tag of headings) {
+            const heading = htmlDoc.querySelector(tag);
+            if (heading) {
+              const headingText = heading.textContent?.trim();
+              if (headingText && headingText.length > 0) {
+                chapterName = headingText;
+                break;
+              }
+            }
+          }
+          
+          // If no heading found, check for title tag
+          if (!chapterName) {
+            const title = htmlDoc.querySelector('title');
+            if (title) {
+              const titleText = title.textContent?.trim();
+              if (titleText && titleText.length > 0) {
+                chapterName = titleText;
+              }
+            }
+          }
+          
+          chapterData.push({ text: chapterText, name: chapterName });
+        }
       }
     }
 
-    return { text: fullText.trim() };
+    // Build full text and calculate boundaries
+    const chapterTexts = chapterData.map(ch => ch.text);
+    const fullText = chapterTexts.join('\n');
+    const chapterBoundaries: ChapterBoundary[] = [];
+    let currentIndex = 0;
+
+    for (let i = 0; i < chapterData.length; i++) {
+      const chapterText = chapterData[i].text;
+      const startIndex = currentIndex;
+      const endIndex = currentIndex + chapterText.length;
+      
+      chapterBoundaries.push({
+        startIndex,
+        endIndex,
+        name: chapterData[i].name,
+      });
+      
+      // Move to next chapter (account for newline separator if not last chapter)
+      currentIndex = endIndex + (i < chapterTexts.length - 1 ? 1 : 0);
+    }
+
+    // Only return chapter boundaries if we found multiple chapters
+    // (single chapter doesn't need boundaries)
+    return {
+      text: fullText,
+      chapterBoundaries: chapterBoundaries.length > 1 ? chapterBoundaries : undefined,
+    };
   } catch (error) {
     throw new Error(`Failed to extract text from EPUB: ${error}`);
   }
@@ -189,15 +254,76 @@ async function extractTextFromEpub(file: File): Promise<ExtractionResult> {
 
 async function extractTextFromFb2(file: File): Promise<ExtractionResult> {
   try {
-    const text = await file.text();
+    const xmlText = await file.text();
     const parser = new DOMParser();
-    const doc = parser.parseFromString(text, 'text/xml');
+    const doc = parser.parseFromString(xmlText, 'text/xml');
     
     // FB2 files are XML, extract text from body
     const body = doc.querySelector('body');
-    const textContent = body?.textContent || '';
+    if (!body) {
+      throw new Error('Invalid FB2 file: missing body');
+    }
+
+    // Extract chapters from <section> tags
+    const sections = body.querySelectorAll('section');
+    const chapterData: Array<{ text: string; name?: string }> = [];
+
+    if (sections.length > 0) {
+      // Use sections as chapters
+      sections.forEach((section) => {
+        const sectionText = section.textContent || '';
+        const trimmedText = sectionText.trim();
+        
+        if (trimmedText.length > 0) {
+          // Try to extract chapter name from title tag within section
+          let chapterName: string | undefined;
+          const titleElement = section.querySelector('title');
+          if (titleElement) {
+            const titleText = titleElement.textContent?.trim();
+            if (titleText && titleText.length > 0) {
+              chapterName = titleText;
+            }
+          }
+          
+          chapterData.push({ text: trimmedText, name: chapterName });
+        }
+      });
+    }
+
+    // Build full text and calculate boundaries
+    let fullText = '';
+    const chapterBoundaries: ChapterBoundary[] = [];
     
-    return { text: textContent.trim() };
+    if (chapterData.length > 0) {
+      const chapterTexts = chapterData.map(ch => ch.text);
+      fullText = chapterTexts.join('\n');
+      let currentIndex = 0;
+
+      for (let i = 0; i < chapterData.length; i++) {
+        const chapterText = chapterData[i].text;
+        const startIndex = currentIndex;
+        const endIndex = currentIndex + chapterText.length;
+        
+        chapterBoundaries.push({
+          startIndex,
+          endIndex,
+          name: chapterData[i].name,
+        });
+        
+        // Move to next chapter (account for newline separator if not last chapter)
+        currentIndex = endIndex + (i < chapterTexts.length - 1 ? 1 : 0);
+      }
+    } else {
+      // No sections found, extract all text from body
+      const textContent = body.textContent || '';
+      fullText = textContent.trim();
+    }
+
+    // Only return chapter boundaries if we found multiple chapters
+    return {
+      text: fullText,
+      chapterBoundaries: chapterBoundaries.length > 1 ? chapterBoundaries : undefined,
+    };
   } catch (error) {
     throw new Error(`Failed to extract text from FB2: ${error}`);
   }

@@ -5,6 +5,7 @@ import { TextInputScreen } from './screens/TextInputScreen';
 import { ReportScreen } from './screens/ReportScreen';
 import { ChaptersScreen } from './screens/ChaptersScreen';
 import type { Language } from './utils/languageDetection';
+import type { ChapterBoundary } from './utils/textExtraction';
 
 type Screen = 'input' | 'report' | 'chapters';
 
@@ -13,6 +14,7 @@ function App() {
   const [text, setText] = useState('');
   const [language, setLanguage] = useState<Language>('english');
   const [exclusionList, setExclusionList] = useState('');
+  const [chapterBoundaries, setChapterBoundaries] = useState<ChapterBoundary[] | undefined>(undefined);
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
@@ -22,9 +24,13 @@ function App() {
             text={text}
             language={language}
             exclusionList={exclusionList}
-            onTextChange={setText}
+            onTextChange={(newText) => {
+              setText(newText);
+              setChapterBoundaries(undefined); // Clear boundaries when text changes manually
+            }}
             onLanguageChange={setLanguage}
             onExclusionListChange={setExclusionList}
+            onChapterBoundariesChange={setChapterBoundaries}
           />
         )}
         {currentScreen === 'report' && (
@@ -39,6 +45,7 @@ function App() {
             text={text}
             language={language}
             exclusionList={exclusionList}
+            chapterBoundaries={chapterBoundaries}
           />
         )}
       </Box>
