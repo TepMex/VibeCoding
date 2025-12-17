@@ -147,7 +147,7 @@ export const GameScreen = ({ onSettings, onGameEnd }: GameScreenProps) => {
     setIsDragging(true);
   };
 
-  const handleTouchMove = (e: React.TouchEvent) => {
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
     if (!isDragging || gameOver) return;
 
     const touch = e.touches[0];
@@ -158,7 +158,7 @@ export const GameScreen = ({ onSettings, onGameEnd }: GameScreenProps) => {
       e.preventDefault();
       setSwipeOffset(deltaX);
     }
-  };
+  }, [isDragging, gameOver]);
 
   const handleTouchEnd = () => {
     if (!isDragging) return;
@@ -178,7 +178,7 @@ export const GameScreen = ({ onSettings, onGameEnd }: GameScreenProps) => {
     setIsDragging(true);
   };
 
-  const handleMouseMove = (e: React.MouseEvent) => {
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
     if (!isDragging || gameOver) return;
 
     const deltaX = e.clientX - touchStartX.current;
@@ -187,7 +187,7 @@ export const GameScreen = ({ onSettings, onGameEnd }: GameScreenProps) => {
     if (Math.abs(deltaX) > deltaY) {
       setSwipeOffset(deltaX);
     }
-  };
+  }, [isDragging, gameOver]);
 
   const handleMouseUp = () => {
     if (!isDragging) return;
@@ -205,8 +205,8 @@ export const GameScreen = ({ onSettings, onGameEnd }: GameScreenProps) => {
     return null;
   }
 
-  const rotation = swipeOffset * 0.1;
-  const opacity = 1 - Math.abs(swipeOffset) / 300;
+  const rotation = gameOver ? 0 : swipeOffset * 0.1;
+  const opacity = gameOver ? 1 : (1 - Math.abs(swipeOffset) / 300);
 
   return (
     <Container maxWidth="sm">
@@ -232,11 +232,20 @@ export const GameScreen = ({ onSettings, onGameEnd }: GameScreenProps) => {
           }}
         >
           <Typography
-            variant="h2"
             component="div"
             sx={{
               fontWeight: 'bold',
               color: 'primary.main',
+              fontSize: '3rem',
+              lineHeight: 1,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              maxWidth: { xs: '120px', sm: '200px' },
+              '@media (max-width: 600px)': {
+                fontSize: '2rem',
+                maxWidth: '100px',
+              },
             }}
           >
             {score}
@@ -283,27 +292,29 @@ export const GameScreen = ({ onSettings, onGameEnd }: GameScreenProps) => {
             width: '100%',
             maxWidth: 400,
             position: 'relative',
-            touchAction: 'pan-y',
+            touchAction: gameOver ? 'auto' : 'pan-y',
           }}
         >
           <Card
             ref={cardRef}
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseUp}
+            onTouchStart={gameOver ? undefined : handleTouchStart}
+            onTouchMove={gameOver ? undefined : handleTouchMove}
+            onTouchEnd={gameOver ? undefined : handleTouchEnd}
+            onMouseDown={gameOver ? undefined : handleMouseDown}
+            onMouseMove={gameOver ? undefined : handleMouseMove}
+            onMouseUp={gameOver ? undefined : handleMouseUp}
+            onMouseLeave={gameOver ? undefined : handleMouseUp}
             sx={{
-              transform: `translateX(${swipeOffset}px) rotate(${rotation}deg)`,
-              opacity: Math.max(0.3, opacity),
-              transition: isDragging ? 'none' : 'transform 0.3s, opacity 0.3s',
-              cursor: 'grab',
+              transform: gameOver ? 'none' : `translateX(${swipeOffset}px) rotate(${rotation}deg)`,
+              opacity: gameOver ? 1 : Math.max(0.3, opacity),
+              transition: gameOver || !isDragging ? 'transform 0.3s, opacity 0.3s' : 'none',
+              cursor: gameOver ? 'default' : 'grab',
               userSelect: 'none',
-              '&:active': {
-                cursor: 'grabbing',
-              },
+              ...(!gameOver && {
+                '&:active': {
+                  cursor: 'grabbing',
+                },
+              }),
             }}
           >
             <CardContent
