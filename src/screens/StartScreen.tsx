@@ -1,5 +1,7 @@
-import { Button, Container, Typography, Box, IconButton } from '@mui/material';
+import { useState, useEffect } from 'react';
+import { Button, Container, Typography, Box, IconButton, Paper } from '@mui/material';
 import SettingsIcon from '@mui/icons-material/Settings';
+import { getHighscore } from '../utils/pairsStorage';
 
 interface StartScreenProps {
   onStart: (mode: 'training' | 'survival') => void;
@@ -7,6 +9,36 @@ interface StartScreenProps {
 }
 
 export const StartScreen = ({ onStart, onSettings }: StartScreenProps) => {
+  const [highscore, setHighscore] = useState(0);
+
+  useEffect(() => {
+    const loadHighscore = () => {
+      setHighscore(getHighscore());
+    };
+    
+    loadHighscore();
+    
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'hanzi-mistaken-pairs-highscore') {
+        loadHighscore();
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Also listen for custom events (for same-tab updates)
+    const handleHighscoreChange = () => {
+      loadHighscore();
+    };
+    
+    window.addEventListener('highscoreChanged', handleHighscoreChange);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('highscoreChanged', handleHighscoreChange);
+    };
+  }, []);
+
   return (
     <Container maxWidth="sm">
       <Box
@@ -33,6 +65,19 @@ export const StartScreen = ({ onStart, onSettings }: StartScreenProps) => {
         <Typography variant="h3" component="h1" align="center" gutterBottom>
           Hanzi Training
         </Typography>
+        {highscore > 0 && (
+          <Paper
+            sx={{
+              padding: 2,
+              backgroundColor: 'primary.light',
+              color: 'primary.contrastText',
+            }}
+          >
+            <Typography variant="h6" align="center">
+              Highscore: {highscore}
+            </Typography>
+          </Paper>
+        )}
         <Box
           sx={{
             display: 'flex',

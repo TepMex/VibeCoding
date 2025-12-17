@@ -60,6 +60,12 @@ export const getHighscore = (): number => {
 
 export const setHighscore = (score: number): void => {
   localStorage.setItem(HIGHSCORE_KEY, score.toString());
+  window.dispatchEvent(new Event('highscoreChanged'));
+};
+
+export const clearHighscore = (): void => {
+  localStorage.removeItem(HIGHSCORE_KEY);
+  window.dispatchEvent(new Event('highscoreChanged'));
 };
 
 

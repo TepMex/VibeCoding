@@ -20,7 +20,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import type { MistakenPair } from '../types';
-import { getPairs, updatePair, deletePair, addPair } from '../utils/pairsStorage';
+import { getPairs, updatePair, deletePair, addPair, clearHighscore } from '../utils/pairsStorage';
 
 interface SettingsScreenProps {
   onBack: () => void;
@@ -30,6 +30,7 @@ export const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
   const [pairs, setPairs] = useState<MistakenPair[]>([]);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [isAdding, setIsAdding] = useState(false);
+  const [showClearHighscoreDialog, setShowClearHighscoreDialog] = useState(false);
   const [editForm, setEditForm] = useState<MistakenPair>({
     hanzi1: '',
     pinyin1: '',
@@ -78,6 +79,11 @@ export const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
     setEditForm({ hanzi1: '', pinyin1: '', hanzi2: '', pinyin2: '' });
   };
 
+  const handleClearHighscore = () => {
+    clearHighscore();
+    setShowClearHighscoreDialog(false);
+  };
+
   return (
     <Container maxWidth="md">
       <Box
@@ -123,9 +129,12 @@ export const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
           </List>
         </Paper>
 
-        <Box sx={{ mt: 3 }}>
+        <Box sx={{ mt: 3, display: 'flex', gap: 2 }}>
           <Button variant="outlined" onClick={onBack}>
             Back
+          </Button>
+          <Button variant="outlined" color="error" onClick={() => setShowClearHighscoreDialog(true)}>
+            Clear Highscores
           </Button>
         </Box>
 
@@ -172,6 +181,19 @@ export const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
             <Button onClick={handleCancel}>Cancel</Button>
             <Button onClick={handleSave} variant="contained">
               Save
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        <Dialog open={showClearHighscoreDialog} onClose={() => setShowClearHighscoreDialog(false)}>
+          <DialogTitle>Clear Highscores</DialogTitle>
+          <DialogContent>
+            <Typography>Are you sure you want to clear all highscores? This action cannot be undone.</Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setShowClearHighscoreDialog(false)}>Cancel</Button>
+            <Button onClick={handleClearHighscore} variant="contained" color="error">
+              Clear
             </Button>
           </DialogActions>
         </Dialog>
