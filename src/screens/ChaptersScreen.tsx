@@ -16,8 +16,9 @@ import {
   ListItem,
   ListItemButton,
   ListItemText,
+  Button,
 } from '@mui/material';
-import { Close as CloseIcon, Menu as MenuIcon } from '@mui/icons-material';
+import { Close as CloseIcon, Menu as MenuIcon, Download as DownloadIcon } from '@mui/icons-material';
 import {
   normalizeExclusionList,
   type WordFrequency,
@@ -421,6 +422,49 @@ export const ChaptersScreen = ({
     setWordOccurrences([]);
   }, []);
 
+  const handleExportToCSV = useCallback(() => {
+    if (filteredMergedFrequencies.length === 0 || selectedChapterIndex === null) return;
+
+    // CSV escaping: wrap in quotes if contains comma, quote, or newline, and escape quotes
+    const escapeCSV = (value: string): string => {
+      if (value.includes(',') || value.includes('"') || value.includes('\n')) {
+        return `"${value.replace(/"/g, '""')}"`;
+      }
+      return value;
+    };
+
+    // Create CSV header
+    const headers = ['word', 'whole text frequency count', 'chapter frequency count', 'is word in exclusions'];
+    const csvRows = [headers.join(',')];
+
+    // Add data rows
+    filteredMergedFrequencies.forEach(({ word, wholeTextFreq, chapterFreq }) => {
+      const lowerWord = word.toLowerCase();
+      const isExcluded = exclusionSet.has(lowerWord);
+      csvRows.push([
+        escapeCSV(word),
+        wholeTextFreq.toString(),
+        chapterFreq.toString(),
+        isExcluded ? 'TRUE' : 'FALSE',
+      ].join(','));
+    });
+
+    // Create CSV content
+    const csvContent = csvRows.join('\n');
+
+    // Create blob and download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `chapter-${selectedChapterIndex + 1}-frequency-dictionary.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }, [filteredMergedFrequencies, exclusionSet, selectedChapterIndex]);
+
   return (
     <Box sx={{ display: 'flex', width: '100%', height: '100%', position: 'relative' }}>
       {/* Chapter Selection Panel */}
@@ -537,9 +581,19 @@ export const ChaptersScreen = ({
               </Paper>
             ) : (
               <>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                  Chapter {selectedChapterIndex + 1} of {chapters.length} • Total unique words: {filteredMergedFrequencies.length}
-                </Typography>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    Chapter {selectedChapterIndex + 1} of {chapters.length} • Total unique words: {filteredMergedFrequencies.length}
+                  </Typography>
+                  <Button
+                    variant="contained"
+                    startIcon={<DownloadIcon />}
+                    onClick={handleExportToCSV}
+                    size="small"
+                  >
+                    Export to CSV
+                  </Button>
+                </Box>
                 <Paper sx={{ p: 2, mb: 2, bgcolor: 'background.default' }}>
                   <Typography variant="caption" component="div" sx={{ mb: 1 }}>
                     <strong>Legend:</strong>

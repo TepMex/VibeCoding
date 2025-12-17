@@ -12,8 +12,9 @@ import {
   Card,
   CardContent,
   Divider,
+  Button,
 } from '@mui/material';
-import { Close as CloseIcon } from '@mui/icons-material';
+import { Close as CloseIcon, Download as DownloadIcon } from '@mui/icons-material';
 import {
   normalizeExclusionList,
   type WordFrequency,
@@ -291,6 +292,48 @@ export const ReportScreen = ({
     setWordOccurrences([]);
   }, []);
 
+  const handleExportToCSV = useCallback(() => {
+    if (filteredWordFrequencies.length === 0) return;
+
+    // CSV escaping: wrap in quotes if contains comma, quote, or newline, and escape quotes
+    const escapeCSV = (value: string): string => {
+      if (value.includes(',') || value.includes('"') || value.includes('\n')) {
+        return `"${value.replace(/"/g, '""')}"`;
+      }
+      return value;
+    };
+
+    // Create CSV header
+    const headers = ['word', 'frequency count', 'is word in exclusions'];
+    const csvRows = [headers.join(',')];
+
+    // Add data rows
+    filteredWordFrequencies.forEach(({ word, frequency }) => {
+      const lowerWord = word.toLowerCase();
+      const isExcluded = exclusionSet.has(lowerWord);
+      csvRows.push([
+        escapeCSV(word),
+        frequency.toString(),
+        isExcluded ? 'TRUE' : 'FALSE',
+      ].join(','));
+    });
+
+    // Create CSV content
+    const csvContent = csvRows.join('\n');
+
+    // Create blob and download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'frequency-dictionary.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }, [filteredWordFrequencies, exclusionSet]);
+
   return (
     <Box sx={{ display: 'flex', width: '100%', height: '100%', position: 'relative' }}>
       <Box
@@ -330,9 +373,19 @@ export const ReportScreen = ({
               </Paper>
             ) : (
               <>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                  Total unique words: {filteredWordFrequencies.length}
-                </Typography>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    Total unique words: {filteredWordFrequencies.length}
+                  </Typography>
+                  <Button
+                    variant="contained"
+                    startIcon={<DownloadIcon />}
+                    onClick={handleExportToCSV}
+                    size="small"
+                  >
+                    Export to CSV
+                  </Button>
+                </Box>
                 <Paper sx={{ p: 2, mb: 2, bgcolor: 'background.default' }}>
                   <Typography variant="caption" component="div" sx={{ mb: 1 }}>
                     <strong>Legend:</strong>
