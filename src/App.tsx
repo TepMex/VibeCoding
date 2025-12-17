@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Box, BottomNavigation, BottomNavigationAction } from '@mui/material';
 import { TextFields, Assessment, MenuBook } from '@mui/icons-material';
 import { TextInputScreen } from './screens/TextInputScreen';
@@ -6,6 +6,7 @@ import { ReportScreen } from './screens/ReportScreen';
 import { ChaptersScreen } from './screens/ChaptersScreen';
 import type { Language } from './utils/languageDetection';
 import type { ChapterBoundary } from './utils/textExtraction';
+import { loadExclusionList, saveExclusionList } from './utils/exclusionListStorage';
 
 type Screen = 'input' | 'report' | 'chapters';
 
@@ -15,6 +16,23 @@ function App() {
   const [language, setLanguage] = useState<Language>('english');
   const [exclusionList, setExclusionList] = useState('');
   const [chapterBoundaries, setChapterBoundaries] = useState<ChapterBoundary[] | undefined>(undefined);
+
+  // Load exclusion list from localStorage on mount
+  useEffect(() => {
+    const stored = loadExclusionList(language);
+    setExclusionList(stored);
+  }, []);
+
+  // Load exclusion list when language changes
+  useEffect(() => {
+    const stored = loadExclusionList(language);
+    setExclusionList(stored);
+  }, [language]);
+
+  // Save exclusion list to localStorage whenever it changes
+  useEffect(() => {
+    saveExclusionList(language, exclusionList);
+  }, [language, exclusionList]);
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
