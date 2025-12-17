@@ -2,7 +2,7 @@ import { Button, Container, Typography, Box, IconButton } from '@mui/material';
 import SettingsIcon from '@mui/icons-material/Settings';
 
 interface StartScreenProps {
-  onStart: () => void;
+  onStart: (mode: 'training' | 'survival') => void;
   onSettings: () => void;
 }
 
@@ -33,18 +33,38 @@ export const StartScreen = ({ onStart, onSettings }: StartScreenProps) => {
         <Typography variant="h3" component="h1" align="center" gutterBottom>
           Hanzi Training
         </Typography>
-        <Button
-          variant="contained"
-          size="large"
-          onClick={onStart}
+        <Box
           sx={{
-            fontSize: '1.5rem',
-            padding: '16px 48px',
-            minWidth: '200px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 2,
+            width: '100%',
+            maxWidth: 300,
           }}
         >
-          Start
-        </Button>
+          <Button
+            variant="contained"
+            size="large"
+            onClick={() => onStart('training')}
+            sx={{
+              fontSize: '1.5rem',
+              padding: '16px 48px',
+            }}
+          >
+            Training
+          </Button>
+          <Button
+            variant="contained"
+            size="large"
+            onClick={() => onStart('survival')}
+            sx={{
+              fontSize: '1.5rem',
+              padding: '16px 48px',
+            }}
+          >
+            Survival
+          </Button>
+        </Box>
       </Box>
     </Container>
   );

@@ -6,22 +6,24 @@ import { calculateScore } from '../utils/score';
 import { getPairs, getHighscore, setHighscore } from '../utils/pairsStorage';
 
 interface GameScreenProps {
+  mode: 'training' | 'survival';
   onSettings: () => void;
   onGameEnd?: () => void;
 }
 
-const MAX_SWIPES = 50;
+const TRAINING_MAX_SWIPES = 50;
 
-export const GameScreen = ({ onSettings, onGameEnd }: GameScreenProps) => {
+export const GameScreen = ({ mode, onSettings, onGameEnd }: GameScreenProps) => {
   const [pairs, setPairs] = useState<MistakenPair[]>([]);
   const [currentCard, setCurrentCard] = useState<GameCard | null>(null);
   const [score, setScore] = useState(0);
   const [streak, setStreak] = useState(0);
   const [swipeCount, setSwipeCount] = useState(0);
-  const [cardStartTime, setCardStartTime] = useState<number>(0);
   const [swipeOffset, setSwipeOffset] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [showHighscoreBanner, setShowHighscoreBanner] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [feedbackMessage, setFeedbackMessage] = useState('');
   const [gameOver, setGameOver] = useState(false);
   const touchStartX = useRef<number>(0);
   const touchStartY = useRef<number>(0);
@@ -75,51 +77,81 @@ export const GameScreen = ({ onSettings, onGameEnd }: GameScreenProps) => {
       setSwipeCount(0);
       setGameOver(false);
       setShowHighscoreBanner(false);
+      setShowFeedback(false);
       const card = generateCard();
       setCurrentCard(card);
-      setCardStartTime(Date.now());
     }
-  }, [pairs, generateCard]);
+  }, [pairs, generateCard, mode]);
 
   const handleAnswer = useCallback((answer: boolean) => {
     if (!currentCard || gameOver) return;
 
-    const timeToAnswer = Date.now() - cardStartTime;
     const isCorrect = answer === currentCard.isCorrect;
     
-    const { score: pointsEarned, streakContinues } = calculateScore(
-      isCorrect,
-      timeToAnswer,
-      streak
-    );
-
-    const newSwipeCount = swipeCount + 1;
-    setSwipeCount(newSwipeCount);
-    
-    const newScore = score + pointsEarned;
-    setScore(newScore);
-    setStreak(streakContinues ? streak + 1 : 0);
-
-    if (newSwipeCount >= MAX_SWIPES) {
-      setGameOver(true);
-      const currentHighscore = getHighscore();
-      if (newScore > currentHighscore) {
-        setHighscore(newScore);
-        setShowHighscoreBanner(true);
-      }
-      if (onGameEnd) {
+    if (mode === 'training') {
+      // Training mode: no score, show feedback on incorrect, limit 50
+      if (!isCorrect) {
+        // Find the correct pinyin for this hanzi
+        const correctPair = pairs.find(
+          p => p.hanzi1 === currentCard.hanzi || p.hanzi2 === currentCard.hanzi
+        );
+        const correctPinyin = correctPair 
+          ? (currentCard.hanzi === correctPair.hanzi1 ? correctPair.pinyin1 : correctPair.pinyin2)
+          : '';
+        setFeedbackMessage(`Incorrect! Correct answer: ${currentCard.hanzi} ${correctPinyin}`);
+        setShowFeedback(true);
         setTimeout(() => {
-          onGameEnd();
+          setShowFeedback(false);
         }, 2000);
       }
-      return;
-    }
 
-    const newCard = generateCard();
-    setCurrentCard(newCard);
-    setCardStartTime(Date.now());
-    setSwipeOffset(0);
-  }, [currentCard, cardStartTime, streak, generateCard, swipeCount, score, onGameEnd, gameOver]);
+      const newSwipeCount = swipeCount + 1;
+      setSwipeCount(newSwipeCount);
+
+      if (newSwipeCount >= TRAINING_MAX_SWIPES) {
+        setGameOver(true);
+        if (onGameEnd) {
+          setTimeout(() => {
+            onGameEnd();
+          }, 2000);
+        }
+        return;
+      }
+
+      const newCard = generateCard();
+      setCurrentCard(newCard);
+      setSwipeOffset(0);
+    } else {
+      // Survival mode: score = max streak, game ends on first incorrect
+      const { score: newScore, streakContinues } = calculateScore(isCorrect, streak);
+
+      if (!isCorrect) {
+        // Game over on first incorrect answer
+        setGameOver(true);
+        setScore(newScore);
+        const currentHighscore = getHighscore();
+        if (newScore > currentHighscore) {
+          setHighscore(newScore);
+          setShowHighscoreBanner(true);
+        }
+        if (onGameEnd) {
+          setTimeout(() => {
+            onGameEnd();
+          }, 2000);
+        }
+        return;
+      }
+
+      // Correct answer: continue
+      const newStreak = streak + 1;
+      setStreak(newStreak);
+      setScore(newScore);
+
+      const newCard = generateCard();
+      setCurrentCard(newCard);
+      setSwipeOffset(0);
+    }
+  }, [currentCard, streak, generateCard, swipeCount, mode, pairs, onGameEnd, gameOver]);
 
   useEffect(() => {
     if (gameOver) return;
@@ -231,25 +263,27 @@ export const GameScreen = ({ onSettings, onGameEnd }: GameScreenProps) => {
             gap: 2,
           }}
         >
-          <Typography
-            component="div"
-            sx={{
-              fontWeight: 'bold',
-              color: 'primary.main',
-              fontSize: '3rem',
-              lineHeight: 1,
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-              maxWidth: { xs: '120px', sm: '200px' },
-              '@media (max-width: 600px)': {
-                fontSize: '2rem',
-                maxWidth: '100px',
-              },
-            }}
-          >
-            {score}
-          </Typography>
+          {mode === 'survival' && (
+            <Typography
+              component="div"
+              sx={{
+                fontWeight: 'bold',
+                color: 'primary.main',
+                fontSize: '3rem',
+                lineHeight: 1,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                maxWidth: { xs: '120px', sm: '200px' },
+                '@media (max-width: 600px)': {
+                  fontSize: '2rem',
+                  maxWidth: '100px',
+                },
+              }}
+            >
+              {score}
+            </Typography>
+          )}
           <IconButton onClick={onSettings}>
             <SettingsIcon />
           </IconButton>
@@ -264,7 +298,7 @@ export const GameScreen = ({ onSettings, onGameEnd }: GameScreenProps) => {
             gap: 1,
           }}
         >
-          {streak > 0 && (
+          {mode === 'survival' && streak > 0 && (
             <Typography
               variant="h6"
               component="div"
@@ -276,15 +310,17 @@ export const GameScreen = ({ onSettings, onGameEnd }: GameScreenProps) => {
               🔥 {streak}x
             </Typography>
           )}
-          <Typography
-            variant="body1"
-            component="div"
-            sx={{
-              color: 'text.secondary',
-            }}
-          >
-            {swipeCount}/{MAX_SWIPES}
-          </Typography>
+          {mode === 'training' && (
+            <Typography
+              variant="body1"
+              component="div"
+              sx={{
+                color: 'text.secondary',
+              }}
+            >
+              {swipeCount}/{TRAINING_MAX_SWIPES}
+            </Typography>
+          )}
         </Box>
 
         <Box
@@ -336,7 +372,10 @@ export const GameScreen = ({ onSettings, onGameEnd }: GameScreenProps) => {
               </Typography>
               {gameOver ? (
                 <Typography variant="h5" sx={{ mt: 4, color: 'primary.main', fontWeight: 'bold' }}>
-                  Game Over! Final Score: {score}
+                  {mode === 'survival' 
+                    ? `Game Over! Final Score: ${score}`
+                    : `Training Complete! ${swipeCount} cards reviewed`
+                  }
                 </Typography>
               ) : (
                 <Typography variant="body2" sx={{ mt: 4, color: 'text.disabled' }}>
@@ -354,6 +393,16 @@ export const GameScreen = ({ onSettings, onGameEnd }: GameScreenProps) => {
         >
           <Alert severity="success" sx={{ fontSize: '1.2rem', padding: 2 }}>
             🎉 New Highscore: {score}!
+          </Alert>
+        </Snackbar>
+        <Snackbar
+          open={showFeedback}
+          autoHideDuration={2000}
+          onClose={() => setShowFeedback(false)}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        >
+          <Alert severity="error" sx={{ fontSize: '1rem', padding: 2 }}>
+            {feedbackMessage}
           </Alert>
         </Snackbar>
       </Box>

@@ -6,8 +6,10 @@ import { SettingsScreen } from './screens/SettingsScreen';
 function App() {
   const [currentScreen, setCurrentScreen] = useState<'start' | 'game' | 'settings'>('start');
   const [previousScreen, setPreviousScreen] = useState<'start' | 'game'>('start');
+  const [gameMode, setGameMode] = useState<'training' | 'survival'>('training');
 
-  const handleStart = () => {
+  const handleStart = (mode: 'training' | 'survival') => {
+    setGameMode(mode);
     setCurrentScreen('game');
   };
 
@@ -26,7 +28,11 @@ function App() {
         <StartScreen onStart={handleStart} onSettings={handleOpenSettings} />
       )}
       {currentScreen === 'game' && (
-        <GameScreen onSettings={handleOpenSettings} onGameEnd={() => setCurrentScreen('start')} />
+        <GameScreen 
+          mode={gameMode}
+          onSettings={handleOpenSettings} 
+          onGameEnd={() => setCurrentScreen('start')} 
+        />
       )}
       {currentScreen === 'settings' && <SettingsScreen onBack={handleBackFromSettings} />}
     </>
