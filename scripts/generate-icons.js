@@ -25,3 +25,7 @@ for (const size of iconSizes) {
 console.log('All icons generated successfully!');
 
 
+
+
+
+
