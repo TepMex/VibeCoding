@@ -1,16 +1,17 @@
 import { useState, useEffect, useRef } from 'react';
 import { Box, BottomNavigation, BottomNavigationAction } from '@mui/material';
-import { TextFields, Assessment, MenuBook } from '@mui/icons-material';
+import { TextFields, Assessment, MenuBook, Settings } from '@mui/icons-material';
 import { TextInputScreen } from './screens/TextInputScreen';
 import { ReportScreen } from './screens/ReportScreen';
 import { ChaptersScreen } from './screens/ChaptersScreen';
+import { SettingsScreen } from './screens/SettingsScreen';
 import type { Language } from './utils/languageDetection';
 import type { ChapterBoundary } from './utils/textExtraction';
 import { loadExclusionList, saveExclusionList } from './utils/exclusionListStorage';
 import type { WordFrequency } from './utils/frequencyAnalysis';
 import type { WorkerMessage, WorkerResponse } from './workers/textProcessor.worker';
 
-type Screen = 'input' | 'report' | 'chapters';
+type Screen = 'input' | 'report' | 'chapters' | 'settings';
 
 function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>('input');
@@ -122,13 +123,11 @@ function App() {
           <TextInputScreen
             text={text}
             language={language}
-            exclusionList={exclusionList}
             onTextChange={(newText) => {
               setText(newText);
               setChapterBoundaries(undefined); // Clear boundaries when text changes manually
             }}
             onLanguageChange={setLanguage}
-            onExclusionListChange={setExclusionList}
             onChapterBoundariesChange={setChapterBoundaries}
           />
         )}
@@ -151,6 +150,13 @@ function App() {
             wordFrequencies={wordFrequencies}
             isProcessing={isProcessing}
             error={processingError}
+          />
+        )}
+        {currentScreen === 'settings' && (
+          <SettingsScreen
+            exclusionList={exclusionList}
+            language={language}
+            onExclusionListChange={setExclusionList}
           />
         )}
       </Box>
@@ -178,6 +184,11 @@ function App() {
           label="Chapters"
           value="chapters"
           icon={<MenuBook />}
+        />
+        <BottomNavigationAction
+          label="Settings"
+          value="settings"
+          icon={<Settings />}
         />
       </BottomNavigation>
     </Box>

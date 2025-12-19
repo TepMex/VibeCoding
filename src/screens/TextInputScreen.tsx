@@ -22,20 +22,16 @@ import type { ChapterBoundary } from '../utils/textExtraction';
 interface TextInputScreenProps {
   text: string;
   language: Language;
-  exclusionList: string;
   onTextChange: (text: string) => void;
   onLanguageChange: (language: Language) => void;
-  onExclusionListChange: (exclusionList: string) => void;
   onChapterBoundariesChange: (boundaries: ChapterBoundary[] | undefined) => void;
 }
 
 export const TextInputScreen = ({
   text,
   language,
-  exclusionList,
   onTextChange,
   onLanguageChange,
-  onExclusionListChange,
   onChapterBoundariesChange,
 }: TextInputScreenProps) => {
   const [isDragging, setIsDragging] = useState(false);
@@ -214,24 +210,6 @@ export const TextInputScreen = ({
           />
         </Box>
 
-        {/* Exclusion List */}
-        <Box>
-          <Typography variant="h6" gutterBottom>
-            Exclusion List
-          </Typography>
-          <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
-            Enter words you already know (one per line). These words will be excluded from the report.
-          </Typography>
-          <TextField
-            fullWidth
-            multiline
-            rows={6}
-            value={exclusionList}
-            onChange={(e) => onExclusionListChange(e.target.value)}
-            placeholder="word1&#10;word2&#10;word3"
-            variant="outlined"
-          />
-        </Box>
       </Stack>
     </Box>
   );

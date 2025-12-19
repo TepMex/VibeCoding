@@ -27,7 +27,7 @@ Here we creating application to create and visualize frequency dictionary for us
 <key-term>Exclusion list is words that user already know, so we can skip it from final report (or at least not to highlight).</key-term>
 
 Application consists of screens
-<screen-1>Text input screen. User should be able to input text manually by pasting it in textarea on that screen, and also upload it as file. We should use third party libraries to extract text with correct encoding from files .txt, .epub, .pdf, .fb2, .html. This screen can contain controls to choose language, encoding, but it is better if app will determine it automatically. Also this screen should contain textarea for user to input words (newline separated), that user already know (exclusion list).</screen-1>
+<screen-1>Text input screen. User should be able to input text manually by pasting it in textarea on that screen, and also upload it as file. We should use third party libraries to extract text with correct encoding from files .txt, .epub, .pdf, .fb2, .html. This screen can contain controls to choose language, encoding, but it is better if app will determine it automatically.</screen-1>
 <screen-2>Report screen. Shows the list of words (as readable chips) where for each word attached its frequency in text (number of occurences). Frequent words (more or equal than 5 occurences) that are not in exclusion list is highlighted green, non-frequent words that are not in exclusion list (less than 5 occurences) is highlighted red, words that is in exclusion list is not highlighted. </screen-2>
 <screen-3>Chapters screen. It works like report, but not for a whole text, for a chapter. <term>Chapter is chunk of text, similar to a chapter of a book - about 5 print pages length. For Chinese language about 3 print pages.</term>
 
@@ -35,6 +35,7 @@ Screen contains hideable left panel with chapter selection. When user clicks cha
 
 Also word chips on that screen should show two frequency numbers instead of one - whole text frequency and chapter frequency. But highlighting should be based on whole text frequency like on screen-2.
 </screen-3>
+<screen-4>Settings screen. This screen should contain textarea for user to input words (newline separated), that user already know (exclusion list). Also a button to export this list (download as txt file).</screen-4>
 </project-description>
 
 <styling>
