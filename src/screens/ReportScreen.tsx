@@ -31,6 +31,7 @@ import {
   type WordOccurrence,
   type SentenceIndex,
 } from '../utils/wordOccurrences';
+import { LegendFilter, type CategoryCounts, type CategoryFilters } from '../components/LegendFilter';
 
 interface ReportScreenProps {
   text: string;
@@ -141,6 +142,14 @@ export const ReportScreen = ({
   const [showOther, setShowOther] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
   const [chipsPerRow, setChipsPerRow] = useState(10);
+  
+  // Category filter states (all active by default)
+  const [categoryFilters, setCategoryFilters] = useState<CategoryFilters>({
+    showFrequent: true,
+    showRare: true,
+    showKnownHanzi: true,
+    showKnown: true,
+  });
 
   const exclusionSet = useMemo(
     () => normalizeExclusionList(exclusionList),
@@ -169,12 +178,87 @@ export const ReportScreen = ({
   }, [text, language]);
 
   // Filter Chinese words to only show hanzi words
-  const filteredWordFrequencies = useMemo(() => {
+  const baseFilteredWordFrequencies = useMemo(() => {
     if (language !== 'chinese') {
       return wordFrequencies;
     }
     return wordFrequencies.filter(({ word }) => containsOnlyHanzi(word));
   }, [wordFrequencies, language]);
+
+  // Categorize words and count each category
+  type WordCategory = 'frequent' | 'rare' | 'knownHanzi' | 'known';
+  
+  const wordCategories = useMemo(() => {
+    const categories = new Map<string, WordCategory[]>();
+    
+    baseFilteredWordFrequencies.forEach(({ word, frequency }) => {
+      const lowerWord = word.toLowerCase();
+      const isExcluded = exclusionSet.has(lowerWord);
+      const wordCats: WordCategory[] = [];
+      
+      if (isExcluded) {
+        wordCats.push('known');
+      } else {
+        // For Chinese, check known hanzi percentage
+        if (language === 'chinese') {
+          const knownHanziPercentage = calculateKnownHanziPercentage(word, knownHanziSet, hanziCacheRef.current);
+          if (knownHanziPercentage > 0) {
+            wordCats.push('knownHanzi');
+          } else {
+            // Only categorize as frequent/rare if no known hanzi
+            wordCats.push(frequency >= 5 ? 'frequent' : 'rare');
+          }
+        } else {
+          wordCats.push(frequency >= 5 ? 'frequent' : 'rare');
+        }
+      }
+      
+      categories.set(word, wordCats);
+    });
+    
+    return categories;
+  }, [baseFilteredWordFrequencies, exclusionSet, knownHanziSet, language]);
+
+  // Count words in each category
+  const categoryCounts = useMemo<CategoryCounts>(() => {
+    const counts = {
+      frequent: 0,
+      rare: 0,
+      knownHanzi: 0,
+      known: 0,
+    };
+    
+    wordCategories.forEach((cats) => {
+      cats.forEach((cat) => {
+        counts[cat]++;
+      });
+    });
+    
+    return counts;
+  }, [wordCategories]);
+
+  // Filter words based on active categories
+  const filteredWordFrequencies = useMemo(() => {
+    return baseFilteredWordFrequencies.filter(({ word }) => {
+      const cats = wordCategories.get(word) || [];
+      
+      // Word is visible if at least one of its categories is active
+      return cats.some((cat) => {
+        switch (cat) {
+          case 'frequent':
+            return categoryFilters.showFrequent;
+          case 'rare':
+            return categoryFilters.showRare;
+          case 'knownHanzi':
+            return categoryFilters.showKnownHanzi;
+          case 'known':
+            return categoryFilters.showKnown;
+          default:
+            return true;
+        }
+      });
+    });
+  }, [baseFilteredWordFrequencies, wordCategories, categoryFilters]);
 
   // Calculate how many chips fit per row based on container width
   useEffect(() => {
@@ -401,41 +485,12 @@ export const ReportScreen = ({
                     Export to CSV
                   </Button>
                 </Box>
-                <Paper sx={{ p: 2, mb: 2, bgcolor: 'background.default' }}>
-                  <Typography variant="caption" component="div" sx={{ mb: 1 }}>
-                    <strong>Legend:</strong>
-                  </Typography>
-                  <Stack direction="row" spacing={2} flexWrap="wrap">
-                    <Chip
-                      label="Frequent (≥5 occurrences)"
-                      color="success"
-                      size="small"
-                      variant="filled"
-                    />
-                    <Chip
-                      label="Rare (<5 occurrences)"
-                      color="error"
-                      size="small"
-                      variant="filled"
-                    />
-                    {language === 'chinese' && (
-                      <Chip
-                        label="Contains known hanzi"
-                        size="small"
-                        variant="filled"
-                        sx={{
-                          backgroundColor: 'rgba(128, 128, 128, 0.4)',
-                          color: 'text.primary',
-                        }}
-                      />
-                    )}
-                    <Chip
-                      label="Known (in exclusion list)"
-                      size="small"
-                      variant="outlined"
-                    />
-                  </Stack>
-                </Paper>
+                <LegendFilter
+                  language={language}
+                  categoryCounts={categoryCounts}
+                  filters={categoryFilters}
+                  onFilterChange={setCategoryFilters}
+                />
                 <Box 
                   ref={containerRef}
                   sx={{ mb: 2, height: 600 }}

@@ -40,6 +40,7 @@ import {
 } from '../utils/chapterSplitting';
 import { segmentText } from '../utils/wordSegmentation';
 import type { ChapterBoundary } from '../utils/textExtraction';
+import { LegendFilter, type CategoryCounts, type CategoryFilters } from '../components/LegendFilter';
 
 interface ChaptersScreenProps {
   text: string;
@@ -123,6 +124,14 @@ export const ChaptersScreen = ({
   const [showUnderstandable, setShowUnderstandable] = useState(true);
   const [showOther, setShowOther] = useState(true);
   const chapterFrequenciesCacheRef = useRef<Map<number, WordFrequency[]>>(new Map());
+  
+  // Category filter states (all active by default)
+  const [categoryFilters, setCategoryFilters] = useState<CategoryFilters>({
+    showFrequent: true,
+    showRare: true,
+    showKnownHanzi: true,
+    showKnown: true,
+  });
 
   const exclusionSet = useMemo(
     () => normalizeExclusionList(exclusionList),
@@ -256,12 +265,87 @@ export const ChaptersScreen = ({
   }, [wordFrequencies, currentChapterFrequencies, wholeTextFrequencyMap, chapterFrequencyMap]);
 
   // Filter Chinese words to only show hanzi words
-  const filteredMergedFrequencies = useMemo(() => {
+  const baseFilteredMergedFrequencies = useMemo(() => {
     if (language !== 'chinese') {
       return mergedFrequencies;
     }
     return mergedFrequencies.filter(({ word }) => containsOnlyHanzi(word));
   }, [mergedFrequencies, language]);
+
+  // Categorize words and count each category
+  type WordCategory = 'frequent' | 'rare' | 'knownHanzi' | 'known';
+  
+  const wordCategories = useMemo(() => {
+    const categories = new Map<string, WordCategory[]>();
+    
+    baseFilteredMergedFrequencies.forEach(({ word, wholeTextFreq }) => {
+      const lowerWord = word.toLowerCase();
+      const isExcluded = exclusionSet.has(lowerWord);
+      const wordCats: WordCategory[] = [];
+      
+      if (isExcluded) {
+        wordCats.push('known');
+      } else {
+        // For Chinese, check known hanzi percentage
+        if (language === 'chinese') {
+          const knownHanziPercentage = calculateKnownHanziPercentage(word, knownHanziSet, hanziCache);
+          if (knownHanziPercentage > 0) {
+            wordCats.push('knownHanzi');
+          } else {
+            // Only categorize as frequent/rare if no known hanzi
+            wordCats.push(wholeTextFreq >= 5 ? 'frequent' : 'rare');
+          }
+        } else {
+          wordCats.push(wholeTextFreq >= 5 ? 'frequent' : 'rare');
+        }
+      }
+      
+      categories.set(word, wordCats);
+    });
+    
+    return categories;
+  }, [baseFilteredMergedFrequencies, exclusionSet, knownHanziSet, language, hanziCache]);
+
+  // Count words in each category
+  const categoryCounts = useMemo<CategoryCounts>(() => {
+    const counts = {
+      frequent: 0,
+      rare: 0,
+      knownHanzi: 0,
+      known: 0,
+    };
+    
+    wordCategories.forEach((cats) => {
+      cats.forEach((cat) => {
+        counts[cat]++;
+      });
+    });
+    
+    return counts;
+  }, [wordCategories]);
+
+  // Filter words based on active categories
+  const filteredMergedFrequencies = useMemo(() => {
+    return baseFilteredMergedFrequencies.filter(({ word }) => {
+      const cats = wordCategories.get(word) || [];
+      
+      // Word is visible if at least one of its categories is active
+      return cats.some((cat) => {
+        switch (cat) {
+          case 'frequent':
+            return categoryFilters.showFrequent;
+          case 'rare':
+            return categoryFilters.showRare;
+          case 'knownHanzi':
+            return categoryFilters.showKnownHanzi;
+          case 'known':
+            return categoryFilters.showKnown;
+          default:
+            return true;
+        }
+      });
+    });
+  }, [baseFilteredMergedFrequencies, wordCategories, categoryFilters]);
 
   // Pre-compute and memoize all chip styles (O(n) once instead of O(n) per render)
   const chipStyles = useMemo(() => {
@@ -572,44 +656,13 @@ export const ChaptersScreen = ({
                     Export to CSV
                   </Button>
                 </Box>
-                <Paper sx={{ p: 2, mb: 2, bgcolor: 'background.default' }}>
-                  <Typography variant="caption" component="div" sx={{ mb: 1 }}>
-                    <strong>Legend:</strong>
-                  </Typography>
-                  <Stack direction="row" spacing={2} flexWrap="wrap">
-                    <Chip
-                      label="Frequent (≥5 occurrences)"
-                      color="success"
-                      size="small"
-                      variant="filled"
-                    />
-                    <Chip
-                      label="Rare (<5 occurrences)"
-                      color="error"
-                      size="small"
-                      variant="filled"
-                    />
-                    {language === 'chinese' && (
-                      <Chip
-                        label="Contains known hanzi"
-                        size="small"
-                        variant="filled"
-                        sx={{
-                          backgroundColor: 'rgba(128, 128, 128, 0.4)',
-                          color: 'text.primary',
-                        }}
-                      />
-                    )}
-                    <Chip
-                      label="Known (in exclusion list)"
-                      size="small"
-                      variant="outlined"
-                    />
-                  </Stack>
-                  <Typography variant="caption" component="div" sx={{ mt: 1, color: 'text.secondary' }}>
-                    Format: word (whole text frequency / chapter frequency)
-                  </Typography>
-                </Paper>
+                <LegendFilter
+                  language={language}
+                  categoryCounts={categoryCounts}
+                  filters={categoryFilters}
+                  onFilterChange={setCategoryFilters}
+                  additionalInfo="Format: word (whole text frequency / chapter frequency)"
+                />
                 <Box
                   onClick={handleContainerClick}
                   sx={{
