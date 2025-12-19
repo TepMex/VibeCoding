@@ -38,7 +38,6 @@ import {
   splitIntoChapters,
 } from '../utils/chapterSplitting';
 import { segmentText } from '../utils/wordSegmentation';
-import type { WorkerMessage, WorkerResponse } from '../workers/textProcessor.worker';
 import type { ChapterBoundary } from '../utils/textExtraction';
 
 interface ChaptersScreenProps {
@@ -46,6 +45,9 @@ interface ChaptersScreenProps {
   language: Language;
   exclusionList: string;
   chapterBoundaries?: ChapterBoundary[];
+  wordFrequencies: WordFrequency[];
+  isProcessing: boolean;
+  error: string | null;
 }
 
 // Check if a character is a hanzi (Chinese character)
@@ -108,16 +110,14 @@ export const ChaptersScreen = ({
   language,
   exclusionList,
   chapterBoundaries,
+  wordFrequencies,
+  isProcessing,
+  error,
 }: ChaptersScreenProps) => {
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [wholeTextFrequencies, setWholeTextFrequencies] = useState<WordFrequency[]>([]);
   const [selectedChapterIndex, setSelectedChapterIndex] = useState<number | null>(null);
   const [selectedWord, setSelectedWord] = useState<string | null>(null);
   const [wordOccurrences, setWordOccurrences] = useState<WordOccurrence[]>([]);
   const [isChapterPanelOpen, setIsChapterPanelOpen] = useState(true);
-  const workerRef = useRef<Worker | null>(null);
-  const debounceTimerRef = useRef<number | null>(null);
   const chapterFrequenciesCacheRef = useRef<Map<number, WordFrequency[]>>(new Map());
 
   const exclusionSet = useMemo(
@@ -149,77 +149,10 @@ export const ChaptersScreen = ({
     }
   }, [chapters, selectedChapterIndex]);
 
-  // Initialize Web Worker for whole text processing
+  // Clear chapter cache when text changes
   useEffect(() => {
-    workerRef.current = new Worker(
-      new URL('../workers/textProcessor.worker.ts', import.meta.url),
-      { type: 'module' }
-    );
-
-    workerRef.current.onmessage = (e: MessageEvent<WorkerResponse>) => {
-      if (e.data.type === 'result' && e.data.frequencies) {
-        setWholeTextFrequencies(e.data.frequencies);
-        setIsProcessing(false);
-      } else if (e.data.type === 'error') {
-        setError(e.data.error || 'Failed to process text');
-        setWholeTextFrequencies([]);
-        setIsProcessing(false);
-      }
-    };
-
-    workerRef.current.onerror = (err) => {
-      setError('Worker error: ' + err.message);
-      setIsProcessing(false);
-    };
-
-    return () => {
-      if (workerRef.current) {
-        workerRef.current.terminate();
-        workerRef.current = null;
-      }
-    };
-  }, []);
-
-  // Debounced whole text processing with Web Worker
-  useEffect(() => {
-    // Clear previous debounce timer
-    if (debounceTimerRef.current !== null) {
-      clearTimeout(debounceTimerRef.current);
-    }
-
-    if (!text.trim()) {
-      debounceTimerRef.current = window.setTimeout(() => {
-        setWholeTextFrequencies([]);
-        setIsProcessing(false);
-        setError(null);
-        const newCache = new Map();
-        chapterFrequenciesCacheRef.current = newCache;
-      }, 0);
-      return;
-    }
-
-    // Debounce processing by 400ms
-    debounceTimerRef.current = window.setTimeout(() => {
-      setIsProcessing(true);
-      setError(null);
-      const newCache = new Map(); // Clear chapter cache when text changes
-      chapterFrequenciesCacheRef.current = newCache;
-      
-      if (workerRef.current) {
-        const message: WorkerMessage = {
-          type: 'process',
-          text,
-          language,
-        };
-        workerRef.current.postMessage(message);
-      }
-    }, 400);
-
-    return () => {
-      if (debounceTimerRef.current !== null) {
-        clearTimeout(debounceTimerRef.current);
-      }
-    };
+    const newCache = new Map();
+    chapterFrequenciesCacheRef.current = newCache;
   }, [text, language]);
 
   // Get selected chapter
@@ -271,11 +204,11 @@ export const ChaptersScreen = ({
   // Create map of whole text frequencies for quick lookup
   const wholeTextFrequencyMap = useMemo(() => {
     const map = new Map<string, number>();
-    wholeTextFrequencies.forEach(({ word, frequency }) => {
+    wordFrequencies.forEach(({ word, frequency }) => {
       map.set(word.toLowerCase(), frequency);
     });
     return map;
-  }, [wholeTextFrequencies]);
+  }, [wordFrequencies]);
 
   // Create map of chapter frequencies for quick lookup
   const chapterFrequencyMap = useMemo(() => {
@@ -291,7 +224,7 @@ export const ChaptersScreen = ({
     const merged = new Map<string, { word: string; wholeTextFreq: number; chapterFreq: number }>();
     
     // Add all words from whole text frequencies
-    wholeTextFrequencies.forEach(({ word }) => {
+    wordFrequencies.forEach(({ word }) => {
       const lowerWord = word.toLowerCase();
       merged.set(lowerWord, {
         word,
@@ -316,7 +249,7 @@ export const ChaptersScreen = ({
     return Array.from(merged.values())
       .filter(item => item.chapterFreq > 0)
       .sort((a, b) => b.wholeTextFreq - a.wholeTextFreq);
-  }, [wholeTextFrequencies, currentChapterFrequencies, wholeTextFrequencyMap, chapterFrequencyMap]);
+  }, [wordFrequencies, currentChapterFrequencies, wholeTextFrequencyMap, chapterFrequencyMap]);
 
   // Filter Chinese words to only show hanzi words
   const filteredMergedFrequencies = useMemo(() => {

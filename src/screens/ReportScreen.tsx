@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { useState, useMemo, useCallback, useRef, memo, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -16,6 +16,7 @@ import {
   Link,
 } from '@mui/material';
 import { Close as CloseIcon, Download as DownloadIcon } from '@mui/icons-material';
+import { List } from 'react-window';
 import {
   normalizeExclusionList,
   type WordFrequency,
@@ -29,12 +30,14 @@ import {
   type WordOccurrence,
   type SentenceIndex,
 } from '../utils/wordOccurrences';
-import type { WorkerMessage, WorkerResponse } from '../workers/textProcessor.worker';
 
 interface ReportScreenProps {
   text: string;
   language: Language;
   exclusionList: string;
+  wordFrequencies: WordFrequency[];
+  isProcessing: boolean;
+  error: string | null;
 }
 
 // Check if a character is a hanzi (Chinese character)
@@ -92,18 +95,48 @@ interface ChipStyle {
   knownHanziPercentage?: number;
 }
 
+interface WordChipProps {
+  word: string;
+  frequency: number;
+  baseStyle: Omit<ChipStyle, 'sx'> & { baseSx: object };
+  isSelected: boolean;
+  onWordClick: (word: string) => void;
+}
+
+// Memoized chip component to prevent unnecessary re-renders
+const WordChip = memo(({ word, frequency, baseStyle, isSelected, onWordClick }: WordChipProps) => {
+  const sx = {
+    ...baseStyle.baseSx,
+    border: isSelected ? '2px solid' : 'none',
+    borderColor: isSelected ? 'primary.main' : 'transparent',
+  };
+
+  return (
+    <Chip
+      data-word={word}
+      label={`${word} (${frequency})`}
+      color={baseStyle.color}
+      variant={baseStyle.variant}
+      sx={sx}
+      onClick={() => onWordClick(word)}
+    />
+  );
+});
+
+WordChip.displayName = 'WordChip';
+
 export const ReportScreen = ({
   text,
   language,
   exclusionList,
+  wordFrequencies,
+  isProcessing,
+  error,
 }: ReportScreenProps) => {
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [wordFrequencies, setWordFrequencies] = useState<WordFrequency[]>([]);
   const [selectedWord, setSelectedWord] = useState<string | null>(null);
   const [wordOccurrences, setWordOccurrences] = useState<WordOccurrence[]>([]);
-  const workerRef = useRef<Worker | null>(null);
-  const debounceTimerRef = useRef<number | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [chipsPerRow, setChipsPerRow] = useState(10);
 
   const exclusionSet = useMemo(
     () => normalizeExclusionList(exclusionList),
@@ -118,83 +151,17 @@ export const ReportScreen = ({
     return new Set<string>();
   }, [exclusionList, language]);
 
-  // Cache for hanzi characters per word
-  const hanziCache = useMemo(() => new Map<string, string[]>(), []);
+  // Cache for hanzi characters per word (useRef to persist across renders)
+  const hanziCacheRef = useRef(new Map<string, string[]>());
 
-  // Pre-compute sentence index for efficient word occurrence searches
-  const sentenceIndex = useMemo<SentenceIndex | null>(() => {
+  // Lazy sentence index - only create when needed
+  const sentenceIndexRef = useRef<SentenceIndex | null>(null);
+  const getSentenceIndex = useCallback((): SentenceIndex | null => {
     if (!text.trim()) return null;
-    return createSentenceIndex(text, language);
-  }, [text, language]);
-
-  // Initialize Web Worker
-  useEffect(() => {
-    workerRef.current = new Worker(
-      new URL('../workers/textProcessor.worker.ts', import.meta.url),
-      { type: 'module' }
-    );
-
-    workerRef.current.onmessage = (e: MessageEvent<WorkerResponse>) => {
-      if (e.data.type === 'result' && e.data.frequencies) {
-        setWordFrequencies(e.data.frequencies);
-        setIsProcessing(false);
-      } else if (e.data.type === 'error') {
-        setError(e.data.error || 'Failed to process text');
-        setWordFrequencies([]);
-        setIsProcessing(false);
-      }
-    };
-
-    workerRef.current.onerror = (err) => {
-      setError('Worker error: ' + err.message);
-      setIsProcessing(false);
-    };
-
-    return () => {
-      if (workerRef.current) {
-        workerRef.current.terminate();
-        workerRef.current = null;
-      }
-    };
-  }, []);
-
-  // Debounced text processing with Web Worker
-  useEffect(() => {
-    // Clear previous debounce timer
-    if (debounceTimerRef.current !== null) {
-      clearTimeout(debounceTimerRef.current);
+    if (!sentenceIndexRef.current) {
+      sentenceIndexRef.current = createSentenceIndex(text, language);
     }
-
-    if (!text.trim()) {
-      // Use setTimeout to avoid synchronous setState in effect
-      debounceTimerRef.current = window.setTimeout(() => {
-        setWordFrequencies([]);
-        setIsProcessing(false);
-        setError(null);
-      }, 0);
-      return;
-    }
-
-    // Debounce processing by 400ms
-    debounceTimerRef.current = window.setTimeout(() => {
-      setIsProcessing(true);
-      setError(null);
-      
-      if (workerRef.current) {
-        const message: WorkerMessage = {
-          type: 'process',
-          text,
-          language,
-        };
-        workerRef.current.postMessage(message);
-      }
-    }, 400);
-
-    return () => {
-      if (debounceTimerRef.current !== null) {
-        clearTimeout(debounceTimerRef.current);
-      }
-    };
+    return sentenceIndexRef.current;
   }, [text, language]);
 
   // Filter Chinese words to only show hanzi words
@@ -205,9 +172,32 @@ export const ReportScreen = ({
     return wordFrequencies.filter(({ word }) => containsOnlyHanzi(word));
   }, [wordFrequencies, language]);
 
-  // Pre-compute and memoize all chip styles (O(n) once instead of O(n) per render)
-  const chipStyles = useMemo(() => {
-    const styles = new Map<string, ChipStyle>();
+  // Calculate how many chips fit per row based on container width
+  useEffect(() => {
+    const updateChipsPerRow = () => {
+      if (containerRef.current) {
+        const containerWidth = containerRef.current.offsetWidth;
+        // Estimate chip width: average word length + frequency + padding
+        // Using a conservative estimate of ~120px per chip (including gap)
+        const estimatedChipWidth = 120;
+        const calculatedChipsPerRow = Math.max(1, Math.floor(containerWidth / estimatedChipWidth));
+        setChipsPerRow(calculatedChipsPerRow);
+      }
+    };
+
+    updateChipsPerRow();
+    window.addEventListener('resize', updateChipsPerRow);
+    return () => window.removeEventListener('resize', updateChipsPerRow);
+  }, [filteredWordFrequencies.length]);
+
+  // Calculate number of rows needed
+  const rowCount = useMemo(() => {
+    return Math.ceil(filteredWordFrequencies.length / chipsPerRow);
+  }, [filteredWordFrequencies.length, chipsPerRow]);
+
+  // Pre-compute base chip styles (without selection dependency for better performance)
+  const baseChipStyles = useMemo(() => {
+    const styles = new Map<string, Omit<ChipStyle, 'sx'> & { baseSx: object }>();
     
     filteredWordFrequencies.forEach(({ word, frequency }) => {
       const lowerWord = word.toLowerCase();
@@ -219,7 +209,7 @@ export const ReportScreen = ({
       if (!isExcluded) {
         // For Chinese, check known hanzi percentage
         if (language === 'chinese') {
-          knownHanziPercentage = calculateKnownHanziPercentage(word, knownHanziSet, hanziCache);
+          knownHanziPercentage = calculateKnownHanziPercentage(word, knownHanziSet, hanziCacheRef.current);
           if (knownHanziPercentage === 0) {
             color = frequency >= 5 ? 'success' : 'error';
           }
@@ -228,14 +218,11 @@ export const ReportScreen = ({
         }
       }
       
-      const isSelected = selectedWord === word;
       const baseSx = {
         fontSize: '0.875rem',
         height: 'auto',
         py: 0.5,
         cursor: 'pointer',
-        border: isSelected ? '2px solid' : 'none',
-        borderColor: isSelected ? 'primary.main' : 'transparent',
         '&:hover': {
           opacity: 0.8,
         },
@@ -257,37 +244,26 @@ export const ReportScreen = ({
       styles.set(word, {
         color,
         variant: isExcluded ? 'outlined' : 'filled',
-        sx,
+        baseSx: sx,
         knownHanziPercentage,
       });
     });
     
     return styles;
-  }, [filteredWordFrequencies, exclusionSet, knownHanziSet, language, selectedWord, hanziCache]);
+  }, [filteredWordFrequencies, exclusionSet, knownHanziSet, language]);
 
   const handleWordClick = useCallback((word: string) => {
     setSelectedWord(word);
     
-    if (sentenceIndex) {
-      const occurrences = findWordOccurrencesWithIndex(sentenceIndex, word);
+    const index = getSentenceIndex();
+    if (index) {
+      const occurrences = findWordOccurrencesWithIndex(index, word);
       setWordOccurrences(occurrences);
     } else {
       setWordOccurrences([]);
     }
-  }, [sentenceIndex]);
+  }, [getSentenceIndex]);
 
-  // Event delegation handler for chip clicks
-  const handleContainerClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    const target = e.target as HTMLElement;
-    const chip = target.closest('[data-word]') as HTMLElement;
-    
-    if (chip) {
-      const word = chip.getAttribute('data-word');
-      if (word) {
-        handleWordClick(word);
-      }
-    }
-  }, [handleWordClick]);
 
   const handleCloseDrawer = useCallback(() => {
     setSelectedWord(null);
@@ -423,32 +399,51 @@ export const ReportScreen = ({
                     />
                   </Stack>
                 </Paper>
-                <Box
-                  onClick={handleContainerClick}
-                  sx={{
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    gap: 1,
-                    mb: 2,
-                    maxHeight: 600,
-                    overflow: 'auto',
-                  }}
+                <Box 
+                  ref={containerRef}
+                  sx={{ mb: 2, height: 600 }}
                 >
-                  {filteredWordFrequencies.map(({ word, frequency }) => {
-                    const chipStyle = chipStyles.get(word);
-                    if (!chipStyle) return null;
-                    
-                    return (
-                      <Chip
-                        key={word}
-                        data-word={word}
-                        label={`${word} (${frequency})`}
-                        color={chipStyle.color}
-                        variant={chipStyle.variant}
-                        sx={chipStyle.sx}
-                      />
-                    );
-                  })}
+                  <List
+                    rowCount={rowCount}
+                    rowHeight={36}
+                    style={{ height: 600 }}
+                    rowComponent={({ index, style, ...props }) => {
+                      // Calculate which chips belong to this row
+                      const startIndex = index * chipsPerRow;
+                      const endIndex = Math.min(startIndex + chipsPerRow, filteredWordFrequencies.length);
+                      const rowChips = filteredWordFrequencies.slice(startIndex, endIndex);
+                      
+                      return (
+                        <Box 
+                          style={style} 
+                          sx={{ 
+                            display: 'flex',
+                            flexWrap: 'wrap',
+                            gap: 1,
+                            px: 0.5,
+                          }} 
+                          {...props}
+                        >
+                          {rowChips.map(({ word, frequency }) => {
+                            const baseStyle = baseChipStyles.get(word);
+                            if (!baseStyle) return null;
+                            
+                            return (
+                              <WordChip
+                                key={word}
+                                word={word}
+                                frequency={frequency}
+                                baseStyle={baseStyle}
+                                isSelected={selectedWord === word}
+                                onWordClick={handleWordClick}
+                              />
+                            );
+                          })}
+                        </Box>
+                      );
+                    }}
+                    rowProps={{}}
+                  />
                 </Box>
               </>
             )}
