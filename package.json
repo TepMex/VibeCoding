@@ -20,6 +20,7 @@
     "jieba-wasm": "^2.4.0",
     "jszip": "^3.10.1",
     "pdfjs-dist": "^5.4.449",
+    "pinyin-pro": "^3.27.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-window": "^2.2.3"
