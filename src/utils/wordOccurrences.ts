@@ -1,4 +1,5 @@
 import type { Language } from './languageDetection';
+import { segmentText } from './wordSegmentation';
 
 export interface WordOccurrence {
   sentence: string;
@@ -159,6 +160,74 @@ export function highlightWordInSentence(
       const highlightedWord = `<mark style="background-color: #ffeb3b; padding: 2px 0; font-weight: 500;">${wordInMatch}</mark>`;
       return (before || '') + highlightedWord + (after || '');
     });
+  }
+}
+
+/**
+ * Check if a sentence has no unknown words other than the selected word
+ * For Chinese: checks if all hanzi characters (excluding those in selectedWord) are known
+ * For other languages: checks if all words (excluding selectedWord) are in the exclusion list
+ * 
+ * @param sentence - The sentence to check
+ * @param selectedWord - The selected word to exclude from unknown word check
+ * @param language - The language of the text
+ * @param exclusionSet - Set of known words (normalized to lowercase)
+ * @param knownHanziSet - Set of known hanzi characters (for Chinese, normalized to lowercase)
+ * @returns true if sentence has no unknown words other than selectedWord, false otherwise
+ */
+export async function hasNoUnknownWordsExceptSelected(
+  sentence: string,
+  selectedWord: string,
+  language: Language,
+  exclusionSet: Set<string>,
+  knownHanziSet?: Set<string>
+): Promise<boolean> {
+  if (language === 'chinese') {
+    // For Chinese, check hanzi characters
+    if (!knownHanziSet) {
+      return false;
+    }
+    
+    // Get all hanzi characters in the sentence
+    const sentenceHanzi = sentence.split('').filter(char => /[\u4e00-\u9fff]/.test(char));
+    
+    // Get all hanzi characters in the selected word
+    const selectedWordHanzi = selectedWord.split('').filter(char => /[\u4e00-\u9fff]/.test(char));
+    const selectedWordHanziSet = new Set(selectedWordHanzi.map(char => char.toLowerCase()));
+    
+    // Check if all hanzi in sentence (except those in selectedWord) are known
+    for (const hanzi of sentenceHanzi) {
+      const lowerHanzi = hanzi.toLowerCase();
+      // Skip hanzi that are part of the selected word
+      if (selectedWordHanziSet.has(lowerHanzi)) {
+        continue;
+      }
+      // If any hanzi is not known, return false
+      if (!knownHanziSet.has(lowerHanzi)) {
+        return false;
+      }
+    }
+    
+    return true;
+  } else {
+    // For space-separated languages, segment and check words
+    const words = await segmentText(sentence, language);
+    const lowerSelectedWord = selectedWord.toLowerCase();
+    
+    // Check if all words (except selectedWord) are in exclusion list
+    for (const word of words) {
+      const lowerWord = word.toLowerCase();
+      // Skip the selected word
+      if (lowerWord === lowerSelectedWord) {
+        continue;
+      }
+      // If any word is not in exclusion list, return false
+      if (!exclusionSet.has(lowerWord)) {
+        return false;
+      }
+    }
+    
+    return true;
   }
 }
 

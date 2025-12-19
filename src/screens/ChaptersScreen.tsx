@@ -31,6 +31,7 @@ import {
   findWordOccurrencesWithIndex,
   createSentenceIndex,
   highlightWordInSentence,
+  hasNoUnknownWordsExceptSelected,
   type WordOccurrence,
   type SentenceIndex,
 } from '../utils/wordOccurrences';
@@ -118,6 +119,7 @@ export const ChaptersScreen = ({
   const [selectedWord, setSelectedWord] = useState<string | null>(null);
   const [wordOccurrences, setWordOccurrences] = useState<WordOccurrence[]>([]);
   const [isChapterPanelOpen, setIsChapterPanelOpen] = useState(true);
+  const [occurrencesWithNoUnknownWords, setOccurrencesWithNoUnknownWords] = useState<Set<number>>(new Set());
   const chapterFrequenciesCacheRef = useRef<Map<number, WordFrequency[]>>(new Map());
 
   const exclusionSet = useMemo(
@@ -336,6 +338,37 @@ export const ChaptersScreen = ({
     }
   }, [chapterSentenceIndex]);
 
+  // Compute which occurrences have no unknown words except the selected one
+  useEffect(() => {
+    if (!selectedWord || wordOccurrences.length === 0) {
+      setOccurrencesWithNoUnknownWords(new Set());
+      return;
+    }
+
+    const computeUnknownWords = async () => {
+      const results = new Set<number>();
+      
+      await Promise.all(
+        wordOccurrences.map(async (occurrence, index) => {
+          const hasNoUnknown = await hasNoUnknownWordsExceptSelected(
+            occurrence.sentence,
+            selectedWord,
+            language,
+            exclusionSet,
+            language === 'chinese' ? knownHanziSet : undefined
+          );
+          if (hasNoUnknown) {
+            results.add(index);
+          }
+        })
+      );
+      
+      setOccurrencesWithNoUnknownWords(results);
+    };
+
+    computeUnknownWords();
+  }, [wordOccurrences, selectedWord, language, exclusionSet, knownHanziSet]);
+
   // Event delegation handler for chip clicks
   const handleContainerClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     const target = e.target as HTMLElement;
@@ -352,6 +385,7 @@ export const ChaptersScreen = ({
   const handleCloseDrawer = useCallback(() => {
     setSelectedWord(null);
     setWordOccurrences([]);
+    setOccurrencesWithNoUnknownWords(new Set());
   }, []);
 
   const handleChapterSelect = useCallback((index: number) => {
@@ -653,15 +687,16 @@ export const ChaptersScreen = ({
                   selectedWord!,
                   language
                 );
+                const hasNoUnknown = occurrencesWithNoUnknownWords.has(index);
                 return (
                   <Card 
                     key={index} 
                     variant="elevation"
                     elevation={2}
                     sx={{
-                      backgroundColor: 'background.paper',
+                      backgroundColor: hasNoUnknown ? 'rgba(76, 175, 80, 0.1)' : 'background.paper',
                       border: '1px solid',
-                      borderColor: 'divider',
+                      borderColor: hasNoUnknown ? 'success.main' : 'divider',
                       borderRadius: 2,
                       transition: 'box-shadow 0.2s ease-in-out',
                       '&:hover': {

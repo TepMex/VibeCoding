@@ -27,6 +27,7 @@ import {
   findWordOccurrencesWithIndex,
   createSentenceIndex,
   highlightWordInSentence,
+  hasNoUnknownWordsExceptSelected,
   type WordOccurrence,
   type SentenceIndex,
 } from '../utils/wordOccurrences';
@@ -135,6 +136,7 @@ export const ReportScreen = ({
 }: ReportScreenProps) => {
   const [selectedWord, setSelectedWord] = useState<string | null>(null);
   const [wordOccurrences, setWordOccurrences] = useState<WordOccurrence[]>([]);
+  const [occurrencesWithNoUnknownWords, setOccurrencesWithNoUnknownWords] = useState<Set<number>>(new Set());
   const containerRef = useRef<HTMLDivElement>(null);
   const [chipsPerRow, setChipsPerRow] = useState(10);
 
@@ -264,10 +266,41 @@ export const ReportScreen = ({
     }
   }, [getSentenceIndex]);
 
+  // Compute which occurrences have no unknown words except the selected one
+  useEffect(() => {
+    if (!selectedWord || wordOccurrences.length === 0) {
+      setOccurrencesWithNoUnknownWords(new Set());
+      return;
+    }
+
+    const computeUnknownWords = async () => {
+      const results = new Set<number>();
+      
+      await Promise.all(
+        wordOccurrences.map(async (occurrence, index) => {
+          const hasNoUnknown = await hasNoUnknownWordsExceptSelected(
+            occurrence.sentence,
+            selectedWord,
+            language,
+            exclusionSet,
+            language === 'chinese' ? knownHanziSet : undefined
+          );
+          if (hasNoUnknown) {
+            results.add(index);
+          }
+        })
+      );
+      
+      setOccurrencesWithNoUnknownWords(results);
+    };
+
+    computeUnknownWords();
+  }, [wordOccurrences, selectedWord, language, exclusionSet, knownHanziSet]);
 
   const handleCloseDrawer = useCallback(() => {
     setSelectedWord(null);
     setWordOccurrences([]);
+    setOccurrencesWithNoUnknownWords(new Set());
   }, []);
 
   const handleExportToCSV = useCallback(() => {
@@ -498,15 +531,16 @@ export const ReportScreen = ({
                   selectedWord!,
                   language
                 );
+                const hasNoUnknown = occurrencesWithNoUnknownWords.has(index);
                 return (
                   <Card 
                     key={index} 
                     variant="elevation"
                     elevation={2}
                     sx={{
-                      backgroundColor: 'background.paper',
+                      backgroundColor: hasNoUnknown ? 'rgba(76, 175, 80, 0.1)' : 'background.paper',
                       border: '1px solid',
-                      borderColor: 'divider',
+                      borderColor: hasNoUnknown ? 'success.main' : 'divider',
                       borderRadius: 2,
                       transition: 'box-shadow 0.2s ease-in-out',
                       '&:hover': {
