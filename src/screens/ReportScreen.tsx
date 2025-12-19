@@ -38,6 +38,7 @@ interface ReportScreenProps {
   wordFrequencies: WordFrequency[];
   isProcessing: boolean;
   error: string | null;
+  onExclusionListChange: (exclusionList: string) => void;
 }
 
 // Check if a character is a hanzi (Chinese character)
@@ -100,7 +101,7 @@ interface WordChipProps {
   frequency: number;
   baseStyle: Omit<ChipStyle, 'sx'> & { baseSx: object };
   isSelected: boolean;
-  onWordClick: (word: string) => void;
+  onWordClick: (word: string, event: React.MouseEvent) => void;
 }
 
 // Memoized chip component to prevent unnecessary re-renders
@@ -118,7 +119,7 @@ const WordChip = memo(({ word, frequency, baseStyle, isSelected, onWordClick }: 
       color={baseStyle.color}
       variant={baseStyle.variant}
       sx={sx}
-      onClick={() => onWordClick(word)}
+      onClick={(e) => onWordClick(word, e)}
     />
   );
 });
@@ -132,6 +133,7 @@ export const ReportScreen = ({
   wordFrequencies,
   isProcessing,
   error,
+  onExclusionListChange,
 }: ReportScreenProps) => {
   const [selectedWord, setSelectedWord] = useState<string | null>(null);
   const [wordOccurrences, setWordOccurrences] = useState<WordOccurrence[]>([]);
@@ -338,7 +340,29 @@ export const ReportScreen = ({
     return styles;
   }, [filteredWordFrequencies, exclusionSet, knownHanziSet, language]);
 
-  const handleWordClick = useCallback((word: string) => {
+  const handleWordClick = useCallback((word: string, event: React.MouseEvent) => {
+    if (event.ctrlKey || event.metaKey) {
+      event.preventDefault();
+      
+      // Check if word is already in exclusion list
+      const lowerWord = word.toLowerCase();
+      if (!exclusionSet.has(lowerWord)) {
+        // Add word to exclusion list
+        const trimmedExclusionList = exclusionList.trim();
+        const newExclusionList = trimmedExclusionList 
+          ? `${trimmedExclusionList}\n${word}`
+          : word;
+        onExclusionListChange(newExclusionList);
+      }
+      return;
+    }
+    
+    if (event.shiftKey) {
+      event.preventDefault();
+      alert('Clicked with shift');
+      return;
+    }
+    
     setSelectedWord(word);
     
     const index = getSentenceIndex();
@@ -348,7 +372,7 @@ export const ReportScreen = ({
     } else {
       setWordOccurrences([]);
     }
-  }, [getSentenceIndex]);
+  }, [getSentenceIndex, exclusionSet, exclusionList, onExclusionListChange]);
 
   // Compute which occurrences have no unknown words except the selected one
   useEffect(() => {

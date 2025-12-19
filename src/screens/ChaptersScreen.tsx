@@ -48,6 +48,7 @@ interface ChaptersScreenProps {
   wordFrequencies: WordFrequency[];
   isProcessing: boolean;
   error: string | null;
+  onExclusionListChange: (exclusionList: string) => void;
 }
 
 // Check if a character is a hanzi (Chinese character)
@@ -113,6 +114,7 @@ export const ChaptersScreen = ({
   wordFrequencies,
   isProcessing,
   error,
+  onExclusionListChange,
 }: ChaptersScreenProps) => {
   const [selectedChapterIndex, setSelectedChapterIndex] = useState<number | null>(null);
   const [selectedWord, setSelectedWord] = useState<string | null>(null);
@@ -461,10 +463,32 @@ export const ChaptersScreen = ({
     if (chip) {
       const word = chip.getAttribute('data-word');
       if (word) {
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          
+          // Check if word is already in exclusion list
+          const lowerWord = word.toLowerCase();
+          if (!exclusionSet.has(lowerWord)) {
+            // Add word to exclusion list
+            const trimmedExclusionList = exclusionList.trim();
+            const newExclusionList = trimmedExclusionList 
+              ? `${trimmedExclusionList}\n${word}`
+              : word;
+            onExclusionListChange(newExclusionList);
+          }
+          return;
+        }
+        
+        if (e.shiftKey) {
+          e.preventDefault();
+          alert('Clicked with shift');
+          return;
+        }
+        
         handleWordClick(word);
       }
     }
-  }, [handleWordClick]);
+  }, [handleWordClick, exclusionSet, exclusionList, onExclusionListChange]);
 
   const handleCloseDrawer = useCallback(() => {
     setSelectedWord(null);

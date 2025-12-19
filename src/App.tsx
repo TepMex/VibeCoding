@@ -139,6 +139,7 @@ function App() {
             wordFrequencies={wordFrequencies}
             isProcessing={isProcessing}
             error={processingError}
+            onExclusionListChange={setExclusionList}
           />
         )}
         {currentScreen === 'chapters' && (
@@ -150,6 +151,7 @@ function App() {
             wordFrequencies={wordFrequencies}
             isProcessing={isProcessing}
             error={processingError}
+            onExclusionListChange={setExclusionList}
           />
         )}
         {currentScreen === 'settings' && (
