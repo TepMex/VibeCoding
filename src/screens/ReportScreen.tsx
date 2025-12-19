@@ -137,6 +137,8 @@ export const ReportScreen = ({
   const [selectedWord, setSelectedWord] = useState<string | null>(null);
   const [wordOccurrences, setWordOccurrences] = useState<WordOccurrence[]>([]);
   const [occurrencesWithNoUnknownWords, setOccurrencesWithNoUnknownWords] = useState<Set<number>>(new Set());
+  const [showUnderstandable, setShowUnderstandable] = useState(true);
+  const [showOther, setShowOther] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
   const [chipsPerRow, setChipsPerRow] = useState(10);
 
@@ -301,6 +303,8 @@ export const ReportScreen = ({
     setSelectedWord(null);
     setWordOccurrences([]);
     setOccurrencesWithNoUnknownWords(new Set());
+    setShowUnderstandable(true);
+    setShowOther(true);
   }, []);
 
   const handleExportToCSV = useCallback(() => {
@@ -517,6 +521,56 @@ export const ReportScreen = ({
             </Link>
           </Box>
         )}
+        {selectedWord && wordOccurrences.length > 0 && (
+          <Box sx={{ mb: 2 }}>
+            <Stack direction="row" spacing={2} sx={{ flexWrap: 'wrap', gap: 1 }}>
+              {(() => {
+                const understandableCount = occurrencesWithNoUnknownWords.size;
+                const otherCount = wordOccurrences.length - understandableCount;
+                return (
+                  <>
+                    <Chip
+                      label={`More understandable (${understandableCount})`}
+                      onClick={() => setShowUnderstandable(!showUnderstandable)}
+                      color={showUnderstandable ? 'success' : 'default'}
+                      variant={showUnderstandable ? 'filled' : 'outlined'}
+                      sx={{
+                        cursor: 'pointer',
+                        backgroundColor: showUnderstandable ? 'rgba(76, 175, 80, 0.1)' : 'transparent',
+                        borderColor: showUnderstandable ? 'success.main' : 'divider',
+                        '&:hover': {
+                          opacity: 0.8,
+                        },
+                      }}
+                    />
+                    <Chip
+                      label={`Other (${otherCount})`}
+                      onClick={() => setShowOther(!showOther)}
+                      color={showOther ? 'default' : 'default'}
+                      variant={showOther ? 'filled' : 'outlined'}
+                      sx={{
+                        cursor: 'pointer',
+                        backgroundColor: showOther 
+                          ? 'rgba(0, 0, 0, 0.06)' 
+                          : 'transparent',
+                        borderColor: showOther ? 'divider' : 'divider',
+                        borderWidth: showOther ? 1 : 1,
+                        borderStyle: 'solid',
+                        opacity: showOther ? 1 : 0.6,
+                        '&:hover': {
+                          opacity: showOther ? 0.9 : 0.8,
+                          backgroundColor: showOther 
+                            ? 'rgba(0, 0, 0, 0.08)' 
+                            : 'rgba(0, 0, 0, 0.04)',
+                        },
+                      }}
+                    />
+                  </>
+                );
+              })()}
+            </Stack>
+          </Box>
+        )}
         <Divider sx={{ mb: 2 }} />
         <Box sx={{ overflow: 'auto' }}>
           {wordOccurrences.length === 0 ? (
@@ -525,40 +579,56 @@ export const ReportScreen = ({
             </Typography>
           ) : (
             <Stack spacing={3}>
-              {wordOccurrences.map((occurrence, index) => {
-                const highlightedSentence = highlightWordInSentence(
-                  occurrence.sentence,
-                  selectedWord!,
-                  language
-                );
-                const hasNoUnknown = occurrencesWithNoUnknownWords.has(index);
-                return (
-                  <Card 
-                    key={index} 
-                    variant="elevation"
-                    elevation={2}
-                    sx={{
-                      backgroundColor: hasNoUnknown ? 'rgba(76, 175, 80, 0.1)' : 'background.paper',
-                      border: '1px solid',
-                      borderColor: hasNoUnknown ? 'success.main' : 'divider',
-                      borderRadius: 2,
-                      transition: 'box-shadow 0.2s ease-in-out',
-                      '&:hover': {
-                        elevation: 4,
-                        boxShadow: 4,
-                      },
-                    }}
-                  >
-                    <CardContent sx={{ p: 2.5 }}>
-                      <Typography
-                        variant="body2"
-                        sx={{ whiteSpace: 'pre-wrap' }}
-                        dangerouslySetInnerHTML={{ __html: highlightedSentence }}
-                      />
-                    </CardContent>
-                  </Card>
-                );
-              })}
+              {wordOccurrences
+                .map((occurrence, index) => {
+                  const hasNoUnknown = occurrencesWithNoUnknownWords.has(index);
+                  return { occurrence, index, hasNoUnknown };
+                })
+                .filter(({ hasNoUnknown }) => {
+                  if (hasNoUnknown) return showUnderstandable;
+                  return showOther;
+                })
+                .map(({ occurrence, index, hasNoUnknown }, filteredIndex) => {
+                  const highlightedSentence = highlightWordInSentence(
+                    occurrence.sentence,
+                    selectedWord!,
+                    language
+                  );
+                  // Alternate background for visual separation
+                  const isEven = filteredIndex % 2 === 0;
+                  const baseBackground = isEven 
+                    ? 'rgba(0, 0, 0, 0.02)' 
+                    : 'rgba(0, 0, 0, 0.04)';
+                  
+                  return (
+                    <Card 
+                      key={index} 
+                      variant="elevation"
+                      elevation={2}
+                      sx={{
+                        backgroundColor: hasNoUnknown 
+                          ? 'rgba(76, 175, 80, 0.1)' 
+                          : baseBackground,
+                        border: '1px solid',
+                        borderColor: hasNoUnknown ? 'success.main' : 'divider',
+                        borderRadius: 2,
+                        transition: 'box-shadow 0.2s ease-in-out',
+                        '&:hover': {
+                          elevation: 4,
+                          boxShadow: 4,
+                        },
+                      }}
+                    >
+                      <CardContent sx={{ p: 2.5 }}>
+                        <Typography
+                          variant="body2"
+                          sx={{ whiteSpace: 'pre-wrap' }}
+                          dangerouslySetInnerHTML={{ __html: highlightedSentence }}
+                        />
+                      </CardContent>
+                    </Card>
+                  );
+                })}
             </Stack>
           )}
         </Box>
