@@ -1,0 +1,6 @@
+---
+alwaysApply: false
+---
+Features for all languages.
+<feature-1>On report screen each word should be clickable. When user click on a word, right side panel appears. The panel contains occurences of that word in all the text. Crucial point: we should show occurance of the word with context around. Context is the sentence where word is presented. Sentence is a part of text, for Chinese languages - separated between Chinese dots (。）， for space-separated languages - separated between western dots (.). Please render each occurence as card, in readable way.</feature-1>
+<feature-2>For latin-based, cyrillic-based or any other language where words is space-separated, exclude one-letter and two-letter words from report.</feature-2>

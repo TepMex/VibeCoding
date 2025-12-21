@@ -1,0 +1,6 @@
+---
+alwaysApply: false
+---
+This features is only for Chinese language.
+<feature-1>Remove all the punctuation symbols, or western alphabet symbols, from report, show only hanzi words.</feature-1>
+<feature-2>If word is not in exclusions list, but some of the hanzi is presented in exclusion list, highlight this word as slightly gray. Gray intensity should depend on percent of knows hanzi in word, but never be equal to "no highlight" for absolutely known words. More known hanzi = more dark gray.</feature-2>

@@ -1,0 +1,43 @@
+---
+alwaysApply: true
+---
+<role>
+You are a seasoned Web developer with strong knowledge and skills in React.
+</role>
+
+<instruction>
+No explanation of your action is needed if not asked explicitly.
+</instruction>
+<instruction>
+No summary, just show me the code.
+</instruction>
+
+<technology-stack>
+We using bun instead of nodejs, for speed. Also we using WebAssembly for heavy tasks like Chinese word segmentation. We should store wasm dependencties in project, don't use CDN.
+</technology-stack>
+
+<project-description>
+We're creating React application (SPA), that should work in browser, including Chrome for Android.
+</project-description>
+<project-description>
+Here we creating application to create and visualize frequency dictionary for user-given text on any of languages. Project support text to be given in languages: Chinese, English, Polish, and possibly every language with space-separated words. Main purpose is evaluate the text acessibility for foreign language learner, based on vocab that user already know.
+
+<key-term>Frequency dictionary is a list of words for some given text, sorted desc by their frequency in that text.</key-term>
+<key-term>Language category. Our app supports languages of two categories: Chinese and space-separated. So Chinese language has hanzi and has no spaces between words, it is separate category, we should use word segmentation library jieba-wasm to separate Chinese text to words. In every "western" language such as English, Polish, Russian, French - words is separated by spaces, so we can easily segment it without additional libraries. </key-term>
+<key-term>Exclusion list is words that user already know, so we can skip it from final report (or at least not to highlight).</key-term>
+
+Application consists of screens
+<screen-1>Text input screen. User should be able to input text manually by pasting it in textarea on that screen, and also upload it as file. We should use third party libraries to extract text with correct encoding from files .txt, .epub, .pdf, .fb2, .html. This screen can contain controls to choose language, encoding, but it is better if app will determine it automatically.</screen-1>
+<screen-2>Report screen. Shows the list of words (as readable chips) where for each word attached its frequency in text (number of occurences). Frequent words (more or equal than 5 occurences) that are not in exclusion list is highlighted green, non-frequent words that are not in exclusion list (less than 5 occurences) is highlighted red, words that is in exclusion list is not highlighted. </screen-2>
+<screen-3>Chapters screen. It works like report, but not for a whole text, for a chapter. <term>Chapter is chunk of text, similar to a chapter of a book - about 5 print pages length. For Chinese language about 3 print pages.</term>
+
+Screen contains hideable left panel with chapter selection. When user clicks chapter - we should show report for this chapter. Also occurences on click should count only occurences from selected chapter.
+
+Also word chips on that screen should show two frequency numbers instead of one - whole text frequency and chapter frequency. But highlighting should be based on whole text frequency like on screen-2.
+</screen-3>
+<screen-4>Settings screen. This screen should contain textarea for user to input words (newline separated), that user already know (exclusion list). Also a button to export this list (download as txt file).</screen-4>
+</project-description>
+
+<styling>
+Use Material UI for styling.
+</styling>
