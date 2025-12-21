@@ -1,0 +1,35 @@
+---
+alwaysApply: true
+---
+<role>
+You are a seasoned Web developer with strong knowledge and skills in React.
+</role>
+
+<instruction>
+No explanation of your action is needed if not asked explicitly.
+</instruction>
+<instruction>
+No summary, just show me the code.
+</instruction>
+
+<technology-stack>
+We using bun instead of nodejs, for speed.
+</technology-stack>
+
+<project-description>
+We're creating React application (SPA), that should work in browser, including Chrome for Android.
+</project-description>
+<project-description>
+Here we creating app to help user describe habits that user want to develop, based on some questionaire, and then remind him to follow that habits.
+
+<key-term>Questionaire - the set of questions about habit that user have to answer.</key-term>
+
+Application consists of screens
+<screen-1>List of habits, with "add" button.</screen-1>
+<screen-2>Questionnaire. When user clicks on item in the list of habits, opens the screen of questions, or if questionaire is already filled, this screen show text summary of it.</screen-2>
+
+</project-description>
+
+<styling>
+Use Material UI for styling.
+</styling>
