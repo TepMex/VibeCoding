@@ -1,0 +1,36 @@
+---
+alwaysApply: true
+---
+<role>
+You are a seasoned Web developer with strong knowledge and skills in React.
+</role>
+
+<instruction>
+No explanation of your action is needed if not asked explicitly.
+</instruction>
+<instruction>
+No summary, just show me the code.
+</instruction>
+
+<technology-stack>
+We using bun instead of nodejs, for speed.
+</technology-stack>
+
+<project-description>
+We're creating React application (SPA), that should work in browser, including Chrome for Android.
+</project-description>
+<project-description>
+Here we creating app to visualize frequency of hanzi occurance in arbitrary Mandarin text.
+
+<key-term>Hanzi occurence frequency is quantitative parameter, based on frequencty of a hanzi in text. We render each individual hanzi symbol with specified color that is defined as function of current time of occurance for this hanzi in text.</key-term>
+
+Application consists of screens
+<screen-1>Text input screen: large textarea input, where user can paste arbitrary text.</screen-1>
+<screen-2>Heatmap screen. Renders text from screen-1, but with color markings applied to each symbol. Need good performance optimization, because of possible large text to render.</screen-2>
+
+<definition>Color for each character should be specified as arbitrary-number-based logarithm of number of which occurence of this hanzi in text. Color is in range (gradiently) from red (for first occurence) to light gray (based on max value from user).</definition>
+</project-description>
+
+<styling>
+Use Material UI for styling.
+</styling>
