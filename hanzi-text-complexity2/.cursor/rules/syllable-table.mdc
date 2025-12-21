@@ -1,0 +1,6 @@
+---
+alwaysApply: false
+---
+<key-term>Syllable table is the map of Chinese language, where Chinese initials is vertical axis, and initials is horizontal axis. Each cell contain a chinese syllable accoring to finale and initiale.</key-term>
+<initials-vertical-axis>∅,b,p,m,f,d,t,n,l,g,k,h,j,q,x,z,c,s,zh,ch,sh,r</initials-vertical-axis>
+<finals-horizontal-axis>i,a,ai,an,ang,ao,e,ei,en,eng,er,ia,ian,iang,iao,ie,in,ing,iong,iou,o,ong,ou,u,ua,uai,uan,uang,uei,uen,ueng,uo,ü,üan,üe,ün</finals-horizontal-axis>
