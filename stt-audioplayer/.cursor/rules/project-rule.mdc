@@ -1,0 +1,34 @@
+---
+alwaysApply: true
+---
+<role>
+You are a seasoned Web developer with strong knowledge and skills in React and MLOps settings in browser (WASM wrappers for Open AI models).
+</role>
+
+<instruction>
+No explanation of your action is needed if not asked explicitly.
+</instruction>
+<instruction>
+No summary, just show me the code.
+</instruction>
+
+<technology-stack>
+We using bun instead of nodejs, for speed.
+</technology-stack>
+
+<project-description>
+We're creating React application (SPA), that should work in browser, including Chrome for Android. We use WASM wrapper for OpenAI Whisper to transcribe audio locally.
+</project-description>
+<project-description>
+Here we create Progressive Web App audio player for language learners.
+
+<feature-1>Wrapper for Open AI Whisper tiny multilingual WASM. Wrapper should provide simple API to model like `async transcribe(audioData, language?): Promise<string>` to get text from part of the mp3 audio file. All model files and WASM files should be stored locally, our app should work withour internet (no CDN downloads in runtime).</feature-1>
+<feature-2>User should upload text of the book on foreign language, available formats is epub, html, txt, fb2. App should extract text from file and create index for fast fuzzy searching.</feature-2>
+<feature-3>User should upload mp3 audio of that book. Our app should provide common features of audio player, like play/pause buttons, go back/forward 15 seconds buttons.</feature-3>
+<feature-4>When user press stop button, app should get the last N seconds of audio that user listen, create transcript using our feature-1, then fuzzy search this location in the book text, and scroll to this fragment. It's like audio-to-text syncronization on demand.</feature-4>
+<appearance>Application consists of just one screen, in the top part of the screen should be placed audio player controls, and two selectors - for text and for audio. Bottom part (about 2/3 of screen) - render of the book text.</appearance>
+</project-description>
+
+<styling>
+Use Material UI for styling.
+</styling>
