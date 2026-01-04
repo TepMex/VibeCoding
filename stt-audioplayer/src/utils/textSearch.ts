@@ -1,4 +1,4 @@
-import Fuse from 'fuse.js';
+import { fuzzySearch } from './fuzzySearch';
 
 export interface SearchResult {
   index: number;
@@ -6,7 +6,6 @@ export interface SearchResult {
   score?: number;
 }
 
-let fuse: Fuse<string> | null = null;
 let textChunks: string[] = [];
 
 /**
@@ -22,34 +21,28 @@ export function createSearchIndex(text: string): void {
     .map((chunk) => chunk.trim());
 
   textChunks = chunks;
-
-  fuse = new Fuse(chunks, {
-    threshold: 0.4, // Lower = more strict matching
-    minMatchCharLength: 3,
-    includeScore: true,
-  });
 }
 
 /**
- * Search for text in the indexed book
+ * Search for text in the indexed book using robust fuzzy search
  * Returns the best matching chunk and its index
+ * Handles transcription errors by using multiple similarity metrics
  */
 export function searchText(query: string): SearchResult | null {
-  if (!fuse || textChunks.length === 0) {
+  if (textChunks.length === 0) {
     return null;
   }
 
-  const results = fuse.search(query, { limit: 1 });
+  const result = fuzzySearch(query, textChunks, 0.25);
 
-  if (results.length === 0) {
+  if (!result) {
     return null;
   }
 
-  const bestMatch = results[0];
   return {
-    index: bestMatch.refIndex,
-    text: bestMatch.item,
-    score: bestMatch.score,
+    index: result.index,
+    text: result.text,
+    score: result.score,
   };
 }
 
@@ -69,4 +62,5 @@ export function getChunkByIndex(index: number): string | null {
 export function getAllChunks(): string[] {
   return textChunks;
 }
+
 
