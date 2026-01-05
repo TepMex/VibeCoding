@@ -4,8 +4,8 @@ import { pipeline, env } from '@xenova/transformers';
 // Models are stored locally in /public/models/ directory
 if (typeof window !== 'undefined') {
   // Browser environment
-  // Configure to use local files from public directory
-  env.localModelPath = '/models/';
+  // Configure to use local files from public directory (relative path)
+  env.localModelPath = './models/';
   // Disable remote to force local loading only
   env.allowRemoteModels = false;
   // Use local files only
@@ -19,9 +19,9 @@ if (typeof window !== 'undefined') {
   
   // Test if local model files are accessible
   const testFiles = [
-    '/models/whisper-tiny/config.json',
-    '/models/whisper-tiny/tokenizer.json',
-    '/models/whisper-tiny/vocab.json'
+    './models/whisper-tiny/config.json',
+    './models/whisper-tiny/tokenizer.json',
+    './models/whisper-tiny/vocab.json'
   ];
   
   Promise.all(testFiles.map(file => 
@@ -87,7 +87,7 @@ async function initializeModel(): Promise<any> {
   
   try {
     // The library will construct paths as: localModelPath + modelId + '/filename'
-    // e.g., /models/ + whisper-tiny + /config.json = /models/whisper-tiny/config.json
+    // e.g., ./models/ + whisper-tiny + /config.json = ./models/whisper-tiny/config.json
     console.log('[Whisper] Attempting to load model from local files:', {
       modelId: MODEL_ID,
       localModelPath: env.localModelPath,
@@ -123,14 +123,14 @@ async function initializeModel(): Promise<any> {
         const isModelFile = url.includes('whisper-tiny') || 
                           url.includes('transformers') ||
                           url.includes('huggingface') ||
-                          (url.includes('config.json') && !url.startsWith('/models/')) ||
-                          (url.includes('tokenizer.json') && !url.startsWith('/models/')) ||
-                          (url.includes('vocab.json') && !url.startsWith('/models/')) ||
-                          (url.includes('merges.txt') && !url.startsWith('/models/')) ||
-                          (url.includes('preprocessor_config.json') && !url.startsWith('/models/')) ||
-                          (url.includes('.onnx') && !url.startsWith('/models/'));
+                          (url.includes('config.json') && !url.includes('./models/') && !url.startsWith('./models/')) ||
+                          (url.includes('tokenizer.json') && !url.includes('./models/') && !url.startsWith('./models/')) ||
+                          (url.includes('vocab.json') && !url.includes('./models/') && !url.startsWith('./models/')) ||
+                          (url.includes('merges.txt') && !url.includes('./models/') && !url.startsWith('./models/')) ||
+                          (url.includes('preprocessor_config.json') && !url.includes('./models/') && !url.startsWith('./models/')) ||
+                          (url.includes('.onnx') && !url.includes('./models/') && !url.startsWith('./models/'));
         
-        if (isModelFile && !url.startsWith('/models/')) {
+        if (isModelFile && !url.includes('./models/') && !url.startsWith('./models/')) {
           // Extract filename from URL
           const filename = url.split('/').pop() || url.split('\\').pop() || '';
           const pathParts = url.split('/');
@@ -138,11 +138,11 @@ async function initializeModel(): Promise<any> {
           // Try to determine the correct local path
           if (filename && (filename.endsWith('.json') || filename.endsWith('.txt') || filename.endsWith('.onnx'))) {
             // Check if it's in a subdirectory (like onnx/)
-            let localPath = `/models/whisper-tiny/${filename}`;
+            let localPath = `./models/whisper-tiny/${filename}`;
             
             // Handle onnx files in subdirectory
             if (url.includes('/onnx/') || url.includes('onnx/')) {
-              localPath = `/models/whisper-tiny/onnx/${filename}`;
+              localPath = `./models/whisper-tiny/onnx/${filename}`;
             }
             // Handle other potential subdirectories
             else if (pathParts.length > 1) {
@@ -150,7 +150,7 @@ async function initializeModel(): Promise<any> {
               if (subdirIndex >= 0 && subdirIndex < pathParts.length - 1) {
                 const subdir = pathParts[subdirIndex + 1];
                 if (subdir && subdir !== filename) {
-                  localPath = `/models/whisper-tiny/${subdir}/${filename}`;
+                  localPath = `./models/whisper-tiny/${subdir}/${filename}`;
                 }
               }
             }
@@ -163,7 +163,7 @@ async function initializeModel(): Promise<any> {
             const whisperIndex = url.indexOf('whisper-tiny');
             if (whisperIndex >= 0) {
               const afterWhisper = url.substring(whisperIndex + 'whisper-tiny'.length);
-              rewrittenUrl = `/models/whisper-tiny${afterWhisper}`;
+              rewrittenUrl = `./models/whisper-tiny${afterWhisper}`;
               console.log(`[Whisper] Rewriting URL: ${url} -> ${rewrittenUrl}`);
               requestedUrls.push(`${url} -> ${rewrittenUrl}`);
             }

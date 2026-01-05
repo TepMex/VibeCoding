@@ -1,11 +1,11 @@
 const CACHE_NAME = 'stt-audioplayer-v1';
 const RUNTIME_CACHE = 'runtime-cache-v1';
 
-// Files to cache on install
+// Files to cache on install (using relative paths)
 const PRECACHE_URLS = [
-  '/',
-  '/index.html',
-  '/vite.svg'
+  './',
+  './index.html',
+  './vite.svg'
 ];
 
 // Install event - cache static assets
@@ -80,7 +80,7 @@ self.addEventListener('fetch', (event) => {
         .catch(() => {
           // If network fails and we're looking for the page, return a cached version
           if (request.mode === 'navigate') {
-            return caches.match('/index.html');
+            return caches.match('./index.html');
           }
         });
     })

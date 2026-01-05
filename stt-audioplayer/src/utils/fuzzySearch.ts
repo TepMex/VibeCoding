@@ -15,7 +15,7 @@ interface WasmModule {
   sequence_alignment_similarity(transcriptWords: string[], chunkWords: string[]): number;
   word_level_similarity(transcript: string, chunk: string): number;
   calculate_combined_similarity(transcript: string, chunk: string): number;
-  default?(): Promise<void>;
+  default?(module_or_path?: string | Request | URL | WebAssembly.Module): Promise<void>;
 }
 
 // WASM module (loaded lazily)
@@ -43,12 +43,41 @@ async function loadWasm(): Promise<WasmModule | null> {
   
   wasmLoading = (async () => {
     try {
-      // Try to import WASM module dynamically
-      // Use absolute path from public directory
-      const wasmPath = '/wasm-fuzzy/pkg/wasm_fuzzy.js';
+      // Load WASM module from public directory using relative path
+      // Files in public can't be imported directly, so we use fetch + blob URL
+      const wasmJsPath = './wasm-fuzzy/pkg/wasm_fuzzy.js';
+      const wasmBgPath = './wasm-fuzzy/pkg/wasm_fuzzy_bg.wasm';
+      
+      // Fetch the JS file
+      const response = await fetch(wasmJsPath);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch WASM module: ${response.statusText}`);
+      }
+      
+      const jsCode = await response.text();
+      
+      // Replace import.meta.url references with the actual WASM path
+      // The WASM module uses new URL('wasm_fuzzy_bg.wasm', import.meta.url)
+      // We need to replace this to use an absolute URL to avoid path duplication
+      const wasmAbsoluteUrl = new URL(wasmBgPath, window.location.href).href;
+      const modifiedCode = jsCode.replace(
+        /new URL\(['"]wasm_fuzzy_bg\.wasm['"],\s*import\.meta\.url\)/g,
+        `new URL('${wasmAbsoluteUrl}')`
+      );
+      
+      // Create a blob URL for the modified JS module
+      const blob = new Blob([modifiedCode], { type: 'application/javascript' });
+      const blobUrl = URL.createObjectURL(blob);
+      
+      // Import the module from blob URL
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore - WASM module may not exist until built
-      const wasm = await import(/* @vite-ignore */ wasmPath) as WasmModule;
+      // @ts-ignore - WASM module loaded dynamically
+      const wasm = await import(/* @vite-ignore */ blobUrl) as WasmModule;
+      
+      // Clean up blob URL
+      URL.revokeObjectURL(blobUrl);
+      
+      // Initialize WASM (it will use the modified path from the code)
       if (wasm.default) {
         await wasm.default();
       }
