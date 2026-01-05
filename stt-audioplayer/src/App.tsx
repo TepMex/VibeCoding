@@ -36,7 +36,7 @@ function App() {
       const extracted = await extractTextFromFile(file);
       setBookText(extracted.text);
       setBookTitle(extracted.title || file.name);
-      createSearchIndex(extracted.text);
+      await createSearchIndex(extracted.text, extracted.title || file.name);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to extract text from file');
       setBookText('');

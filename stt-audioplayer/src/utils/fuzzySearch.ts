@@ -1,12 +1,85 @@
 /**
  * Robust fuzzy search algorithm for handling transcription errors
  * Uses multiple strategies: n-gram similarity, word-level matching, sequence alignment, and sliding window
+ * Optimized with WASM for performance and IndexedDB for pre-computed indices
  */
+
+// WASM module interface
+interface WasmModule {
+  levenshtein_distance(str1: string, str2: string): number;
+  string_similarity(str1: string, str2: string): number;
+  normalize_text(text: string): string;
+  n_gram_similarity(text1: string, text2: string, n: number): number;
+  are_words_similar(word1: string, word2: string, threshold: number): boolean;
+  word_to_phrase_similarity(word: string, phrase: string): number;
+  sequence_alignment_similarity(transcriptWords: string[], chunkWords: string[]): number;
+  word_level_similarity(transcript: string, chunk: string): number;
+  calculate_combined_similarity(transcript: string, chunk: string): number;
+  default?(): Promise<void>;
+}
+
+// WASM module (loaded lazily)
+let wasmModule: WasmModule | null = null;
+let wasmLoading: Promise<WasmModule | null> | null = null;
+
+/**
+ * Load WASM module (synchronous check)
+ */
+function getWasm(): WasmModule | null {
+  return wasmModule;
+}
+
+/**
+ * Load WASM module (async initialization)
+ */
+async function loadWasm(): Promise<WasmModule | null> {
+  if (wasmModule) {
+    return wasmModule;
+  }
+  
+  if (wasmLoading) {
+    return wasmLoading;
+  }
+  
+  wasmLoading = (async () => {
+    try {
+      // Try to import WASM module dynamically
+      // Use absolute path from public directory
+      const wasmPath = '/wasm-fuzzy/pkg/wasm_fuzzy.js';
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore - WASM module may not exist until built
+      const wasm = await import(/* @vite-ignore */ wasmPath) as WasmModule;
+      if (wasm.default) {
+        await wasm.default();
+      }
+      wasmModule = wasm;
+      return wasm;
+    } catch {
+      // WASM module not built yet or not available - this is expected
+      // Will fall back to JavaScript implementation
+      return null;
+    }
+  })();
+  
+  return wasmLoading;
+}
+
+// Pre-load WASM in background
+loadWasm().catch(() => {
+  // Silent fail, will use JS fallback
+});
 
 /**
  * Calculate Levenshtein distance between two strings
+ * Uses WASM if available, otherwise falls back to JavaScript
  */
 function levenshteinDistance(str1: string, str2: string): number {
+  const wasm = getWasm();
+  if (wasm) {
+    return wasm.levenshtein_distance(str1, str2);
+  }
+  
+  // Fallback to JS implementation
   const m = str1.length;
   const n = str2.length;
   const dp: number[][] = Array(m + 1).fill(null).map(() => Array(n + 1).fill(0));
@@ -33,8 +106,15 @@ function levenshteinDistance(str1: string, str2: string): number {
 
 /**
  * Calculate similarity between two strings (0 = identical, 1 = completely different)
+ * Uses WASM if available
  */
 function stringSimilarity(str1: string, str2: string): number {
+  const wasm = getWasm();
+  if (wasm) {
+    return wasm.string_similarity(str1, str2);
+  }
+  
+  // Fallback to JS
   const maxLen = Math.max(str1.length, str2.length);
   if (maxLen === 0) return 0;
   const distance = levenshteinDistance(str1.toLowerCase(), str2.toLowerCase());
@@ -44,7 +124,7 @@ function stringSimilarity(str1: string, str2: string): number {
 /**
  * Normalize text: remove punctuation, lowercase, trim
  */
-function normalizeText(text: string): string {
+export function normalizeText(text: string): string {
   return text
     .toLowerCase()
     .replace(/[^\w\s]/g, ' ')
@@ -55,7 +135,7 @@ function normalizeText(text: string): string {
 /**
  * Generate n-grams from text
  */
-function generateNGrams(text: string, n: number): Set<string> {
+export function generateNGrams(text: string, n: number): Set<string> {
   const words = text.split(/\s+/).filter(w => w.length > 0);
   const ngrams = new Set<string>();
   
@@ -77,8 +157,15 @@ function jaccardSimilarity(set1: Set<string>, set2: Set<string>): number {
 
 /**
  * Calculate n-gram similarity between two texts
+ * Uses WASM if available
  */
 function nGramSimilarity(text1: string, text2: string, n: number = 2): number {
+  const wasm = getWasm();
+  if (wasm) {
+    return wasm.n_gram_similarity(text1, text2, n);
+  }
+  
+  // Fallback to JS
   const ngrams1 = generateNGrams(text1, n);
   const ngrams2 = generateNGrams(text2, n);
   return jaccardSimilarity(ngrams1, ngrams2);
@@ -87,8 +174,15 @@ function nGramSimilarity(text1: string, text2: string, n: number = 2): number {
 /**
  * Check if two words are similar (handles cases like "soberly" vs "so really")
  * Uses character-level matching with flexible thresholds
+ * Uses WASM if available
  */
 function areWordsSimilar(word1: string, word2: string, threshold: number = 0.7): boolean {
+  const wasm = getWasm();
+  if (wasm) {
+    return wasm.are_words_similar(word1, word2, threshold);
+  }
+  
+  // Fallback to JS
   if (word1 === word2) return true;
   
   const similarity = 1 - stringSimilarity(word1, word2);
@@ -105,8 +199,15 @@ function areWordsSimilar(word1: string, word2: string, threshold: number = 0.7):
 /**
  * Calculate similarity between a word and a phrase (handles word splitting/merging)
  * Example: "soberly" should match "so really"
+ * Uses WASM if available
  */
 function wordToPhraseSimilarity(word: string, phrase: string): number {
+  const wasm = getWasm();
+  if (wasm) {
+    return wasm.word_to_phrase_similarity(word, phrase);
+  }
+  
+  // Fallback to JS
   const wordNorm = normalizeText(word);
   const phraseNorm = normalizeText(phrase);
   
@@ -141,11 +242,19 @@ function wordToPhraseSimilarity(word: string, phrase: string): number {
 /**
  * Find best sequence alignment between transcript and chunk words
  * Uses dynamic programming to handle word splitting, merging, and extra words
+ * Uses WASM if available
  */
 function sequenceAlignmentSimilarity(
   transcriptWords: string[],
   chunkWords: string[]
 ): number {
+  const wasm = getWasm();
+  if (wasm) {
+    // Convert to string arrays for WASM
+    return wasm.sequence_alignment_similarity(transcriptWords, chunkWords);
+  }
+  
+  // Fallback to JS implementation
   if (transcriptWords.length === 0 || chunkWords.length === 0) return 0;
 
   const m = transcriptWords.length;
@@ -211,8 +320,15 @@ function sequenceAlignmentSimilarity(
 
 /**
  * Calculate word-level similarity score using sequence alignment
+ * Uses WASM if available
  */
 function wordLevelSimilarity(transcript: string, chunk: string): number {
+  const wasm = getWasm();
+  if (wasm) {
+    return wasm.word_level_similarity(transcript, chunk);
+  }
+  
+  // Fallback to JS
   const transcriptWords = normalizeText(transcript).split(/\s+/).filter(w => w.length > 0);
   const chunkWords = normalizeText(chunk).split(/\s+/).filter(w => w.length > 0);
 
@@ -247,8 +363,15 @@ function wordLevelSimilarity(transcript: string, chunk: string): number {
 
 /**
  * Calculate combined similarity score using multiple metrics
+ * Uses WASM if available
  */
 function calculateCombinedSimilarity(transcript: string, chunk: string): number {
+  const wasm = getWasm();
+  if (wasm) {
+    return wasm.calculate_combined_similarity(transcript, chunk);
+  }
+  
+  // Fallback to JS
   const normalizedTranscript = normalizeText(transcript);
   const normalizedChunk = normalizeText(chunk);
 
@@ -290,25 +413,66 @@ export interface FuzzyMatchResult {
  * Find the best matching chunk in a list of text chunks using robust fuzzy search
  * 
  * @param query - The transcript to search for (may contain transcription errors)
- * @param chunks - Array of text chunks from the book
+ * @param chunks - Array of text chunks from the book (should be pre-normalized if using IndexedDB)
  * @param threshold - Minimum similarity score (0-1), default 0.25 (lowered for better matching)
+ * @param nGramIndex - Optional n-gram index from IndexedDB for candidate filtering
  * @returns Best matching chunk or null if no match found
  */
 export function fuzzySearch(
   query: string,
   chunks: string[],
-  threshold: number = 0.25
+  threshold: number = 0.25,
+  nGramIndex?: { [n: number]: { [ngram: string]: number[] } }
 ): FuzzyMatchResult | null {
   if (!query || chunks.length === 0) {
     return null;
   }
 
+  // Use n-gram index to pre-filter candidates if available
+  let candidateIndices: number[] | null = null;
+  if (nGramIndex) {
+    const queryNorm = normalizeText(query);
+    const queryWords = queryNorm.split(/\s+/).filter(w => w.length > 0);
+    
+    // Generate n-grams from query (use 2-grams and 3-grams)
+    const candidateSet = new Set<number>();
+    
+    for (const n of [2, 3]) {
+      if (nGramIndex[n]) {
+        for (let i = 0; i <= queryWords.length - n; i++) {
+          const ngram = queryWords.slice(i, i + n).join(' ');
+          const chunkIndices = nGramIndex[n][ngram];
+          if (chunkIndices) {
+            for (const idx of chunkIndices) {
+              candidateSet.add(idx);
+            }
+          }
+        }
+      }
+    }
+    
+    // If we found candidates, use them; otherwise search all chunks
+    if (candidateSet.size > 0 && candidateSet.size < chunks.length * 0.5) {
+      candidateIndices = Array.from(candidateSet);
+    }
+  }
+
   let bestMatch: FuzzyMatchResult | null = null;
   let bestScore = threshold;
 
-  for (let i = 0; i < chunks.length; i++) {
+  // Search either candidates or all chunks
+  const indicesToSearch = candidateIndices || Array.from({ length: chunks.length }, (_, i) => i);
+
+  for (const i of indicesToSearch) {
     const chunk = chunks[i];
     if (!chunk || chunk.trim().length === 0) continue;
+
+    // Early exit: skip chunks that are too different in length
+    const queryLen = query.length;
+    const chunkLen = chunk.length;
+    if (Math.abs(queryLen - chunkLen) > Math.max(queryLen, chunkLen) * 2) {
+      continue;
+    }
 
     const score = calculateCombinedSimilarity(query, chunk);
 

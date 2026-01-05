@@ -8,7 +8,9 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "download-model": "bun run scripts/download-model.ts"
+    "download-model": "bun run scripts/download-model.ts",
+    "build-wasm": "bun run scripts/build-wasm.ts",
+    "prebuild": "bun run build-wasm"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
