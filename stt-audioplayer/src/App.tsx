@@ -21,8 +21,8 @@ function App() {
   const [isLoadingText, setIsLoadingText] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [highlightedChunkIndex, setHighlightedChunkIndex] = useState<number | null>(null);
   const textDisplayRef = useRef<HTMLDivElement>(null);
-  const highlightedRef = useRef<HTMLSpanElement | null>(null);
 
   const handleTextFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -114,30 +114,19 @@ function App() {
   const scrollToChunk = (chunkIndex: number) => {
     if (!textDisplayRef.current) return;
 
-    // Remove previous highlight
-    if (highlightedRef.current) {
-      highlightedRef.current.style.backgroundColor = 'transparent';
-    }
-
     const chunks = getAllChunks();
     if (chunkIndex < 0 || chunkIndex >= chunks.length) return;
 
-    // Find the element with data-chunk-index attribute
+    // Set the highlighted chunk index in state (persistent)
+    setHighlightedChunkIndex(chunkIndex);
+
+    // Find the element with data-chunk-index attribute and scroll to it
     const targetElement = textDisplayRef.current.querySelector(
       `[data-chunk-index="${chunkIndex}"]`
     ) as HTMLElement;
 
     if (targetElement) {
       targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      targetElement.style.backgroundColor = 'yellow';
-      highlightedRef.current = targetElement;
-
-      // Remove highlight after 3 seconds
-      setTimeout(() => {
-        if (targetElement) {
-          targetElement.style.backgroundColor = 'transparent';
-        }
-      }, 3000);
     }
   };
 
@@ -222,6 +211,7 @@ function App() {
                   marginBottom: '0.5em',
                   padding: '2px 4px',
                   transition: 'background-color 0.3s',
+                  backgroundColor: highlightedChunkIndex === index ? 'yellow' : 'transparent',
                 }}
               >
                 {chunk}{' '}
