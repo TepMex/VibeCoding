@@ -52,11 +52,32 @@ export function SettingsScreen() {
   }
 
   return (
-    <Container maxWidth="md" sx={{ py: 3, pb: 10 }}>
-      <Typography variant="h4" component="h1" gutterBottom>
+    <Container 
+      maxWidth="md" 
+      sx={{ 
+        py: { xs: 2, sm: 3 },
+        px: { xs: 1, sm: 2, md: 3 },
+        pb: { xs: 10, sm: 10 },
+      }}
+    >
+      <Typography 
+        variant="h4" 
+        component="h1" 
+        gutterBottom
+        sx={{
+          fontSize: { xs: '1.5rem', sm: '2rem', md: '2.125rem' },
+        }}
+      >
         Settings
       </Typography>
-      <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
+      <Typography 
+        variant="body1" 
+        color="text.secondary" 
+        sx={{ 
+          mb: { xs: 2, sm: 3 },
+          fontSize: { xs: '0.875rem', sm: '1rem' },
+        }}
+      >
         Manage your legend categories
       </Typography>
       <CategoryList
@@ -69,10 +90,12 @@ export function SettingsScreen() {
         aria-label="add"
         sx={{
           position: 'fixed',
-          bottom: 16,
-          right: 16,
+          bottom: { xs: 16, sm: 24 },
+          right: { xs: 16, sm: 24 },
+          zIndex: 1000,
         }}
         onClick={handleCreate}
+        size="medium"
       >
         <AddIcon />
       </Fab>

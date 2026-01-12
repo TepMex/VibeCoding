@@ -50,11 +50,40 @@ export function MainScreen() {
   const existingEvents = selectedDate ? getEventsForDate(selectedDate) : [];
 
   return (
-    <Container maxWidth="lg" sx={{ py: 3 }}>
-      <Typography variant="h4" component="h1" gutterBottom>
-        Events
-      </Typography>
-      <Box sx={{ mt: 3 }}>
+    <Box sx={{ 
+      display: 'flex',
+      flexDirection: 'column',
+      height: '100%',
+      width: '100%',
+    }}>
+      <Container 
+        maxWidth={false}
+        sx={{ 
+          py: { xs: 2, sm: 3 },
+          px: { xs: 1, sm: 2, md: 3 },
+          flexShrink: 0,
+        }}
+      >
+        <Typography 
+          variant="h4" 
+          component="h1" 
+          gutterBottom
+          sx={{
+            fontSize: { xs: '1.5rem', sm: '2rem', md: '2.125rem' },
+          }}
+        >
+          Events
+        </Typography>
+      </Container>
+      <Box sx={{ 
+        flex: 1,
+        width: '100%',
+        minHeight: 0,
+        px: { xs: 1, sm: 2, md: 3 },
+        pb: { xs: 1, sm: 2, md: 3 },
+        display: 'flex',
+        flexDirection: 'column',
+      }}>
         <CalendarGrid
           categories={categories}
           events={events}
@@ -72,6 +101,6 @@ export function MainScreen() {
           onDelete={handleDeleteEvent}
         />
       )}
-    </Container>
+    </Box>
   );
 }

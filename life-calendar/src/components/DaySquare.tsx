@@ -1,4 +1,4 @@
-import { Box, Tooltip } from '@mui/material';
+import { Box, Tooltip, useTheme } from '@mui/material';
 import type { DayEvent, LegendCategory } from '../types';
 
 interface DaySquareProps {
@@ -9,6 +9,8 @@ interface DaySquareProps {
 }
 
 export function DaySquare({ date, events, categories, onClick }: DaySquareProps) {
+  const theme = useTheme();
+  
   const getCategoryColor = (categoryId: string) => {
     const category = categories.find((c) => c.id === categoryId);
     return category?.color || '#e0e0e0';
@@ -52,15 +54,23 @@ export function DaySquare({ date, events, categories, onClick }: DaySquareProps)
         sx={{
           width: '100%',
           aspectRatio: '1',
-          border: '1px solid #e0e0e0',
-          borderRadius: '2px',
+          border: `1px solid ${theme.palette.divider}`,
+          borderRadius: { xs: '2px', sm: '3px' },
           cursor: 'pointer',
           position: 'relative',
           overflow: 'hidden',
-          backgroundColor: '#f5f5f5',
+          backgroundColor: theme.palette.mode === 'dark' 
+            ? theme.palette.grey[800] 
+            : theme.palette.grey[100],
+          touchAction: 'auto',
+          userSelect: 'none',
           '&:hover': {
-            borderColor: '#1976d2',
+            borderColor: theme.palette.primary.main,
             borderWidth: '2px',
+          },
+          '&:active': {
+            transform: 'scale(0.95)',
+            transition: 'transform 0.1s',
           },
         }}
       >
@@ -79,7 +89,9 @@ export function DaySquare({ date, events, categories, onClick }: DaySquareProps)
                 right: 0,
                 height,
                 backgroundColor: color,
-                borderTop: index > 0 ? '1px solid rgba(0,0,0,0.1)' : 'none',
+                borderTop: index > 0 
+                  ? `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}` 
+                  : 'none',
               }}
             />
           );

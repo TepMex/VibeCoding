@@ -13,6 +13,8 @@ import {
   ListItem,
   ListItemText,
   ListItemSecondaryAction,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import type { DayEvent, LegendCategory } from '../types';
@@ -36,6 +38,9 @@ export function EventDialog({
   onSave,
   onDelete,
 }: EventDialogProps) {
+  const theme = useTheme();
+  const fullScreen = useMediaQuery(theme.breakpoints.down('sm'));
+
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr + 'T00:00:00');
     return date.toLocaleDateString('en-US', {
@@ -62,15 +67,53 @@ export function EventDialog({
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Add Event - {formatDate(date)}</DialogTitle>
-      <DialogContent>
-        <Box sx={{ mb: 2 }}>
-          <Typography variant="body2" color="text.secondary">
+    <Dialog 
+      open={open} 
+      onClose={onClose} 
+      maxWidth="sm" 
+      fullWidth
+      fullScreen={fullScreen}
+      PaperProps={{
+        sx: {
+          m: { xs: 0, sm: 2 },
+          maxHeight: { xs: '100%', sm: '90vh' },
+        },
+      }}
+    >
+      <DialogTitle
+        sx={{
+          fontSize: { xs: '1.125rem', sm: '1.25rem' },
+          pb: { xs: 1, sm: 2 },
+        }}
+      >
+        Add Event - {formatDate(date)}
+      </DialogTitle>
+      <DialogContent
+        sx={{
+          px: { xs: 2, sm: 3 },
+          pb: { xs: 1, sm: 2 },
+        }}
+      >
+        <Box sx={{ mb: { xs: 2, sm: 3 } }}>
+          <Typography 
+            variant="body2" 
+            color="text.secondary"
+            sx={{
+              fontSize: { xs: '0.8125rem', sm: '0.875rem' },
+              mb: 1,
+            }}
+          >
             Existing events for this day:
           </Typography>
           {existingEvents.length === 0 ? (
-            <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+            <Typography 
+              variant="body2" 
+              color="text.secondary" 
+              sx={{ 
+                fontStyle: 'italic',
+                fontSize: { xs: '0.8125rem', sm: '0.875rem' },
+              }}
+            >
               No events yet
             </Typography>
           ) : (
@@ -83,17 +126,29 @@ export function EventDialog({
                     sx={{
                       borderLeft: `4px solid ${category?.color || '#e0e0e0'}`,
                       mb: 0.5,
+                      px: { xs: 1, sm: 2 },
                     }}
                   >
                     <ListItemText
                       primary={category?.name || 'Unknown'}
                       secondary={`${event.duration} day`}
+                      primaryTypographyProps={{
+                        fontSize: { xs: '0.875rem', sm: '1rem' },
+                      }}
+                      secondaryTypographyProps={{
+                        fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                      }}
                     />
                     <ListItemSecondaryAction>
                       <IconButton
                         edge="end"
                         onClick={() => onDelete(event.id)}
                         size="small"
+                        sx={{
+                          '& .MuiSvgIcon-root': {
+                            fontSize: { xs: '1.125rem', sm: '1.25rem' },
+                          },
+                        }}
                       >
                         <DeleteIcon />
                       </IconButton>
@@ -112,7 +167,12 @@ export function EventDialog({
             name="categoryId"
             fullWidth
             required
-            sx={{ mb: 2 }}
+            sx={{ 
+              mb: { xs: 2, sm: 2.5 },
+              '& .MuiInputBase-root': {
+                fontSize: { xs: '0.875rem', sm: '1rem' },
+              },
+            }}
             defaultValue=""
           >
             {categories.map((category) => (
@@ -120,8 +180,8 @@ export function EventDialog({
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <Box
                     sx={{
-                      width: 16,
-                      height: 16,
+                      width: { xs: 14, sm: 16 },
+                      height: { xs: 14, sm: 16 },
                       borderRadius: '50%',
                       backgroundColor: category.color,
                     }}
@@ -139,6 +199,11 @@ export function EventDialog({
             fullWidth
             required
             defaultValue=""
+            sx={{
+              '& .MuiInputBase-root': {
+                fontSize: { xs: '0.875rem', sm: '1rem' },
+              },
+            }}
           >
             <MenuItem value="full">Whole day</MenuItem>
             <MenuItem value="half">Half a day</MenuItem>
@@ -146,9 +211,29 @@ export function EventDialog({
           </TextField>
         </Box>
       </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose}>Cancel</Button>
-        <Button type="submit" form="event-form" variant="contained">
+      <DialogActions
+        sx={{
+          px: { xs: 2, sm: 3 },
+          pb: { xs: 2, sm: 2.5 },
+          gap: { xs: 1, sm: 2 },
+        }}
+      >
+        <Button 
+          onClick={onClose}
+          sx={{
+            fontSize: { xs: '0.875rem', sm: '1rem' },
+          }}
+        >
+          Cancel
+        </Button>
+        <Button 
+          type="submit" 
+          form="event-form" 
+          variant="contained"
+          sx={{
+            fontSize: { xs: '0.875rem', sm: '1rem' },
+          }}
+        >
           Save
         </Button>
       </DialogActions>

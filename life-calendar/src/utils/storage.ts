@@ -2,6 +2,9 @@ import type { LegendCategory, DayEvent } from '../types';
 
 const CATEGORIES_KEY = 'life-calendar-categories';
 const EVENTS_KEY = 'life-calendar-events';
+const THEME_KEY = 'life-calendar-theme';
+
+export type ThemeMode = 'light' | 'dark';
 
 export const storage = {
   getCategories(): LegendCategory[] {
@@ -35,6 +38,23 @@ export const storage = {
       localStorage.setItem(EVENTS_KEY, JSON.stringify(events));
     } catch (error) {
       console.error('Failed to save events:', error);
+    }
+  },
+
+  getTheme(): ThemeMode {
+    try {
+      const data = localStorage.getItem(THEME_KEY);
+      return (data === 'dark' || data === 'light') ? data : 'light';
+    } catch {
+      return 'light';
+    }
+  },
+
+  saveTheme(theme: ThemeMode): void {
+    try {
+      localStorage.setItem(THEME_KEY, theme);
+    } catch (error) {
+      console.error('Failed to save theme:', error);
     }
   },
 };
