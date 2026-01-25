@@ -16,7 +16,7 @@ const defaultExampleLines = 1
 const defaultMaxExamples = 6
 
 function App() {
-  const [hanziText, setHanziText] = useState('')
+  const [hanziText, setHanziText] = useState('我的汉子')
   const [cellSizeMm, setCellSizeMm] = useState(defaultCellSizeMm)
   const [exampleLines, setExampleLines] = useState(defaultExampleLines)
   const [useStrokeOrder, setUseStrokeOrder] = useState(false)
