@@ -76,6 +76,8 @@ function CopybookPage({
                 }`}
                 key={`${hanzi}-${cellIndex}`}
               >
+                <span className="copybook-cell-diagonal copybook-cell-diagonal-1" />
+                <span className="copybook-cell-diagonal copybook-cell-diagonal-2" />
                 {isExampleRow && (
                   <span className="copybook-cell-hanzi">{hanzi}</span>
                 )}

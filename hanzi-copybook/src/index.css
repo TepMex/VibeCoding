@@ -72,45 +72,52 @@ body {
   width: var(--cell-size);
   height: var(--cell-size);
   box-sizing: border-box;
+  border: 0.35mm solid #111;
 }
 
 .copybook-cell::before {
   content: '';
   position: absolute;
-  inset: 0;
-  border: 0.35mm solid #111;
-  box-sizing: border-box;
+  left: 0;
+  right: 0;
+  top: 50%;
+  border-top: 0.18mm dashed rgba(0, 0, 0, 0.45);
+  transform: translateY(-50%);
+  z-index: 0;
 }
 
 .copybook-cell::after {
   content: '';
   position: absolute;
-  inset: 0;
-  background:
-    linear-gradient(#777 0 0) center/100% 0.2mm no-repeat,
-    linear-gradient(#777 0 0) center/0.2mm 100% no-repeat;
-  opacity: 0.7;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  border-left: 0.18mm dashed rgba(0, 0, 0, 0.45);
+  transform: translateX(-50%);
+  z-index: 0;
 }
 
-.copybook-grid-mi .copybook-cell::after {
-  background:
-    linear-gradient(#777 0 0) center/100% 0.2mm no-repeat,
-    linear-gradient(#777 0 0) center/0.2mm 100% no-repeat,
-    linear-gradient(
-        45deg,
-        transparent calc(50% - 0.12mm),
-        #777 calc(50% - 0.12mm),
-        #777 calc(50% + 0.12mm),
-        transparent calc(50% + 0.12mm)
-      ),
-    linear-gradient(
-        -45deg,
-        transparent calc(50% - 0.12mm),
-        #777 calc(50% - 0.12mm),
-        #777 calc(50% + 0.12mm),
-        transparent calc(50% + 0.12mm)
-      );
-  opacity: 0.6;
+.copybook-cell-diagonal {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 141.42%;
+  border-top: 0.18mm dashed rgba(0, 0, 0, 0.45);
+  transform-origin: center;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.copybook-cell-diagonal-1 {
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.copybook-cell-diagonal-2 {
+  transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+.copybook-grid-tian .copybook-cell-diagonal {
+  display: none;
 }
 
 .copybook-cell-hanzi {
@@ -122,6 +129,7 @@ body {
   font-family: 'KaiTi', 'STKaiti', 'SimSun', 'Noto Serif SC', serif;
   font-size: calc(var(--cell-size) * 0.78);
   color: #666;
+  z-index: 1;
 }
 
 .copybook-cell-example .copybook-cell-hanzi {
