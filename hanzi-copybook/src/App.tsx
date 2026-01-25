@@ -69,6 +69,10 @@ function App() {
     window.location.hash = `data=${encoded}`
   }
 
+  const clearHash = () => {
+    window.location.hash = ''
+  }
+
   const copyToClipboard = async (text: string) => {
     if (navigator.clipboard?.writeText) {
       await navigator.clipboard.writeText(text)
@@ -117,6 +121,10 @@ function App() {
           updateHash(nextState)
         }}
         onCopyLink={() => copyToClipboard(window.location.href)}
+        onBack={() => {
+          setCopybookData(null)
+          clearHash()
+        }}
       />
     )
   }

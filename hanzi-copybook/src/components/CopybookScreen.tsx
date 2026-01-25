@@ -17,6 +17,7 @@ type CopybookScreenProps = {
   gridStyle: GridStyle
   onGridStyleChange: (value: GridStyle) => void
   onCopyLink: () => Promise<void> | void
+  onBack: () => void
 }
 
 function CopybookScreen({
@@ -26,6 +27,7 @@ function CopybookScreen({
   gridStyle,
   onGridStyleChange,
   onCopyLink,
+  onBack,
 }: CopybookScreenProps) {
   const [copied, setCopied] = useState(false)
 
@@ -38,6 +40,9 @@ function CopybookScreen({
     <Box className="copybook-screen">
       <Box className="screen-only copybook-controls">
         <Stack direction="row" spacing={2} alignItems="center">
+          <Button variant="text" onClick={onBack}>
+            Back
+          </Button>
           <ToggleButtonGroup
             exclusive
             value={gridStyle}
