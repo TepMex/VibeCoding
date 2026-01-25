@@ -5,8 +5,148 @@
 body {
   margin: 0;
   min-height: 100vh;
+  background: #f3f4f6;
 }
 
 #root {
   min-height: 100vh;
+}
+
+.copybook-screen {
+  padding: 24px 12px 48px;
+}
+
+.copybook-controls {
+  max-width: 1100px;
+  margin: 0 auto 24px;
+}
+
+.copybook-page {
+  width: 210mm;
+  height: 297mm;
+  background: #fff;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+  border-radius: 6px;
+}
+
+.copybook-page-inner {
+  height: 100%;
+  padding: var(--page-margin);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 8mm;
+}
+
+.copybook-header {
+  height: var(--header-height);
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 0.3mm solid #111;
+  padding-bottom: 2mm;
+}
+
+.copybook-header-hanzi {
+  font-family: 'KaiTi', 'STKaiti', 'SimSun', 'Noto Serif SC', serif;
+  font-size: 9mm;
+  line-height: 1;
+}
+
+.copybook-header-meta {
+  color: #444;
+  font-size: 3.2mm;
+}
+
+.copybook-grid {
+  display: grid;
+  align-content: start;
+  gap: 0;
+}
+
+.copybook-cell {
+  position: relative;
+  width: var(--cell-size);
+  height: var(--cell-size);
+  box-sizing: border-box;
+}
+
+.copybook-cell::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 0.35mm solid #111;
+  box-sizing: border-box;
+}
+
+.copybook-cell::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(#777 0 0) center/100% 0.2mm no-repeat,
+    linear-gradient(#777 0 0) center/0.2mm 100% no-repeat;
+  opacity: 0.7;
+}
+
+.copybook-grid-mi .copybook-cell::after {
+  background:
+    linear-gradient(#777 0 0) center/100% 0.2mm no-repeat,
+    linear-gradient(#777 0 0) center/0.2mm 100% no-repeat,
+    linear-gradient(
+        45deg,
+        transparent calc(50% - 0.12mm),
+        #777 calc(50% - 0.12mm),
+        #777 calc(50% + 0.12mm),
+        transparent calc(50% + 0.12mm)
+      ),
+    linear-gradient(
+        -45deg,
+        transparent calc(50% - 0.12mm),
+        #777 calc(50% - 0.12mm),
+        #777 calc(50% + 0.12mm),
+        transparent calc(50% + 0.12mm)
+      );
+  opacity: 0.6;
+}
+
+.copybook-cell-hanzi {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'KaiTi', 'STKaiti', 'SimSun', 'Noto Serif SC', serif;
+  font-size: 7.5mm;
+  color: #666;
+}
+
+.copybook-cell-example .copybook-cell-hanzi {
+  color: rgba(0, 0, 0, 0.28);
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 0;
+  }
+
+  body {
+    background: #fff;
+  }
+
+  .screen-only {
+    display: none !important;
+  }
+
+  .copybook-screen {
+    padding: 0;
+  }
+
+  .copybook-page {
+    box-shadow: none;
+    border-radius: 0;
+    page-break-after: always;
+  }
 }

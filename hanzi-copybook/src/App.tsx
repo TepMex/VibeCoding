@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import {
   Box,
   Button,
@@ -9,6 +9,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material'
+import CopybookScreen from './components/CopybookScreen'
 
 const defaultCellSizeMm = 15
 const defaultExampleLines = 1
@@ -20,16 +21,33 @@ function App() {
   const [exampleLines, setExampleLines] = useState(defaultExampleLines)
   const [useStrokeOrder, setUseStrokeOrder] = useState(false)
   const [maxExamples, setMaxExamples] = useState(defaultMaxExamples)
+  const [copybookData, setCopybookData] = useState<{
+    hanziList: string[]
+    cellSizeMm: number
+    exampleLines: number
+  } | null>(null)
+
+  const hanziList = useMemo(
+    () => hanziText.split(/[\s,，]+/).map((value) => value.trim()),
+    [hanziText],
+  )
 
   const handleGenerate = () => {
-    const payload = {
-      hanziText,
+    setCopybookData({
+      hanziList,
       cellSizeMm,
       exampleLines,
-      useStrokeOrder,
-      maxExamples,
-    }
-    console.log('Generate copybook', payload)
+    })
+  }
+
+  if (copybookData) {
+    return (
+      <CopybookScreen
+        hanziList={copybookData.hanziList}
+        cellSizeMm={copybookData.cellSizeMm}
+        exampleLines={copybookData.exampleLines}
+      />
+    )
   }
 
   return (
