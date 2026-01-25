@@ -144,6 +144,7 @@ body {
 
   body {
     background: #fff;
+    margin: 0;
   }
 
   .screen-only {
@@ -154,9 +155,24 @@ body {
     padding: 0;
   }
 
+  .copybook-screen .MuiStack-root {
+    display: block !important;
+    gap: 0 !important;
+  }
+
+  .copybook-screen .MuiStack-root > :not(style) + :not(style) {
+    margin: 0 !important;
+  }
+
   .copybook-page {
     box-shadow: none;
     border-radius: 0;
+    break-after: page;
     page-break-after: always;
+  }
+
+  .copybook-page:last-of-type {
+    break-after: auto;
+    page-break-after: auto;
   }
 }
