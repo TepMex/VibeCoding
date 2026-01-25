@@ -3,6 +3,7 @@ import {
   Button,
   Snackbar,
   Stack,
+  SvgIcon,
   ToggleButton,
   ToggleButtonGroup,
 } from '@mui/material'
@@ -20,6 +21,12 @@ type CopybookScreenProps = {
   onCopyLink: () => Promise<void> | void
   onBack: () => void
 }
+
+const BackIcon = () => (
+  <SvgIcon fontSize="small" viewBox="0 0 24 24">
+    <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" />
+  </SvgIcon>
+)
 
 function CopybookScreen({
   hanziList,
@@ -42,7 +49,7 @@ function CopybookScreen({
     <Box className="copybook-screen">
       <Box className="screen-only copybook-controls">
         <Stack direction="row" spacing={2} alignItems="center">
-          <Button variant="text" onClick={onBack}>
+          <Button variant="text" onClick={onBack} startIcon={<BackIcon />}>
             Back
           </Button>
           <ToggleButtonGroup

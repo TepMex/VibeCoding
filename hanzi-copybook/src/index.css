@@ -42,11 +42,18 @@ body {
 .copybook-header {
   height: var(--header-height);
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
   border-bottom: 0.3mm solid #111;
   padding-bottom: 2mm;
+}
+
+.copybook-header-link {
+  font-size: 2.8mm;
+  line-height: 1;
+  color: #111;
+  white-space: nowrap;
 }
 
 .copybook-header-hanzi {

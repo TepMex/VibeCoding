@@ -1,4 +1,4 @@
-import { Box, Typography } from '@mui/material'
+import { Box, Link, Typography } from '@mui/material'
 import { useMemo } from 'react'
 import type { GridStyle } from '../types/copybook'
 
@@ -52,6 +52,15 @@ function CopybookPage({
       <Box className="copybook-page-inner">
         <Box className="copybook-header">
           <Typography className="copybook-header-hanzi">{hanzi}</Typography>
+          <Link
+            className="copybook-header-link"
+            href="https://tepmex.github.io/hanzi-copybook"
+            target="_blank"
+            rel="noreferrer"
+            underline="none"
+          >
+            tepmex.github.io/hanzi-copybook
+          </Link>
           <Typography className="copybook-header-meta">
             {`${cellSizeMm}mm · ${exampleLines} example lines · ${
               gridStyle === 'tian' ? 'Tian zi ge' : 'Mi zi ge'
