@@ -7,6 +7,9 @@ interface CalendarGridProps {
   categories: LegendCategory[];
   events: DayEvent[];
   onDayClick: (date: string) => void;
+  onDayDoubleClick: (date: string) => void;
+  highlightedDate?: string | null;
+  scrollToTodayRef?: React.RefObject<(() => void) | null>;
 }
 
 const DAYS_TO_LOAD = 50;
@@ -50,7 +53,7 @@ function generateWeeks(startDate: Date, endDate: Date): { date: string; month: s
   return weeksData;
 }
 
-export function CalendarGrid({ categories, events, onDayClick }: CalendarGridProps) {
+export function CalendarGrid({ categories, events, onDayClick, onDayDoubleClick, highlightedDate, scrollToTodayRef }: CalendarGridProps) {
   const theme = useTheme();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const topSentinelRef = useRef<HTMLDivElement>(null);
@@ -158,6 +161,25 @@ export function CalendarGrid({ categories, events, onDayClick }: CalendarGridPro
 
   const hasInitializedScroll = useRef(false);
 
+  const scrollToToday = useCallback(() => {
+    const container = scrollContainerRef.current;
+    if (!container || weeks.length === 0) return;
+
+    const todayDateStr = today.toISOString().split('T')[0];
+    const todayWeekIndex = weeks.findIndex((week) =>
+      week.some((day) => day.date === todayDateStr)
+    );
+
+    if (todayWeekIndex !== -1) {
+      const weekHeight = container.scrollHeight / weeks.length;
+      const targetScroll = todayWeekIndex * weekHeight - container.clientHeight / 2;
+      container.scrollTo({
+        top: Math.max(0, targetScroll),
+        behavior: 'smooth',
+      });
+    }
+  }, [weeks, today]);
+
   useEffect(() => {
     if (scrollContainerRef.current && !hasInitializedScroll.current && weeks.length > 0) {
       const container = scrollContainerRef.current;
@@ -179,6 +201,12 @@ export function CalendarGrid({ categories, events, onDayClick }: CalendarGridPro
     }
   }, [weeks, today]);
 
+  useEffect(() => {
+    if (scrollToTodayRef?.current !== undefined) {
+      scrollToTodayRef.current = scrollToToday;
+    }
+  }, [scrollToToday, scrollToTodayRef]);
+
   const getEventsForDate = (date: string): DayEvent[] => {
     return events.filter((e) => e.date === date);
   };
@@ -194,7 +222,6 @@ export function CalendarGrid({ categories, events, onDayClick }: CalendarGridPro
         overflowX: 'hidden', 
         overflowY: 'auto',
         py: { xs: 1, sm: 2 },
-        px: { xs: 0.5, sm: 1 },
         WebkitOverflowScrolling: 'touch',
         touchAction: 'pan-y',
         overscrollBehavior: 'contain',
@@ -232,6 +259,7 @@ export function CalendarGrid({ categories, events, onDayClick }: CalendarGridPro
           gap: { xs: 0.25, sm: 0.5 },
           width: '100%',
           pl: { xs: 5, sm: 6 },
+          pr: { xs: 1, sm: 2 },
         }}
       >
         <Box ref={topSentinelRef} sx={{ width: '100%', height: '1px' }} />
@@ -279,6 +307,8 @@ export function CalendarGrid({ categories, events, onDayClick }: CalendarGridPro
                     events={getEventsForDate(day.date)}
                     categories={categories}
                     onClick={() => onDayClick(day.date)}
+                    onDoubleClick={() => onDayDoubleClick(day.date)}
+                    highlighted={highlightedDate === day.date}
                   />
                 </Box>
               ))}

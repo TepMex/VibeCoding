@@ -6,9 +6,11 @@ interface DaySquareProps {
   events: DayEvent[];
   categories: LegendCategory[];
   onClick: () => void;
+  onDoubleClick: () => void;
+  highlighted?: boolean;
 }
 
-export function DaySquare({ date, events, categories, onClick }: DaySquareProps) {
+export function DaySquare({ date, events, categories, onClick, onDoubleClick, highlighted = false }: DaySquareProps) {
   const theme = useTheme();
   
   const getCategoryColor = (categoryId: string) => {
@@ -51,17 +53,24 @@ export function DaySquare({ date, events, categories, onClick }: DaySquareProps)
     <Tooltip title={formatDate(date)}>
       <Box
         onClick={onClick}
+        onDoubleClick={onDoubleClick}
         sx={{
           width: '100%',
           aspectRatio: '1',
-          border: `1px solid ${theme.palette.divider}`,
+          border: highlighted 
+            ? `2px solid ${theme.palette.primary.main}` 
+            : `1px solid ${theme.palette.divider}`,
           borderRadius: { xs: '2px', sm: '3px' },
           cursor: 'pointer',
           position: 'relative',
           overflow: 'hidden',
-          backgroundColor: theme.palette.mode === 'dark' 
-            ? theme.palette.grey[800] 
-            : theme.palette.grey[100],
+          backgroundColor: highlighted
+            ? theme.palette.mode === 'dark'
+              ? theme.palette.primary.dark + '40'
+              : theme.palette.primary.light + '40'
+            : theme.palette.mode === 'dark' 
+              ? theme.palette.grey[800] 
+              : theme.palette.grey[100],
           touchAction: 'auto',
           userSelect: 'none',
           '&:hover': {

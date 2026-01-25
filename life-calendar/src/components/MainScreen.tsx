@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Box, Container, Typography } from '@mui/material';
+import { useState, useRef } from 'react';
+import { Box, Container, Typography, Fab } from '@mui/material';
 import { CalendarGrid } from './CalendarGrid';
 import { EventDialog } from './EventDialog';
 import { useAppData } from '../hooks/useAppData';
@@ -15,9 +15,15 @@ export function MainScreen() {
     getEventsForDate,
   } = useAppData();
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [highlightedDate, setHighlightedDate] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const scrollToTodayRef = useRef<() => void>(null);
 
   const handleDayClick = (date: string) => {
+    setHighlightedDate(date);
+  };
+
+  const handleDayDoubleClick = (date: string) => {
     setSelectedDate(date);
     setDialogOpen(true);
   };
@@ -25,6 +31,12 @@ export function MainScreen() {
   const handleCloseDialog = () => {
     setDialogOpen(false);
     setSelectedDate(null);
+  };
+
+  const handleScrollToToday = () => {
+    if (scrollToTodayRef.current) {
+      scrollToTodayRef.current();
+    }
   };
 
   const handleSaveEvent = (eventData: Omit<DayEvent, 'id'>) => {
@@ -79,16 +91,36 @@ export function MainScreen() {
         flex: 1,
         width: '100%',
         minHeight: 0,
-        px: { xs: 1, sm: 2, md: 3 },
         pb: { xs: 1, sm: 2, md: 3 },
         display: 'flex',
         flexDirection: 'column',
+        alignItems: 'center',
       }}>
-        <CalendarGrid
-          categories={categories}
-          events={events}
-          onDayClick={handleDayClick}
-        />
+        <Box sx={{ width: '90%', height: '100%', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+          <CalendarGrid
+            categories={categories}
+            events={events}
+            onDayClick={handleDayClick}
+            onDayDoubleClick={handleDayDoubleClick}
+            highlightedDate={highlightedDate}
+            scrollToTodayRef={scrollToTodayRef}
+          />
+          <Fab
+            color="primary"
+            aria-label="scroll to today"
+            onClick={handleScrollToToday}
+            sx={{
+              position: 'absolute',
+              bottom: { xs: 16, sm: 24 },
+              right: { xs: 16, sm: 24 },
+              zIndex: 1000,
+            }}
+          >
+            <Typography variant="button" sx={{ fontWeight: 'bold' }}>
+              Now
+            </Typography>
+          </Fab>
+        </Box>
       </Box>
       {selectedDate && (
         <EventDialog
