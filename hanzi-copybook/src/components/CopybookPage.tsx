@@ -1,7 +1,6 @@
 import { Box, Typography } from '@mui/material'
 import { useMemo } from 'react'
-
-type GridStyle = 'tian' | 'mi'
+import type { GridStyle } from '../types/copybook'
 
 type CopybookPageProps = {
   hanzi: string

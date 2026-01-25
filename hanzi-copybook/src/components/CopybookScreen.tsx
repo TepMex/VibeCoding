@@ -1,21 +1,33 @@
-import { Box, Button, Stack, ToggleButton, ToggleButtonGroup } from '@mui/material'
+import {
+  Box,
+  Button,
+  Snackbar,
+  Stack,
+  ToggleButton,
+  ToggleButtonGroup,
+} from '@mui/material'
 import { useMemo, useState } from 'react'
 import CopybookPage from './CopybookPage'
-
-type GridStyle = 'tian' | 'mi'
+import type { GridStyle } from '../types/copybook'
 
 type CopybookScreenProps = {
   hanziList: string[]
   cellSizeMm: number
   exampleLines: number
+  gridStyle: GridStyle
+  onGridStyleChange: (value: GridStyle) => void
+  onCopyLink: () => Promise<void> | void
 }
 
 function CopybookScreen({
   hanziList,
   cellSizeMm,
   exampleLines,
+  gridStyle,
+  onGridStyleChange,
+  onCopyLink,
 }: CopybookScreenProps) {
-  const [gridStyle, setGridStyle] = useState<GridStyle>('tian')
+  const [copied, setCopied] = useState(false)
 
   const normalizedList = useMemo(
     () => hanziList.filter((item) => item.trim().length > 0),
@@ -30,7 +42,7 @@ function CopybookScreen({
             exclusive
             value={gridStyle}
             onChange={(_, value) => {
-              if (value) setGridStyle(value)
+              if (value) onGridStyleChange(value)
             }}
             size="small"
           >
@@ -38,7 +50,19 @@ function CopybookScreen({
             <ToggleButton value="mi">Mi zi ge</ToggleButton>
           </ToggleButtonGroup>
           <Box sx={{ flex: 1 }} />
-          <Button variant="outlined">Copy link</Button>
+          <Button
+            variant="outlined"
+            onClick={async () => {
+              try {
+                await onCopyLink()
+                setCopied(true)
+              } catch {
+                setCopied(false)
+              }
+            }}
+          >
+            Copy link
+          </Button>
           <Button variant="contained">Download PDF</Button>
         </Stack>
       </Box>
@@ -53,6 +77,13 @@ function CopybookScreen({
           />
         ))}
       </Stack>
+      <Snackbar
+        open={copied}
+        autoHideDuration={2000}
+        onClose={() => setCopied(false)}
+        message="Link copied"
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      />
     </Box>
   )
 }

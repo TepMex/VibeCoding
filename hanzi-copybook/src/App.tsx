@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   Box,
   Button,
@@ -10,10 +10,13 @@ import {
   Typography,
 } from '@mui/material'
 import CopybookScreen from './components/CopybookScreen'
+import type { CopybookState, GridStyle } from './types/copybook'
+import { decodeCopybookState, encodeCopybookState } from './utils/shareLink'
 
 const defaultCellSizeMm = 15
 const defaultExampleLines = 1
 const defaultMaxExamples = 6
+const defaultGridStyle: GridStyle = 'tian'
 
 function App() {
   const [hanziText, setHanziText] = useState('我的汉子')
@@ -21,11 +24,8 @@ function App() {
   const [exampleLines, setExampleLines] = useState(defaultExampleLines)
   const [useStrokeOrder, setUseStrokeOrder] = useState(false)
   const [maxExamples, setMaxExamples] = useState(defaultMaxExamples)
-  const [copybookData, setCopybookData] = useState<{
-    hanziList: string[]
-    cellSizeMm: number
-    exampleLines: number
-  } | null>(null)
+  const [gridStyle, setGridStyle] = useState<GridStyle>(defaultGridStyle)
+  const [copybookData, setCopybookData] = useState<CopybookState | null>(null)
 
   const hanziList = useMemo(
     () =>
@@ -37,12 +37,70 @@ function App() {
     [hanziText],
   )
 
+  const defaultCopybookState: CopybookState = useMemo(
+    () => ({
+      hanziList: [],
+      cellSizeMm: defaultCellSizeMm,
+      exampleLines: defaultExampleLines,
+      useStrokeOrder: false,
+      maxExamples: defaultMaxExamples,
+      gridStyle: defaultGridStyle,
+    }),
+    [],
+  )
+
+  useEffect(() => {
+    const decoded = decodeCopybookState(
+      window.location.hash,
+      defaultCopybookState,
+    )
+    if (!decoded) return
+    setHanziText(decoded.hanziList.join(''))
+    setCellSizeMm(decoded.cellSizeMm)
+    setExampleLines(decoded.exampleLines)
+    setUseStrokeOrder(decoded.useStrokeOrder)
+    setMaxExamples(decoded.maxExamples)
+    setGridStyle(decoded.gridStyle)
+    setCopybookData(decoded)
+  }, [defaultCopybookState])
+
+  const updateHash = (state: CopybookState) => {
+    const encoded = encodeCopybookState(state)
+    window.location.hash = `data=${encoded}`
+  }
+
+  const copyToClipboard = async (text: string) => {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text)
+      return
+    }
+
+    const textarea = document.createElement('textarea')
+    textarea.value = text
+    textarea.style.position = 'fixed'
+    textarea.style.opacity = '0'
+    document.body.appendChild(textarea)
+    textarea.focus()
+    textarea.select()
+    const success = document.execCommand('copy')
+    document.body.removeChild(textarea)
+
+    if (!success) {
+      throw new Error('Copy failed')
+    }
+  }
+
   const handleGenerate = () => {
-    setCopybookData({
+    const nextState: CopybookState = {
       hanziList,
       cellSizeMm,
       exampleLines,
-    })
+      useStrokeOrder,
+      maxExamples,
+      gridStyle,
+    }
+    setCopybookData(nextState)
+    updateHash(nextState)
   }
 
   if (copybookData) {
@@ -51,6 +109,14 @@ function App() {
         hanziList={copybookData.hanziList}
         cellSizeMm={copybookData.cellSizeMm}
         exampleLines={copybookData.exampleLines}
+        gridStyle={copybookData.gridStyle}
+        onGridStyleChange={(value) => {
+          setGridStyle(value)
+          const nextState = { ...copybookData, gridStyle: value }
+          setCopybookData(nextState)
+          updateHash(nextState)
+        }}
+        onCopyLink={() => copyToClipboard(window.location.href)}
       />
     )
   }
