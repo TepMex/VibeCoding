@@ -9,7 +9,7 @@ import {
 import { useMemo, useState } from 'react'
 import CopybookPage from './CopybookPage'
 import type { GridStyle } from '../types/copybook'
-import { downloadCopybookPdf } from '../utils/pdf'
+import { buildCopybookFilename, downloadCopybookPdf } from '../utils/pdf'
 
 type CopybookScreenProps = {
   hanziList: string[]
@@ -76,7 +76,7 @@ function CopybookScreen({
             onClick={async () => {
               setIsDownloading(true)
               try {
-                await downloadCopybookPdf('hanzi-copybook.pdf')
+                await downloadCopybookPdf(buildCopybookFilename(normalizedList))
               } finally {
                 setIsDownloading(false)
               }

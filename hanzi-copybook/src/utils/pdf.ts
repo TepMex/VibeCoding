@@ -14,6 +14,18 @@ const getScale = () => {
   return Math.min(ratio, 2)
 }
 
+const pad2 = (value: number) => String(value).padStart(2, '0')
+
+export const buildCopybookFilename = (hanziList: string[]) => {
+  const now = new Date()
+  const timestamp = `${now.getFullYear()}${pad2(now.getMonth() + 1)}${pad2(
+    now.getDate(),
+  )}${pad2(now.getHours())}${pad2(now.getMinutes())}${pad2(now.getSeconds())}`
+  const hanziPreview = hanziList.join('').slice(0, 10).trim()
+  const namePart = hanziPreview.length > 0 ? ` ${hanziPreview}` : ''
+  return `${timestamp}${namePart} Copybook.pdf`
+}
+
 export const downloadCopybookPdf = async (filename: string) => {
   const pages = Array.from(
     document.querySelectorAll<HTMLElement>('.copybook-page'),
