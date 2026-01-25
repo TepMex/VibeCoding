@@ -150,8 +150,6 @@ body {
   height: 100%;
   z-index: 1;
   pointer-events: none;
-  transform: scaleY(-1);
-  transform-origin: center;
 }
 
 .copybook-cell-strokes path {

@@ -136,14 +136,16 @@ function CopybookPage({
                     viewBox="0 -100 1024 1024"
                     aria-hidden="true"
                   >
-                    {strokeData.strokes
-                      .slice(0, stageCount)
-                      .map((stroke, index) => (
-                        <path
-                          key={`${hanzi}-stroke-${index}`}
-                          d={stroke}
-                        />
-                      ))}
+                    <g transform="translate(0 824) scale(1 -1)">
+                      {strokeData.strokes
+                        .slice(0, stageCount)
+                        .map((stroke, index) => (
+                          <path
+                            key={`${hanzi}-stroke-${index}`}
+                            d={stroke}
+                          />
+                        ))}
+                    </g>
                   </svg>
                 )}
                 {showFallbackText && (
