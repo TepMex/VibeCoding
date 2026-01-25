@@ -12,6 +12,7 @@ import {
 import CopybookScreen from './components/CopybookScreen'
 import type { CopybookState, GridStyle } from './types/copybook'
 import { decodeCopybookState, encodeCopybookState } from './utils/shareLink'
+import copybookBackground from './assets/copybook.png'
 
 const defaultCellSizeMm = 15
 const defaultExampleLines = 1
@@ -132,68 +133,90 @@ function App() {
   }
 
   return (
-    <Container maxWidth="sm">
-      <Box sx={{ py: 6 }}>
-        <Stack spacing={3}>
-          <Typography variant="h4" component="h1">
-            Hanzi Copybook
-          </Typography>
+    <Box
+      sx={{
+        minHeight: '100vh',
+        backgroundColor: '#f6efe4',
+        backgroundImage: `url(${copybookBackground})`,
+        backgroundRepeat: 'no-repeat',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center top',
+      }}
+    >
+      <Container maxWidth="sm">
+        <Box sx={{ py: 6 }}>
+          <Box
+            sx={{
+              backgroundColor: 'rgba(255, 255, 255, 0.88)',
+              borderRadius: 3,
+              px: { xs: 3, sm: 4 },
+              py: { xs: 3, sm: 4 },
+              boxShadow: '0 10px 30px rgba(0, 0, 0, 0.15)',
+              backdropFilter: 'blur(2px)',
+            }}
+          >
+            <Stack spacing={3}>
+              <Typography variant="h4" component="h1">
+                Hanzi Copybook
+              </Typography>
 
-          <TextField
-            label="Hanzi list"
-            placeholder="例: 我,你,他 or 我你他"
-            value={hanziText}
-            onChange={(event) => setHanziText(event.target.value)}
-            multiline
-            minRows={3}
-            fullWidth
-          />
-
-          <TextField
-            label="Cell size (mm)"
-            type="number"
-            value={cellSizeMm}
-            onChange={(event) => setCellSizeMm(Number(event.target.value))}
-            inputProps={{ min: 1, step: 1 }}
-            fullWidth
-          />
-
-          <TextField
-            label="Number of example lines"
-            type="number"
-            value={exampleLines}
-            onChange={(event) => setExampleLines(Number(event.target.value))}
-            inputProps={{ min: 0, step: 1 }}
-            fullWidth
-          />
-
-          <FormControlLabel
-            control={
-              <Checkbox
-                checked={useStrokeOrder}
-                onChange={(event) => setUseStrokeOrder(event.target.checked)}
+              <TextField
+                label="Hanzi list"
+                placeholder="例: 我,你,他 or 我你他"
+                value={hanziText}
+                onChange={(event) => setHanziText(event.target.value)}
+                multiline
+                minRows={3}
+                fullWidth
               />
-            }
-            label="Use stroke order in example lines"
-          />
 
-          {useStrokeOrder && (
-            <TextField
-              label="Max number of examples"
-              type="number"
-              value={maxExamples}
-              onChange={(event) => setMaxExamples(Number(event.target.value))}
-              inputProps={{ min: 1, step: 1 }}
-              fullWidth
-            />
-          )}
+              <TextField
+                label="Cell size (mm)"
+                type="number"
+                value={cellSizeMm}
+                onChange={(event) => setCellSizeMm(Number(event.target.value))}
+                inputProps={{ min: 1, step: 1 }}
+                fullWidth
+              />
 
-          <Button variant="contained" size="large" onClick={handleGenerate}>
-            Generate copybook
-          </Button>
-        </Stack>
-      </Box>
-    </Container>
+              <TextField
+                label="Number of example lines"
+                type="number"
+                value={exampleLines}
+                onChange={(event) => setExampleLines(Number(event.target.value))}
+                inputProps={{ min: 0, step: 1 }}
+                fullWidth
+              />
+
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={useStrokeOrder}
+                    onChange={(event) => setUseStrokeOrder(event.target.checked)}
+                  />
+                }
+                label="Use stroke order in example lines"
+              />
+
+              {useStrokeOrder && (
+                <TextField
+                  label="Max number of examples"
+                  type="number"
+                  value={maxExamples}
+                  onChange={(event) => setMaxExamples(Number(event.target.value))}
+                  inputProps={{ min: 1, step: 1 }}
+                  fullWidth
+                />
+              )}
+
+              <Button variant="contained" size="large" onClick={handleGenerate}>
+                Generate copybook
+              </Button>
+            </Stack>
+          </Box>
+        </Box>
+      </Container>
+    </Box>
   )
 }
 
