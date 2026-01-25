@@ -1,11 +1,17 @@
 import { Box, Link, Typography } from '@mui/material'
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { GridStyle } from '../types/copybook'
+import {
+  loadHanziStrokeData,
+  type HanziStrokeData,
+} from '../utils/hanziStrokeData'
 
 type CopybookPageProps = {
   hanzi: string
   cellSizeMm: number
   exampleLines: number
+  useStrokeOrder: boolean
+  maxExamples: number
   gridStyle: GridStyle
 }
 
@@ -22,8 +28,30 @@ function CopybookPage({
   hanzi,
   cellSizeMm,
   exampleLines,
+  useStrokeOrder,
+  maxExamples,
   gridStyle,
 }: CopybookPageProps) {
+  const [strokeData, setStrokeData] = useState<HanziStrokeData | null>(null)
+
+  useEffect(() => {
+    let active = true
+    if (!useStrokeOrder) {
+      setStrokeData(null)
+      return () => {
+        active = false
+      }
+    }
+
+    loadHanziStrokeData(hanzi).then((data) => {
+      if (active) setStrokeData(data)
+    })
+
+    return () => {
+      active = false
+    }
+  }, [hanzi, useStrokeOrder])
+
   const layout = useMemo(() => {
     const usableWidth = pageWidthMm - pageMarginMm * 2
     const usableHeight = pageHeightMm - pageMarginMm * 2 - headerHeightMm
@@ -46,6 +74,17 @@ function CopybookPage({
       }) as React.CSSProperties,
     [cellSizeMm],
   )
+
+  const strokeCount = strokeData?.strokes.length ?? 0
+  const totalExampleStages = useMemo(() => {
+    if (!useStrokeOrder || strokeCount === 0) return 0
+    return Math.min(maxExamples, strokeCount)
+  }, [useStrokeOrder, maxExamples, strokeCount])
+
+  const stageOffset = useMemo(() => {
+    if (!useStrokeOrder || strokeCount === 0) return 0
+    return Math.max(strokeCount - maxExamples, 0)
+  }, [useStrokeOrder, maxExamples, strokeCount])
 
   return (
     <Box className="copybook-page" sx={{ px: 0, py: 0 }} style={styleVars}>
@@ -76,7 +115,19 @@ function CopybookPage({
         >
           {cells.map((cellIndex) => {
             const rowIndex = Math.floor(cellIndex / layout.columns)
+            const columnIndex = cellIndex % layout.columns
             const isExampleRow = rowIndex < exampleLines
+            const exampleCellIndex = rowIndex * layout.columns + columnIndex
+            const showStrokeOrder =
+              isExampleRow &&
+              useStrokeOrder &&
+              strokeData &&
+              exampleCellIndex < totalExampleStages
+            const stageCount = showStrokeOrder
+              ? Math.min(stageOffset + exampleCellIndex + 1, strokeCount)
+              : 0
+            const showFallbackText =
+              isExampleRow && (!useStrokeOrder || !strokeData)
             return (
               <Box
                 className={`copybook-cell ${
@@ -86,7 +137,23 @@ function CopybookPage({
               >
                 <span className="copybook-cell-diagonal copybook-cell-diagonal-1" />
                 <span className="copybook-cell-diagonal copybook-cell-diagonal-2" />
-                {isExampleRow && (
+                {showStrokeOrder && strokeData && (
+                  <svg
+                    className="copybook-cell-strokes"
+                    viewBox="0 0 1024 1024"
+                    aria-hidden="true"
+                  >
+                    {strokeData.strokes
+                      .slice(0, stageCount)
+                      .map((stroke, index) => (
+                        <path
+                          key={`${hanzi}-stroke-${index}`}
+                          d={stroke}
+                        />
+                      ))}
+                  </svg>
+                )}
+                {showFallbackText && (
                   <span className="copybook-cell-hanzi">{hanzi}</span>
                 )}
               </Box>

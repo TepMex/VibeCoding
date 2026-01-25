@@ -113,6 +113,8 @@ function App() {
         hanziList={copybookData.hanziList}
         cellSizeMm={copybookData.cellSizeMm}
         exampleLines={copybookData.exampleLines}
+        useStrokeOrder={copybookData.useStrokeOrder}
+        maxExamples={copybookData.maxExamples}
         gridStyle={copybookData.gridStyle}
         onGridStyleChange={(value) => {
           setGridStyle(value)

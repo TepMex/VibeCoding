@@ -143,6 +143,25 @@ body {
   color: rgba(0, 0, 0, 0.28);
 }
 
+.copybook-cell-strokes {
+  position: absolute;
+  inset: 8%;
+  width: 84%;
+  height: 84%;
+  z-index: 1;
+  pointer-events: none;
+  transform: scaleY(-1);
+  transform-origin: center;
+}
+
+.copybook-cell-strokes path {
+  fill: none;
+  stroke: rgba(0, 0, 0, 0.28);
+  stroke-width: 48;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
 @media print {
   @page {
     size: A4;

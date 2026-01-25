@@ -16,6 +16,8 @@ type CopybookScreenProps = {
   hanziList: string[]
   cellSizeMm: number
   exampleLines: number
+  useStrokeOrder: boolean
+  maxExamples: number
   gridStyle: GridStyle
   onGridStyleChange: (value: GridStyle) => void
   onCopyLink: () => Promise<void> | void
@@ -32,6 +34,8 @@ function CopybookScreen({
   hanziList,
   cellSizeMm,
   exampleLines,
+  useStrokeOrder,
+  maxExamples,
   gridStyle,
   onGridStyleChange,
   onCopyLink,
@@ -100,6 +104,8 @@ function CopybookScreen({
             hanzi={hanzi}
             cellSizeMm={cellSizeMm}
             exampleLines={exampleLines}
+            useStrokeOrder={useStrokeOrder}
+            maxExamples={maxExamples}
             gridStyle={gridStyle}
           />
         ))}

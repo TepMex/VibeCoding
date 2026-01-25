@@ -4,10 +4,11 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
+    "dev": "bun run build:hanzi-data && vite",
+    "build": "bun run build:hanzi-data && tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "build:hanzi-data": "bun scripts/build-hanzi-data.ts"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
