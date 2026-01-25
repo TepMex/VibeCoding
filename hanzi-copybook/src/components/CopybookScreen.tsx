@@ -9,6 +9,7 @@ import {
 import { useMemo, useState } from 'react'
 import CopybookPage from './CopybookPage'
 import type { GridStyle } from '../types/copybook'
+import { downloadCopybookPdf } from '../utils/pdf'
 
 type CopybookScreenProps = {
   hanziList: string[]
@@ -30,6 +31,7 @@ function CopybookScreen({
   onBack,
 }: CopybookScreenProps) {
   const [copied, setCopied] = useState(false)
+  const [isDownloading, setIsDownloading] = useState(false)
 
   const normalizedList = useMemo(
     () => hanziList.filter((item) => item.trim().length > 0),
@@ -68,7 +70,20 @@ function CopybookScreen({
           >
             Copy link
           </Button>
-          <Button variant="contained">Download PDF</Button>
+          <Button
+            variant="contained"
+            disabled={isDownloading}
+            onClick={async () => {
+              setIsDownloading(true)
+              try {
+                await downloadCopybookPdf('hanzi-copybook.pdf')
+              } finally {
+                setIsDownloading(false)
+              }
+            }}
+          >
+            {isDownloading ? 'Generating PDF...' : 'Download PDF'}
+          </Button>
         </Stack>
       </Box>
       <Stack spacing={4} alignItems="center">
