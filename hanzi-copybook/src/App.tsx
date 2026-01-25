@@ -28,7 +28,12 @@ function App() {
   } | null>(null)
 
   const hanziList = useMemo(
-    () => hanziText.split(/[\s,，]+/).map((value) => value.trim()),
+    () =>
+      hanziText
+        .replace(/[\s,，]+/g, '')
+        .split('')
+        .map((value) => value.trim())
+        .filter(Boolean),
     [hanziText],
   )
 

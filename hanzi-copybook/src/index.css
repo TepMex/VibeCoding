@@ -17,7 +17,8 @@ body {
 }
 
 .copybook-controls {
-  max-width: 1100px;
+  width: 100%;
+  max-width: 210mm;
   margin: 0 auto 24px;
 }
 
@@ -35,7 +36,7 @@ body {
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  gap: 8mm;
+  gap: 4mm;
 }
 
 .copybook-header {
@@ -57,6 +58,7 @@ body {
 .copybook-header-meta {
   color: #444;
   font-size: 3.2mm;
+  white-space: nowrap;
 }
 
 .copybook-grid {
