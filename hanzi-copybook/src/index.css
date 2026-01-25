@@ -120,7 +120,7 @@ body {
   align-items: center;
   justify-content: center;
   font-family: 'KaiTi', 'STKaiti', 'SimSun', 'Noto Serif SC', serif;
-  font-size: 7.5mm;
+  font-size: calc(var(--cell-size) * 0.78);
   color: #666;
 }
 
