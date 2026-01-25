@@ -35,13 +35,8 @@ function CopybookPage({
   const [strokeData, setStrokeData] = useState<HanziStrokeData | null>(null)
 
   useEffect(() => {
+    if (!useStrokeOrder) return
     let active = true
-    if (!useStrokeOrder) {
-      setStrokeData(null)
-      return () => {
-        active = false
-      }
-    }
 
     loadHanziStrokeData(hanzi).then((data) => {
       if (active) setStrokeData(data)
@@ -118,13 +113,11 @@ function CopybookPage({
             const columnIndex = cellIndex % layout.columns
             const isExampleRow = rowIndex < exampleLines
             const exampleCellIndex = rowIndex * layout.columns + columnIndex
-            const showStrokeOrder =
-              isExampleRow &&
-              useStrokeOrder &&
-              strokeData &&
-              exampleCellIndex < totalExampleStages
+            const showStrokeOrder = isExampleRow && useStrokeOrder && strokeData
             const stageCount = showStrokeOrder
-              ? Math.min(stageOffset + exampleCellIndex + 1, strokeCount)
+              ? exampleCellIndex < totalExampleStages
+                ? Math.min(stageOffset + exampleCellIndex + 1, strokeCount)
+                : strokeCount
               : 0
             const showFallbackText =
               isExampleRow && (!useStrokeOrder || !strokeData)
@@ -140,7 +133,7 @@ function CopybookPage({
                 {showStrokeOrder && strokeData && (
                   <svg
                     className="copybook-cell-strokes"
-                    viewBox="0 0 1024 1024"
+                    viewBox="0 -100 1024 1024"
                     aria-hidden="true"
                   >
                     {strokeData.strokes
