@@ -1,11 +1,13 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type ComponentProps } from 'react'
 import {
   Box,
   Button,
   Checkbox,
   Container,
   FormControlLabel,
+  IconButton,
   Stack,
+  SvgIcon,
   TextField,
   Typography,
 } from '@mui/material'
@@ -15,10 +17,16 @@ import { decodeCopybookState, encodeCopybookState } from './utils/shareLink'
 import copybookBackground from './assets/copybook.png'
 import { getBrowserTranslations } from './i18n'
 
-const defaultCellSizeMm = 15
+const defaultCellSizeMm = 16
 const defaultExampleLines = 1
 const defaultMaxExamples = 6
 const defaultGridStyle: GridStyle = 'tian'
+
+const SettingsIcon = (props: ComponentProps<typeof SvgIcon>) => (
+  <SvgIcon {...props} viewBox="0 0 24 24">
+    <path d="M19.14,12.94c0.04-0.31,0.06-0.63,0.06-0.94s-0.02-0.63-0.06-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61l-1.92-3.32c-0.12-0.2-0.37-0.28-0.58-0.22l-2.39,0.96c-0.5-0.38-1.04-0.7-1.64-0.94L14.5,2.5C14.47,2.22,14.24,2,13.96,2h-3.92C9.76,2,9.53,2.22,9.5,2.5L9.13,5.3c-0.6,0.24-1.15,0.56-1.64,0.94L5.1,5.28c-0.22-0.09-0.47,0.02-0.58,0.22L2.6,8.82c-0.12,0.2-0.06,0.47,0.12,0.61l2.03,1.58C4.71,11.37,4.69,11.68,4.69,12s0.02,0.63,0.06,0.94l-2.03,1.58c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.2,0.37,0.28,0.58,0.22l2.39-0.96c0.5,0.38,1.04,0.7,1.64,0.94l0.37,2.8c0.03,0.28,0.26,0.5,0.54,0.5h3.92c0.28,0,0.51-0.22,0.54-0.5l0.37-2.8c0.6-0.24,1.15-0.56,1.64-0.94l2.39,0.96c0.22,0.09,0.47-0.02,0.58-0.22l1.92-3.32c0.12-0.2,0.06-0.47-0.12-0.61l-2.03-1.58ZM12,15.5c-1.93,0-3.5-1.57-3.5-3.5s1.57-3.5,3.5-3.5,3.5,1.57,3.5,3.5-1.57,3.5-3.5,3.5Z" />
+  </SvgIcon>
+)
 
 function App() {
   const strings = useMemo(() => getBrowserTranslations(), [])
@@ -29,6 +37,7 @@ function App() {
   const [maxExamples, setMaxExamples] = useState(defaultMaxExamples)
   const [gridStyle, setGridStyle] = useState<GridStyle>(defaultGridStyle)
   const [copybookData, setCopybookData] = useState<CopybookState | null>(null)
+  const [showSettings, setShowSettings] = useState(false)
 
   const hanziList = useMemo(
     () =>
@@ -158,9 +167,18 @@ function App() {
             }}
           >
             <Stack spacing={3}>
-              <Typography variant="h4" component="h1">
-                {strings.appTitle}
-              </Typography>
+              <Stack direction="row" alignItems="center" justifyContent="space-between">
+                <Typography variant="h4" component="h1">
+                  {strings.appTitle}
+                </Typography>
+                <IconButton
+                  size="small"
+                  aria-label={strings.settingsToggleLabel}
+                  onClick={() => setShowSettings((value) => !value)}
+                >
+                  <SettingsIcon fontSize="small" />
+                </IconButton>
+              </Stack>
 
               <TextField
                 label={strings.hanziListLabel}
@@ -172,46 +190,55 @@ function App() {
                 fullWidth
               />
 
-              <TextField
-                label={strings.cellSizeLabel}
-                type="number"
-                value={cellSizeMm}
-                onChange={(event) => setCellSizeMm(Number(event.target.value))}
-                inputProps={{ min: 1, step: 1 }}
-                fullWidth
-              />
-
-              <TextField
-                label={strings.exampleLinesLabel(exampleLines)}
-                type="number"
-                value={exampleLines}
-                onChange={(event) => setExampleLines(Number(event.target.value))}
-                inputProps={{ min: 0, step: 1 }}
-                fullWidth
-              />
-
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={useStrokeOrder}
-                    onChange={(event) => setUseStrokeOrder(event.target.checked)}
+              {showSettings && (
+                <Stack spacing={3}>
+                  <TextField
+                    label={strings.cellSizeLabel}
+                    type="number"
+                    value={cellSizeMm}
+                    onChange={(event) => setCellSizeMm(Number(event.target.value))}
+                    inputProps={{ min: 1, step: 1 }}
+                    fullWidth
                   />
-                }
-                label={strings.useStrokeOrderLabel}
-              />
 
-              {useStrokeOrder && (
-                <TextField
-                  label={strings.maxExamplesLabel}
-                  type="number"
-                  value={maxExamples}
-                  onChange={(event) => setMaxExamples(Number(event.target.value))}
-                  inputProps={{ min: 1, step: 1 }}
-                  fullWidth
-                />
+                  <TextField
+                    label={strings.exampleLinesLabel(exampleLines)}
+                    type="number"
+                    value={exampleLines}
+                    onChange={(event) => setExampleLines(Number(event.target.value))}
+                    inputProps={{ min: 0, step: 1 }}
+                    fullWidth
+                  />
+
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={useStrokeOrder}
+                        onChange={(event) => setUseStrokeOrder(event.target.checked)}
+                      />
+                    }
+                    label={strings.useStrokeOrderLabel}
+                  />
+
+                  {useStrokeOrder && (
+                    <TextField
+                      label={strings.maxExamplesLabel}
+                      type="number"
+                      value={maxExamples}
+                      onChange={(event) => setMaxExamples(Number(event.target.value))}
+                      inputProps={{ min: 1, step: 1 }}
+                      fullWidth
+                    />
+                  )}
+                </Stack>
               )}
 
-              <Button variant="contained" size="large" onClick={handleGenerate}>
+              <Button
+                variant="contained"
+                color="success"
+                size="large"
+                onClick={handleGenerate}
+              >
                 {strings.generateCopybookButton}
               </Button>
             </Stack>

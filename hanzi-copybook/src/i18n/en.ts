@@ -7,6 +7,7 @@ const en = {
     count === 1 ? 'example line' : 'example lines',
   useStrokeOrderLabel: 'Use stroke order in example lines',
   maxExamplesLabel: 'Max number of examples',
+  settingsToggleLabel: 'Toggle settings',
   generateCopybookButton: 'Generate copybook',
   backButton: 'Back',
   gridTian: 'Tian zi ge',

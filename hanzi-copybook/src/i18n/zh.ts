@@ -6,6 +6,7 @@ const zh = {
   exampleLinesLabel: () => '示范行',
   useStrokeOrderLabel: '示范行显示笔顺',
   maxExamplesLabel: '最大示例数量',
+  settingsToggleLabel: '切换设置',
   generateCopybookButton: '生成字帖',
   backButton: '返回',
   gridTian: '田字格',

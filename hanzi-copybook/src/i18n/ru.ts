@@ -11,6 +11,7 @@ const ru = {
   },
   useStrokeOrderLabel: 'Использовать порядок черт в примерах',
   maxExamplesLabel: 'Макс. число примеров',
+  settingsToggleLabel: 'Переключить настройки',
   generateCopybookButton: 'Создать прописи',
   backButton: 'Назад',
   gridTian: 'Тянь-цзы-гэ',
