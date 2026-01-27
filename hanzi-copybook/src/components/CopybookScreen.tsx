@@ -9,7 +9,8 @@ import {
 } from '@mui/material'
 import { useMemo, useState } from 'react'
 import CopybookPage from './CopybookPage'
-import type { GridStyle } from '../types/copybook'
+import CopybookSheet from './CopybookSheet'
+import type { GridStyle, LinesPerHanzi } from '../types/copybook'
 import { buildCopybookFilename, downloadCopybookPdf } from '../utils/pdf'
 import { getBrowserTranslations } from '../i18n'
 
@@ -18,6 +19,7 @@ type CopybookScreenProps = {
   cellSizeMm: number
   exampleLines: number
   exampleCells: number
+  linesPerHanzi: LinesPerHanzi
   useStrokeOrder: boolean
   maxExamples: number
   gridStyle: GridStyle
@@ -37,6 +39,7 @@ function CopybookScreen({
   cellSizeMm,
   exampleLines,
   exampleCells,
+  linesPerHanzi,
   useStrokeOrder,
   maxExamples,
   gridStyle,
@@ -52,6 +55,7 @@ function CopybookScreen({
     () => hanziList.filter((item) => item.trim().length > 0),
     [hanziList],
   )
+  const renderFullPages = linesPerHanzi === 'full'
 
   return (
     <Box className="copybook-screen">
@@ -102,18 +106,32 @@ function CopybookScreen({
         </Stack>
       </Box>
       <Stack spacing={4} alignItems="center">
-        {normalizedList.map((hanzi) => (
-          <CopybookPage
-            key={`page-${hanzi}`}
-            hanzi={hanzi}
+        {renderFullPages ? (
+          normalizedList.map((hanzi) => (
+            <CopybookPage
+              key={`page-${hanzi}`}
+              hanzi={hanzi}
+              cellSizeMm={cellSizeMm}
+              exampleLines={exampleLines}
+              exampleCells={exampleCells}
+              linesPerHanzi={linesPerHanzi}
+              useStrokeOrder={useStrokeOrder}
+              maxExamples={maxExamples}
+              gridStyle={gridStyle}
+            />
+          ))
+        ) : (
+          <CopybookSheet
+            hanziList={normalizedList}
             cellSizeMm={cellSizeMm}
             exampleLines={exampleLines}
             exampleCells={exampleCells}
+            linesPerHanzi={linesPerHanzi}
             useStrokeOrder={useStrokeOrder}
             maxExamples={maxExamples}
             gridStyle={gridStyle}
           />
-        ))}
+        )}
       </Stack>
       <Snackbar
         open={copied}

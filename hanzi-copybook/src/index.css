@@ -39,6 +39,12 @@ body {
   gap: 4mm;
 }
 
+.copybook-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4mm;
+}
+
 .copybook-header {
   height: var(--header-height);
   display: flex;

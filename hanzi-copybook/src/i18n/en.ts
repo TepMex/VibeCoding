@@ -3,6 +3,9 @@ const en = {
   hanziListLabel: 'Hanzi list',
   hanziListPlaceholder: 'Example: 我,你,他 or 我你他',
   cellSizeLabel: 'Cell size (mm)',
+  linesPerHanziLabel: 'Lines per hanzi',
+  linesPerHanziOption: (count: number) => `${count}`,
+  linesPerHanziOptionWholePage: 'Whole page',
   exampleLinesLabel: (count: number) =>
     count === 1 ? 'example line' : 'example lines',
   exampleCellsLabel: (count: number) =>

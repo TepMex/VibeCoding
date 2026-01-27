@@ -1,4 +1,4 @@
-import type { CopybookState } from '../types/copybook'
+import type { CopybookState, LinesPerHanzi } from '../types/copybook'
 
 const textEncoder = new TextEncoder()
 const textDecoder = new TextDecoder()
@@ -50,6 +50,15 @@ export const decodeCopybookState = (
 
     if (!parsed || typeof parsed !== 'object') return null
 
+    const normalizeLinesPerHanzi = (
+      value: Partial<LinesPerHanzi>,
+    ): LinesPerHanzi => {
+      if (value === 1 || value === 2 || value === 3 || value === 'full') {
+        return value
+      }
+      return defaults.linesPerHanzi
+    }
+
     const normalized: CopybookState = {
       ...defaults,
       ...parsed,
@@ -68,6 +77,7 @@ export const decodeCopybookState = (
         typeof parsed.exampleCells === 'number'
           ? parsed.exampleCells
           : defaults.exampleCells,
+      linesPerHanzi: normalizeLinesPerHanzi(parsed.linesPerHanzi),
       useStrokeOrder:
         typeof parsed.useStrokeOrder === 'boolean'
           ? parsed.useStrokeOrder

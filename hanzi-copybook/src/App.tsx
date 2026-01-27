@@ -6,13 +6,14 @@ import {
   Container,
   FormControlLabel,
   IconButton,
+  MenuItem,
   Stack,
   SvgIcon,
   TextField,
   Typography,
 } from '@mui/material'
 import CopybookScreen from './components/CopybookScreen'
-import type { CopybookState, GridStyle } from './types/copybook'
+import type { CopybookState, GridStyle, LinesPerHanzi } from './types/copybook'
 import { decodeCopybookState, encodeCopybookState } from './utils/shareLink'
 import copybookBackground from './assets/copybook.png'
 import { getBrowserTranslations } from './i18n'
@@ -22,6 +23,7 @@ const defaultExampleLines = 1
 const defaultExampleCells = 4
 const defaultMaxExamples = 6
 const defaultGridStyle: GridStyle = 'mi'
+const defaultLinesPerHanzi: LinesPerHanzi = 1
 
 const SettingsIcon = (props: ComponentProps<typeof SvgIcon>) => (
   <SvgIcon {...props} viewBox="0 0 24 24">
@@ -35,6 +37,8 @@ function App() {
   const [cellSizeMm, setCellSizeMm] = useState(defaultCellSizeMm)
   const [exampleLines, setExampleLines] = useState(defaultExampleLines)
   const [exampleCells, setExampleCells] = useState(defaultExampleCells)
+  const [linesPerHanzi, setLinesPerHanzi] =
+    useState<LinesPerHanzi>(defaultLinesPerHanzi)
   const [useStrokeOrder, setUseStrokeOrder] = useState(false)
   const [maxExamples, setMaxExamples] = useState(defaultMaxExamples)
   const [gridStyle, setGridStyle] = useState<GridStyle>(defaultGridStyle)
@@ -57,6 +61,7 @@ function App() {
       cellSizeMm: defaultCellSizeMm,
       exampleLines: defaultExampleLines,
       exampleCells: defaultExampleCells,
+      linesPerHanzi: defaultLinesPerHanzi,
       useStrokeOrder: false,
       maxExamples: defaultMaxExamples,
       gridStyle: defaultGridStyle,
@@ -74,6 +79,7 @@ function App() {
     setCellSizeMm(decoded.cellSizeMm)
     setExampleLines(decoded.exampleLines)
     setExampleCells(decoded.exampleCells)
+    setLinesPerHanzi(decoded.linesPerHanzi)
     setUseStrokeOrder(decoded.useStrokeOrder)
     setMaxExamples(decoded.maxExamples)
     setGridStyle(decoded.gridStyle)
@@ -116,6 +122,7 @@ function App() {
       cellSizeMm,
       exampleLines,
       exampleCells,
+      linesPerHanzi,
       useStrokeOrder,
       maxExamples,
       gridStyle,
@@ -131,6 +138,7 @@ function App() {
         cellSizeMm={copybookData.cellSizeMm}
         exampleLines={copybookData.exampleLines}
         exampleCells={copybookData.exampleCells}
+        linesPerHanzi={copybookData.linesPerHanzi}
         useStrokeOrder={copybookData.useStrokeOrder}
         maxExamples={copybookData.maxExamples}
         gridStyle={copybookData.gridStyle}
@@ -206,6 +214,23 @@ function App() {
                     inputProps={{ min: 1, step: 1 }}
                     fullWidth
                   />
+
+                  <TextField
+                    select
+                    label={strings.linesPerHanziLabel}
+                    value={linesPerHanzi}
+                    onChange={(event) =>
+                      setLinesPerHanzi(event.target.value as LinesPerHanzi)
+                    }
+                    fullWidth
+                  >
+                    <MenuItem value={1}>{strings.linesPerHanziOption(1)}</MenuItem>
+                    <MenuItem value={2}>{strings.linesPerHanziOption(2)}</MenuItem>
+                    <MenuItem value={3}>{strings.linesPerHanziOption(3)}</MenuItem>
+                    <MenuItem value="full">
+                      {strings.linesPerHanziOptionWholePage}
+                    </MenuItem>
+                  </TextField>
 
                   <TextField
                     label={strings.exampleLinesLabel(exampleLines)}

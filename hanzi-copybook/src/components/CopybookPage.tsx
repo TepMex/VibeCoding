@@ -1,6 +1,6 @@
 import { Box, Link, Typography } from '@mui/material'
 import { useEffect, useMemo, useState } from 'react'
-import type { GridStyle } from '../types/copybook'
+import type { GridStyle, LinesPerHanzi } from '../types/copybook'
 import {
   loadHanziStrokeData,
   type HanziStrokeData,
@@ -11,6 +11,7 @@ type CopybookPageProps = {
   cellSizeMm: number
   exampleLines: number
   exampleCells: number
+  linesPerHanzi: LinesPerHanzi
   useStrokeOrder: boolean
   maxExamples: number
   gridStyle: GridStyle
@@ -30,6 +31,7 @@ function CopybookPage({
   cellSizeMm,
   exampleLines,
   exampleCells,
+  linesPerHanzi,
   useStrokeOrder,
   maxExamples,
   gridStyle,
@@ -54,8 +56,10 @@ function CopybookPage({
     const usableHeight = pageHeightMm - pageMarginMm * 2 - headerHeightMm
     const columns = clamp(Math.floor(usableWidth / cellSizeMm), 1)
     const rows = clamp(Math.floor(usableHeight / cellSizeMm), 1)
-    return { columns, rows }
-  }, [cellSizeMm])
+    const limitedRows =
+      linesPerHanzi === 'full' ? rows : Math.min(rows, linesPerHanzi)
+    return { columns, rows: limitedRows }
+  }, [cellSizeMm, linesPerHanzi])
 
   const cells = useMemo(() => {
     const total = layout.columns * layout.rows
