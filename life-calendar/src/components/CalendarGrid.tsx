@@ -15,19 +15,26 @@ interface CalendarGridProps {
 const DAYS_TO_LOAD = 50;
 const WEEKS_TO_LOAD_AT_ONCE = 10;
 
+function toLocalDateString(date: Date): string {
+  const year = date.getFullYear();
+  const month = `${date.getMonth() + 1}`.padStart(2, '0');
+  const day = `${date.getDate()}`.padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 function generateWeeks(startDate: Date, endDate: Date): { date: string; month: string }[][] {
   const weeksData: { date: string; month: string }[][] = [];
   let currentDate = new Date(startDate);
   let currentWeek: { date: string; month: string }[] = [];
 
   const startOfWeek = new Date(currentDate);
-  const dayOfWeek = startOfWeek.getDay();
+  const dayOfWeek = (startOfWeek.getDay() + 6) % 7;
   startOfWeek.setDate(startOfWeek.getDate() - dayOfWeek);
 
   currentDate = new Date(startOfWeek);
 
   while (currentDate <= endDate) {
-    const dateStr = currentDate.toISOString().split('T')[0];
+    const dateStr = toLocalDateString(currentDate);
     const month = currentDate.toLocaleDateString('en-US', { month: 'short' });
 
     currentWeek.push({ date: dateStr, month });
@@ -42,7 +49,7 @@ function generateWeeks(startDate: Date, endDate: Date): { date: string; month: s
 
   if (currentWeek.length > 0) {
     while (currentWeek.length < 7) {
-      const dateStr = currentDate.toISOString().split('T')[0];
+      const dateStr = toLocalDateString(currentDate);
       const month = currentDate.toLocaleDateString('en-US', { month: 'short' });
       currentWeek.push({ date: dateStr, month });
       currentDate.setDate(currentDate.getDate() + 1);
@@ -294,7 +301,7 @@ export function CalendarGrid({ categories, events, onDayClick, onDayDoubleClick,
                   {monthHeader.month}
                 </Typography>
               )}
-              {week.map((day) => (
+              {week.map((day, dayIndex) => (
                 <Box
                   key={day.date}
                   sx={{
@@ -309,6 +316,7 @@ export function CalendarGrid({ categories, events, onDayClick, onDayDoubleClick,
                     onClick={() => onDayClick(day.date)}
                     onDoubleClick={() => onDayDoubleClick(day.date)}
                     highlighted={highlightedDate === day.date}
+                    showDayNumber={dayIndex === 0}
                   />
                 </Box>
               ))}

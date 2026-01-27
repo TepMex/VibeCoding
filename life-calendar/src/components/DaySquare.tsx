@@ -1,4 +1,4 @@
-import { Box, Tooltip, useTheme } from '@mui/material';
+import { Box, Tooltip, Typography, useTheme } from '@mui/material';
 import type { DayEvent, LegendCategory } from '../types';
 
 interface DaySquareProps {
@@ -8,9 +8,10 @@ interface DaySquareProps {
   onClick: () => void;
   onDoubleClick: () => void;
   highlighted?: boolean;
+  showDayNumber?: boolean;
 }
 
-export function DaySquare({ date, events, categories, onClick, onDoubleClick, highlighted = false }: DaySquareProps) {
+export function DaySquare({ date, events, categories, onClick, onDoubleClick, highlighted = false, showDayNumber = false }: DaySquareProps) {
   const theme = useTheme();
   
   const getCategoryColor = (categoryId: string) => {
@@ -31,6 +32,8 @@ export function DaySquare({ date, events, categories, onClick, onDoubleClick, hi
       day: 'numeric',
     });
   };
+
+  const dayNumber = new Date(date + 'T00:00:00').getDate();
 
   const getEventHeight = (duration: 'full' | 'half' | 'quarter'): string => {
     if (duration === 'full') return '100%';
@@ -83,6 +86,27 @@ export function DaySquare({ date, events, categories, onClick, onDoubleClick, hi
           },
         }}
       >
+        {showDayNumber && (
+          <Typography
+            variant="caption"
+            sx={{
+              position: 'absolute',
+              top: 2,
+              left: 3,
+              zIndex: 3,
+              fontSize: { xs: '0.55rem', sm: '0.6rem' },
+              lineHeight: 1,
+              color: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.85)' : 'rgba(0,0,0,0.75)',
+              textShadow: theme.palette.mode === 'dark'
+                ? '0 1px 1px rgba(0,0,0,0.6)'
+                : '0 1px 1px rgba(255,255,255,0.6)',
+              pointerEvents: 'none',
+              userSelect: 'none',
+            }}
+          >
+            {dayNumber}
+          </Typography>
+        )}
         {sortedEvents.map((event, index) => {
           const color = getCategoryColor(event.categoryId);
           const height = getEventHeight(event.duration);
