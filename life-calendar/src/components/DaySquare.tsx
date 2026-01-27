@@ -20,7 +20,7 @@ export function DaySquare({ date, events, categories, onClick, onDoubleClick, hi
   };
 
   const sortedEvents = [...events].sort((a, b) => {
-    const order = { full: 0, half: 1, quarter: 2 };
+    const order = { full: 0, half: 1, quarter: 2, eighth: 3 };
     return order[a.duration] - order[b.duration];
   });
 
@@ -35,19 +35,20 @@ export function DaySquare({ date, events, categories, onClick, onDoubleClick, hi
 
   const dayNumber = new Date(date + 'T00:00:00').getDate();
 
-  const getEventHeight = (duration: 'full' | 'half' | 'quarter'): string => {
-    if (duration === 'full') return '100%';
-    if (duration === 'half') return '50%';
-    return '25%';
+  const getDurationPercent = (duration: DayEvent['duration']): number => {
+    if (duration === 'full') return 100;
+    if (duration === 'half') return 50;
+    if (duration === 'quarter') return 25;
+    return 12.5;
   };
+
+  const getEventHeight = (duration: DayEvent['duration']): string => `${getDurationPercent(duration)}%`;
 
   const calculateTopPosition = (index: number, events: DayEvent[]): string => {
     let top = 0;
     for (let i = 0; i < index; i++) {
       const prevDuration = events[i].duration;
-      if (prevDuration === 'full') top = 100;
-      else if (prevDuration === 'half') top += 50;
-      else top += 25;
+      top += getDurationPercent(prevDuration);
     }
     return `${top}%`;
   };

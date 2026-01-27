@@ -9,5 +9,5 @@ export interface DayEvent {
   id: string;
   date: string; // YYYY-MM-DD
   categoryId: string;
-  duration: 'full' | 'half' | 'quarter';
+  duration: 'full' | 'half' | 'quarter' | 'eighth';
 }

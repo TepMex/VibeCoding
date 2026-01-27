@@ -54,7 +54,7 @@ export function EventDialog({
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const categoryId = formData.get('categoryId') as string;
-    const duration = formData.get('duration') as 'full' | 'half' | 'quarter';
+    const duration = formData.get('duration') as DayEvent['duration'];
 
     if (categoryId && duration) {
       onSave({
@@ -64,6 +64,13 @@ export function EventDialog({
       });
       e.currentTarget.reset();
     }
+  };
+
+  const formatDurationLabel = (duration: DayEvent['duration']) => {
+    if (duration === 'full') return 'Whole day';
+    if (duration === 'half') return 'Half a day';
+    if (duration === 'quarter') return '1/4 of day';
+    return '1/8 of day';
   };
 
   return (
@@ -131,7 +138,7 @@ export function EventDialog({
                   >
                     <ListItemText
                       primary={category?.name || 'Unknown'}
-                      secondary={`${event.duration} day`}
+                      secondary={formatDurationLabel(event.duration)}
                       primaryTypographyProps={{
                         fontSize: { xs: '0.875rem', sm: '1rem' },
                       }}
@@ -208,6 +215,7 @@ export function EventDialog({
             <MenuItem value="full">Whole day</MenuItem>
             <MenuItem value="half">Half a day</MenuItem>
             <MenuItem value="quarter">1/4 of day</MenuItem>
+            <MenuItem value="eighth">1/8 of day</MenuItem>
           </TextField>
         </Box>
       </DialogContent>
