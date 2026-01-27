@@ -6,9 +6,9 @@ const en = {
   linesPerHanziLabel: 'Lines per hanzi',
   linesPerHanziOption: (count: number) => `${count}`,
   linesPerHanziOptionWholePage: 'Whole page',
-  exampleLinesLabel: (count: number) =>
+  exampleLinesLabel: (count: number): string =>
     count === 1 ? 'example line' : 'example lines',
-  exampleCellsLabel: (count: number) =>
+  exampleCellsLabel: (count: number): string =>
     count === 1 ? 'example cell' : 'example cells',
   useStrokeOrderLabel: 'Use stroke order in example lines',
   maxExamplesLabel: 'Max number of examples',

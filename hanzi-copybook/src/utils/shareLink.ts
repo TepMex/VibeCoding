@@ -51,7 +51,7 @@ export const decodeCopybookState = (
     if (!parsed || typeof parsed !== 'object') return null
 
     const normalizeLinesPerHanzi = (
-      value: Partial<LinesPerHanzi>,
+      value?: LinesPerHanzi,
     ): LinesPerHanzi => {
       if (value === 1 || value === 2 || value === 3 || value === 'full') {
         return value
