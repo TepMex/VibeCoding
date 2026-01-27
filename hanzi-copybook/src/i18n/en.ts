@@ -5,6 +5,8 @@ const en = {
   cellSizeLabel: 'Cell size (mm)',
   exampleLinesLabel: (count: number) =>
     count === 1 ? 'example line' : 'example lines',
+  exampleCellsLabel: (count: number) =>
+    count === 1 ? 'example cell' : 'example cells',
   useStrokeOrderLabel: 'Use stroke order in example lines',
   maxExamplesLabel: 'Max number of examples',
   settingsToggleLabel: 'Toggle settings',
@@ -19,15 +21,17 @@ const en = {
   metaLine: ({
     cellSizeMm,
     exampleLines,
+    exampleCells,
     gridLabel,
   }: {
     cellSizeMm: number
     exampleLines: number
+    exampleCells: number
     gridLabel: string
   }) =>
     `${cellSizeMm}mm · ${exampleLines} ${en.exampleLinesLabel(
       exampleLines,
-    )} · ${gridLabel}`,
+    )} · ${exampleCells} ${en.exampleCellsLabel(exampleCells)} · ${gridLabel}`,
 }
 
 export default en

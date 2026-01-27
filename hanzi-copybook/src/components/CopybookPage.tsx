@@ -11,6 +11,7 @@ type CopybookPageProps = {
   hanzi: string
   cellSizeMm: number
   exampleLines: number
+  exampleCells: number
   useStrokeOrder: boolean
   maxExamples: number
   gridStyle: GridStyle
@@ -29,6 +30,7 @@ function CopybookPage({
   hanzi,
   cellSizeMm,
   exampleLines,
+  exampleCells,
   useStrokeOrder,
   maxExamples,
   gridStyle,
@@ -73,6 +75,10 @@ function CopybookPage({
   )
 
   const strokeCount = strokeData?.strokes.length ?? 0
+  const exampleCellsPerRow = useMemo(
+    () => Math.min(Math.max(exampleCells, 0), layout.columns),
+    [exampleCells, layout.columns],
+  )
   const totalExampleStages = useMemo(() => {
     if (!useStrokeOrder || strokeCount === 0) return 0
     return Math.min(maxExamples, strokeCount)
@@ -101,6 +107,7 @@ function CopybookPage({
             {strings.metaLine({
               cellSizeMm,
               exampleLines,
+              exampleCells,
               gridLabel: gridStyle === 'tian' ? strings.gridTian : strings.gridMi,
             })}
           </Typography>
@@ -116,20 +123,22 @@ function CopybookPage({
             const rowIndex = Math.floor(cellIndex / layout.columns)
             const columnIndex = cellIndex % layout.columns
             const isExampleRow = rowIndex < exampleLines
-            const exampleCellIndex = rowIndex * layout.columns + columnIndex
-            const showStrokeOrder = isExampleRow && useStrokeOrder && strokeData
+            const isExampleCell = isExampleRow && columnIndex < exampleCellsPerRow
+            const exampleCellIndex =
+              rowIndex * exampleCellsPerRow + columnIndex
+            const showStrokeOrder = isExampleCell && useStrokeOrder && strokeData
             const stageCount = showStrokeOrder
               ? exampleCellIndex < totalExampleStages
                 ? Math.min(stageOffset + exampleCellIndex + 1, strokeCount)
                 : strokeCount
               : 0
             const showFallbackText =
-              isExampleRow && (!useStrokeOrder || !strokeData)
+              isExampleCell && (!useStrokeOrder || !strokeData)
             return (
               <Box
                 className={`copybook-cell ${
-                  isExampleRow ? 'copybook-cell-example' : ''
-                }`}
+                  isExampleCell ? 'copybook-cell-example' : ''
+                } ${isExampleCell && columnIndex === 0 ? 'copybook-cell-example-first' : ''}`}
                 key={`${hanzi}-${cellIndex}`}
               >
                 <span className="copybook-cell-diagonal copybook-cell-diagonal-1" />

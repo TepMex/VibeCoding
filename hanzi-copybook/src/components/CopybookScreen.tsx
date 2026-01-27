@@ -17,6 +17,7 @@ type CopybookScreenProps = {
   hanziList: string[]
   cellSizeMm: number
   exampleLines: number
+  exampleCells: number
   useStrokeOrder: boolean
   maxExamples: number
   gridStyle: GridStyle
@@ -35,6 +36,7 @@ function CopybookScreen({
   hanziList,
   cellSizeMm,
   exampleLines,
+  exampleCells,
   useStrokeOrder,
   maxExamples,
   gridStyle,
@@ -106,6 +108,7 @@ function CopybookScreen({
             hanzi={hanzi}
             cellSizeMm={cellSizeMm}
             exampleLines={exampleLines}
+            exampleCells={exampleCells}
             useStrokeOrder={useStrokeOrder}
             maxExamples={maxExamples}
             gridStyle={gridStyle}

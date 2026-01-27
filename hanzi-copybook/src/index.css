@@ -143,6 +143,10 @@ body {
   color: rgba(0, 0, 0, 0.28);
 }
 
+.copybook-cell-example-first .copybook-cell-hanzi {
+  color: #000;
+}
+
 .copybook-cell-strokes {
   position: absolute;
   inset: 0;
@@ -158,6 +162,10 @@ body {
   stroke-width: 48;
   stroke-linecap: round;
   stroke-linejoin: round;
+}
+
+.copybook-cell-example-first .copybook-cell-strokes path {
+  stroke: #000;
 }
 
 @media print {

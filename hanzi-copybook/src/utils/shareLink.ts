@@ -64,6 +64,10 @@ export const decodeCopybookState = (
         typeof parsed.exampleLines === 'number'
           ? parsed.exampleLines
           : defaults.exampleLines,
+      exampleCells:
+        typeof parsed.exampleCells === 'number'
+          ? parsed.exampleCells
+          : defaults.exampleCells,
       useStrokeOrder:
         typeof parsed.useStrokeOrder === 'boolean'
           ? parsed.useStrokeOrder

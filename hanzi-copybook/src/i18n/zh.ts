@@ -4,6 +4,7 @@ const zh = {
   hanziListPlaceholder: '示例：我,你,他 或 我你他',
   cellSizeLabel: '格子大小（毫米）',
   exampleLinesLabel: () => '示范行',
+  exampleCellsLabel: () => '示范格数',
   useStrokeOrderLabel: '示范行显示笔顺',
   maxExamplesLabel: '最大示例数量',
   settingsToggleLabel: '切换设置',
@@ -18,12 +19,15 @@ const zh = {
   metaLine: ({
     cellSizeMm,
     exampleLines,
+    exampleCells,
     gridLabel,
   }: {
     cellSizeMm: number
     exampleLines: number
+    exampleCells: number
     gridLabel: string
-  }) => `${cellSizeMm}毫米 · ${exampleLines} ${zh.exampleLinesLabel()} · ${gridLabel}`,
+  }) =>
+    `${cellSizeMm}毫米 · ${exampleLines} ${zh.exampleLinesLabel()} · ${exampleCells} ${zh.exampleCellsLabel()} · ${gridLabel}`,
 }
 
 export default zh

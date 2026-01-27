@@ -19,8 +19,9 @@ import { getBrowserTranslations } from './i18n'
 
 const defaultCellSizeMm = 16
 const defaultExampleLines = 1
+const defaultExampleCells = 4
 const defaultMaxExamples = 6
-const defaultGridStyle: GridStyle = 'tian'
+const defaultGridStyle: GridStyle = 'mi'
 
 const SettingsIcon = (props: ComponentProps<typeof SvgIcon>) => (
   <SvgIcon {...props} viewBox="0 0 24 24">
@@ -33,6 +34,7 @@ function App() {
   const [hanziText, setHanziText] = useState('我的汉子')
   const [cellSizeMm, setCellSizeMm] = useState(defaultCellSizeMm)
   const [exampleLines, setExampleLines] = useState(defaultExampleLines)
+  const [exampleCells, setExampleCells] = useState(defaultExampleCells)
   const [useStrokeOrder, setUseStrokeOrder] = useState(false)
   const [maxExamples, setMaxExamples] = useState(defaultMaxExamples)
   const [gridStyle, setGridStyle] = useState<GridStyle>(defaultGridStyle)
@@ -54,6 +56,7 @@ function App() {
       hanziList: [],
       cellSizeMm: defaultCellSizeMm,
       exampleLines: defaultExampleLines,
+      exampleCells: defaultExampleCells,
       useStrokeOrder: false,
       maxExamples: defaultMaxExamples,
       gridStyle: defaultGridStyle,
@@ -70,6 +73,7 @@ function App() {
     setHanziText(decoded.hanziList.join(''))
     setCellSizeMm(decoded.cellSizeMm)
     setExampleLines(decoded.exampleLines)
+    setExampleCells(decoded.exampleCells)
     setUseStrokeOrder(decoded.useStrokeOrder)
     setMaxExamples(decoded.maxExamples)
     setGridStyle(decoded.gridStyle)
@@ -111,6 +115,7 @@ function App() {
       hanziList,
       cellSizeMm,
       exampleLines,
+      exampleCells,
       useStrokeOrder,
       maxExamples,
       gridStyle,
@@ -125,6 +130,7 @@ function App() {
         hanziList={copybookData.hanziList}
         cellSizeMm={copybookData.cellSizeMm}
         exampleLines={copybookData.exampleLines}
+        exampleCells={copybookData.exampleCells}
         useStrokeOrder={copybookData.useStrokeOrder}
         maxExamples={copybookData.maxExamples}
         gridStyle={copybookData.gridStyle}
@@ -206,6 +212,15 @@ function App() {
                     type="number"
                     value={exampleLines}
                     onChange={(event) => setExampleLines(Number(event.target.value))}
+                    inputProps={{ min: 0, step: 1 }}
+                    fullWidth
+                  />
+
+                  <TextField
+                    label={strings.exampleCellsLabel(exampleCells)}
+                    type="number"
+                    value={exampleCells}
+                    onChange={(event) => setExampleCells(Number(event.target.value))}
                     inputProps={{ min: 0, step: 1 }}
                     fullWidth
                   />
