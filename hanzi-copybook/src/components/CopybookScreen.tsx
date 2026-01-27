@@ -11,6 +11,7 @@ import { useMemo, useState } from 'react'
 import CopybookPage from './CopybookPage'
 import type { GridStyle } from '../types/copybook'
 import { buildCopybookFilename, downloadCopybookPdf } from '../utils/pdf'
+import { getBrowserTranslations } from '../i18n'
 
 type CopybookScreenProps = {
   hanziList: string[]
@@ -41,6 +42,7 @@ function CopybookScreen({
   onCopyLink,
   onBack,
 }: CopybookScreenProps) {
+  const strings = useMemo(() => getBrowserTranslations(), [])
   const [copied, setCopied] = useState(false)
   const [isDownloading, setIsDownloading] = useState(false)
 
@@ -54,7 +56,7 @@ function CopybookScreen({
       <Box className="screen-only copybook-controls">
         <Stack direction="row" spacing={2} alignItems="center">
           <Button variant="text" onClick={onBack} startIcon={<BackIcon />}>
-            Back
+            {strings.backButton}
           </Button>
           <ToggleButtonGroup
             exclusive
@@ -64,8 +66,8 @@ function CopybookScreen({
             }}
             size="small"
           >
-            <ToggleButton value="tian">Tian zi ge</ToggleButton>
-            <ToggleButton value="mi">Mi zi ge</ToggleButton>
+            <ToggleButton value="tian">{strings.gridTian}</ToggleButton>
+            <ToggleButton value="mi">{strings.gridMi}</ToggleButton>
           </ToggleButtonGroup>
           <Box sx={{ flex: 1 }} />
           <Button
@@ -79,7 +81,7 @@ function CopybookScreen({
               }
             }}
           >
-            Copy link
+            {strings.copyLink}
           </Button>
           <Button
             variant="contained"
@@ -93,7 +95,7 @@ function CopybookScreen({
               }
             }}
           >
-            {isDownloading ? 'Generating PDF...' : 'Download PDF'}
+            {isDownloading ? strings.generatingPdf : strings.downloadPdf}
           </Button>
         </Stack>
       </Box>
@@ -114,7 +116,7 @@ function CopybookScreen({
         open={copied}
         autoHideDuration={2000}
         onClose={() => setCopied(false)}
-        message="Link copied"
+        message={strings.linkCopied}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       />
     </Box>

@@ -13,6 +13,7 @@ import CopybookScreen from './components/CopybookScreen'
 import type { CopybookState, GridStyle } from './types/copybook'
 import { decodeCopybookState, encodeCopybookState } from './utils/shareLink'
 import copybookBackground from './assets/copybook.png'
+import { getBrowserTranslations } from './i18n'
 
 const defaultCellSizeMm = 15
 const defaultExampleLines = 1
@@ -20,6 +21,7 @@ const defaultMaxExamples = 6
 const defaultGridStyle: GridStyle = 'tian'
 
 function App() {
+  const strings = useMemo(() => getBrowserTranslations(), [])
   const [hanziText, setHanziText] = useState('我的汉子')
   const [cellSizeMm, setCellSizeMm] = useState(defaultCellSizeMm)
   const [exampleLines, setExampleLines] = useState(defaultExampleLines)
@@ -157,12 +159,12 @@ function App() {
           >
             <Stack spacing={3}>
               <Typography variant="h4" component="h1">
-                Hanzi Copybook
+                {strings.appTitle}
               </Typography>
 
               <TextField
-                label="Hanzi list"
-                placeholder="例: 我,你,他 or 我你他"
+                label={strings.hanziListLabel}
+                placeholder={strings.hanziListPlaceholder}
                 value={hanziText}
                 onChange={(event) => setHanziText(event.target.value)}
                 multiline
@@ -171,7 +173,7 @@ function App() {
               />
 
               <TextField
-                label="Cell size (mm)"
+                label={strings.cellSizeLabel}
                 type="number"
                 value={cellSizeMm}
                 onChange={(event) => setCellSizeMm(Number(event.target.value))}
@@ -180,7 +182,7 @@ function App() {
               />
 
               <TextField
-                label="Number of example lines"
+                label={strings.exampleLinesLabel(exampleLines)}
                 type="number"
                 value={exampleLines}
                 onChange={(event) => setExampleLines(Number(event.target.value))}
@@ -195,12 +197,12 @@ function App() {
                     onChange={(event) => setUseStrokeOrder(event.target.checked)}
                   />
                 }
-                label="Use stroke order in example lines"
+                label={strings.useStrokeOrderLabel}
               />
 
               {useStrokeOrder && (
                 <TextField
-                  label="Max number of examples"
+                  label={strings.maxExamplesLabel}
                   type="number"
                   value={maxExamples}
                   onChange={(event) => setMaxExamples(Number(event.target.value))}
@@ -210,7 +212,7 @@ function App() {
               )}
 
               <Button variant="contained" size="large" onClick={handleGenerate}>
-                Generate copybook
+                {strings.generateCopybookButton}
               </Button>
             </Stack>
           </Box>
