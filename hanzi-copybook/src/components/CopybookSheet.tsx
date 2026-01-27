@@ -21,6 +21,7 @@ type CopybookSectionProps = {
   hanzi: string
   columns: number
   rows: number
+  showLink: boolean
   exampleLines: number
   exampleCells: number
   useStrokeOrder: boolean
@@ -43,6 +44,7 @@ function CopybookSection({
   hanzi,
   columns,
   rows,
+  showLink,
   exampleLines,
   exampleCells,
   useStrokeOrder,
@@ -88,15 +90,17 @@ function CopybookSection({
     <Box className="copybook-section">
       <Box className="copybook-header">
         <Typography className="copybook-header-hanzi">{hanzi}</Typography>
-        <Link
-          className="copybook-header-link"
-          href="https://tepmex.github.io/hanzi-copybook"
-          target="_blank"
-          rel="noreferrer"
-          underline="none"
-        >
-          tepmex.github.io/hanzi-copybook
-        </Link>
+        {showLink && (
+          <Link
+            className="copybook-header-link"
+            href="https://tepmex.github.io/hanzi-copybook"
+            target="_blank"
+            rel="noreferrer"
+            underline="none"
+          >
+            tepmex.github.io/hanzi-copybook
+          </Link>
+        )}
       </Box>
       <Box
         className={`copybook-grid copybook-grid-${gridStyle}`}
@@ -217,6 +221,7 @@ function CopybookSheet({
                 hanzi={hanzi}
                 columns={layout.columns}
                 rows={layout.rowsPerSection}
+                showLink={sectionIndex === 0}
                 exampleLines={exampleLines}
                 exampleCells={exampleCells}
                 useStrokeOrder={useStrokeOrder}
