@@ -42,14 +42,18 @@ body {
 .copybook-section {
   display: flex;
   flex-direction: column;
-  gap: 4mm;
+  gap: 0;
+}
+
+.copybook-section + .copybook-section {
+  margin-top: 4mm;
 }
 
 .copybook-header {
-  height: var(--header-height);
+  height: var(--page-header-height);
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 12px;
   border-bottom: 0.3mm solid #111;
   padding-bottom: 2mm;
@@ -62,16 +66,52 @@ body {
   white-space: nowrap;
 }
 
-.copybook-header-hanzi {
-  font-family: 'KaiTi', 'STKaiti', 'SimSun', 'Noto Serif SC', serif;
-  font-size: 9mm;
-  line-height: 1;
+.copybook-hanzi-header {
+  height: var(--hanzi-header-height);
+  width: 100%;
+  display: grid;
+  align-items: center;
+  justify-content: start;
+  gap: 0;
+  border: 0.35mm solid #111;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
-.copybook-header-meta {
-  color: #444;
-  font-size: 3.2mm;
-  white-space: nowrap;
+.copybook-hanzi-header-cell {
+  position: relative;
+  width: var(--hanzi-header-cell-size);
+  height: var(--hanzi-header-cell-size);
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-right: 0.35mm solid #111;
+}
+
+.copybook-hanzi-header-cell:last-child {
+  border-right: none;
+}
+
+.copybook-hanzi-header-text {
+  font-family: 'KaiTi', 'STKaiti', 'SimSun', 'Noto Serif SC', serif;
+  font-size: calc(var(--hanzi-header-cell-size) * 0.72);
+  line-height: 1;
+  color: #000;
+}
+
+.copybook-hanzi-header-strokes {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.copybook-hanzi-header-strokes path {
+  fill: #000;
+  stroke: none;
 }
 
 .copybook-grid {
@@ -163,15 +203,12 @@ body {
 }
 
 .copybook-cell-strokes path {
-  fill: none;
-  stroke: rgba(0, 0, 0, 0.28);
-  stroke-width: 48;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+  fill: rgba(0, 0, 0, 0.28);
+  stroke: none;
 }
 
 .copybook-cell-example-first .copybook-cell-strokes path {
-  stroke: #000;
+  fill: #000;
 }
 
 @media print {
