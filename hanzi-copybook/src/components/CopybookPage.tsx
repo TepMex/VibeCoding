@@ -5,7 +5,6 @@ import {
   loadHanziStrokeData,
   type HanziStrokeData,
 } from '../utils/hanziStrokeData'
-import { getBrowserTranslations } from '../i18n'
 
 type CopybookPageProps = {
   hanzi: string
@@ -35,7 +34,6 @@ function CopybookPage({
   maxExamples,
   gridStyle,
 }: CopybookPageProps) {
-  const strings = useMemo(() => getBrowserTranslations(), [])
   const [strokeData, setStrokeData] = useState<HanziStrokeData | null>(null)
 
   useEffect(() => {
@@ -103,14 +101,6 @@ function CopybookPage({
           >
             tepmex.github.io/hanzi-copybook
           </Link>
-          <Typography className="copybook-header-meta">
-            {strings.metaLine({
-              cellSizeMm,
-              exampleLines,
-              exampleCells,
-              gridLabel: gridStyle === 'tian' ? strings.gridTian : strings.gridMi,
-            })}
-          </Typography>
         </Box>
         <Box
           className={`copybook-grid copybook-grid-${gridStyle}`}
