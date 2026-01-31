@@ -47,9 +47,6 @@ body {
   gap: 0;
 }
 
-.copybook-section + .copybook-section {
-  margin-top: 4mm;
-}
 
 .copybook-header {
   height: var(--page-header-height);
@@ -246,10 +243,20 @@ body {
     zoom: 1;
     break-after: page;
     page-break-after: always;
+    break-inside: avoid;
+    page-break-inside: avoid;
+    overflow: hidden;
   }
 
   .copybook-page:last-of-type {
     break-after: auto;
     page-break-after: auto;
+  }
+
+  .copybook-section,
+  .copybook-grid,
+  .copybook-hanzi-header {
+    break-inside: avoid;
+    page-break-inside: avoid;
   }
 }
