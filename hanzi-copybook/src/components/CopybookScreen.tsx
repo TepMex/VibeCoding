@@ -7,7 +7,7 @@ import {
   ToggleButton,
   ToggleButtonGroup,
 } from '@mui/material'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type CSSProperties } from 'react'
 import CopybookPage from './CopybookPage'
 import CopybookSheet from './CopybookSheet'
 import type { GridStyle, LinesPerHanzi } from '../types/copybook'
@@ -50,6 +50,7 @@ function CopybookScreen({
   const strings = useMemo(() => getBrowserTranslations(), [])
   const [copied, setCopied] = useState(false)
   const [isDownloading, setIsDownloading] = useState(false)
+  const [pageScale, setPageScale] = useState(1)
 
   const normalizedList = useMemo(
     () => hanziList.filter((item) => item.trim().length > 0),
@@ -57,8 +58,29 @@ function CopybookScreen({
   )
   const renderFullPages = linesPerHanzi === 'full'
 
+  useEffect(() => {
+    const mmToPx = 96 / 25.4
+    const pageWidthPx = 210 * mmToPx
+    const updateScale = () => {
+      const available = Math.max(window.innerWidth - 32, 0)
+      const nextScale = Math.min(1, available / pageWidthPx)
+      const safeScale = Number.isFinite(nextScale) ? Math.max(nextScale, 0.35) : 1
+      setPageScale(safeScale)
+    }
+    updateScale()
+    window.addEventListener('resize', updateScale)
+    return () => window.removeEventListener('resize', updateScale)
+  }, [])
+
   return (
-    <Box className="copybook-screen">
+    <Box
+      className="copybook-screen"
+      style={
+        {
+          '--page-scale': pageScale,
+        } as CSSProperties
+      }
+    >
       <Box className="screen-only copybook-controls">
         <Stack direction="row" spacing={2} alignItems="center">
           <Button variant="text" onClick={onBack} startIcon={<BackIcon />}>

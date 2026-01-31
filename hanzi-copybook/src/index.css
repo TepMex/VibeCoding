@@ -14,6 +14,7 @@ body {
 
 .copybook-screen {
   padding: 24px 12px 48px;
+  overflow-x: auto;
 }
 
 .copybook-controls {
@@ -28,6 +29,7 @@ body {
   background: #fff;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
   border-radius: 6px;
+  zoom: var(--page-scale, 1);
 }
 
 .copybook-page-inner {
@@ -241,6 +243,7 @@ body {
   .copybook-page {
     box-shadow: none;
     border-radius: 0;
+    zoom: 1;
     break-after: page;
     page-break-after: always;
   }
