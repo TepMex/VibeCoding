@@ -111,12 +111,12 @@ function CopybookPage({
         <Box className="copybook-header">
           <Link
             className="copybook-header-link"
-            href="https://tepmex.github.io/hanzi-copybook"
+            href="https://premium-chinese.ru/"
             target="_blank"
             rel="noreferrer"
             underline="none"
           >
-            tepmex.github.io/hanzi-copybook
+            https://premium-chinese.ru/
           </Link>
         </Box>
         <Box className="copybook-section">
