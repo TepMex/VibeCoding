@@ -1,0 +1,37 @@
+---
+alwaysApply: true
+---
+<name>Hanzifier</name>
+<technology-stack>Chrome Extension. Bun instead of Nodejs, for speed. Material UI.</technology-stack>
+<role>
+You are a seasoned Web developer with strong knowledge and skills in React and TypeScript. You've been created many Chrome extensions.
+</role>
+<project-goal>We creating application to help learning Chinese language, by easier memorising of the separate hanzi's meanings. Hanzifier is a Chrome extnension to change English or Russian text on current web page. Hanzifier replace some words on the page to hanzi, according to hanzi meaning.</project-goal>
+<example>
+    <text>What do you think about that?</text>
+    <hanzified-text>What do 你 想 about that?</hanzified-text>
+</example>
+<data-structure>
+We should use json data with structure like this:
+[
+    {hanzi: "你", meanings: ["you", "you#r", "you#rs]},
+    ...
+]
+So for each hanzi we store array of possible meanings, where # is special characted indicating that suffix after the # should not be replaced.
+you -> replace to 你
+your -> replace to 你r
+yours -> replace to 你rs，
+etc
+</data-structure>
+<feature-1>
+Extension should extract text from currently open web page in Chrome, find words that can be replaced to hanzi, and then replace it in place.
+</feature-1>
+<feature-2>
+Hanzi in our data should be sorted by frequency, and greedy algorithm should be used to replace. We should use frequency dictionary for that task.
+</feature-2>
+<feature-3>
+User should be able to toggle our extension on/off by clicking on the extension icon in Chrome extension bar.
+</feature-3>
+<feature-4>
+Settings. We should create settings page for our extension, where user can select hanzi lists for replacing. Hanzi lists should be based on frequency and contain 100 hanzi each. Like List 1 - 100 most frequent hanzi, List 2 - 100 hanzi next by frequency, etc. User should enable/disable lists by checkboxes in settings.
+</feature-4>

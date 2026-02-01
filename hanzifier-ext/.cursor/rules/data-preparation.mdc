@@ -1,0 +1,14 @@
+---
+alwaysApply: false
+---
+We should prepare our data for English and Russian language to format like this
+[
+    {hanzi: "你", meanings: ["you", "you#r", "you#rs]},
+    ...
+]
+
+Use frequency dictionary from ./data/hanzi-frequency.csv
+Extract English meanings from ./data/unihan-kdefinition.txt (kDefinition field)
+Extract Russian meanings from ./data/BKRS. Data is stored in Youmichan format.
+
+We should do something with variability of words (suffixes), maybe using some morphology libraries for English and Russian.

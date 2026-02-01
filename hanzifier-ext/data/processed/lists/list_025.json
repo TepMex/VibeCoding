@@ -1,0 +1,1342 @@
+[
+  {
+    "hanzi": "缸",
+    "meanings": [
+      "jar#red",
+      "jar",
+      "jar#ring",
+      "jar#s",
+      "vat",
+      "vat#s",
+      "classifier"
+    ]
+  },
+  {
+    "hanzi": "辨",
+    "meanings": [
+      "distinguish#ing",
+      "distinguish#es",
+      "distinguish",
+      "distinguish#ed",
+      "recognize#d",
+      "recognize#s",
+      "recognize",
+      "гл"
+    ]
+  },
+  {
+    "hanzi": "蘑",
+    "meanings": [
+      "mushroom#ing",
+      "mushroom#s",
+      "mushroom",
+      "mushroom#ed",
+      "гриб#у",
+      "гриб#ов",
+      "гриб#ом",
+      "гриб#а",
+      "гриб#ами",
+      "гриб#е",
+      "гриб#ы",
+      "гриб",
+      "гриб#ам",
+      "гриб#ах"
+    ]
+  },
+  {
+    "hanzi": "菇",
+    "meanings": [
+      "mushroom#ing",
+      "mushroom#s",
+      "mushroom",
+      "mushroom#ed",
+      "гриб#у",
+      "гриб#ов",
+      "гриб#ом",
+      "гриб#а",
+      "гриб#ами",
+      "гриб#е",
+      "гриб#ы",
+      "гриб",
+      "гриб#ам",
+      "гриб#ах",
+      "гу"
+    ]
+  },
+  {
+    "hanzi": "拌",
+    "meanings": [
+      "mix#es",
+      "mix#ing",
+      "mix#ed",
+      "mix",
+      "toss#ing",
+      "toss",
+      "toss#ed",
+      "toss#es",
+      "гл"
+    ]
+  },
+  {
+    "hanzi": "滤",
+    "meanings": [
+      "strain",
+      "strain#s",
+      "strain#ed",
+      "strain#ing",
+      "filter#s",
+      "filter#ing",
+      "filter",
+      "filter#ed",
+      "процеживать"
+    ]
+  },
+  {
+    "hanzi": "瞩",
+    "meanings": [
+      "gaze#s",
+      "gaze",
+      "gaze#d",
+      "stare",
+      "stare#d",
+      "stare#s",
+      "гл"
+    ]
+  },
+  {
+    "hanzi": "凝",
+    "meanings": [
+      "congeal",
+      "congeal#s",
+      "congeal#ed",
+      "congeal#ing",
+      "concentrate#d",
+      "concentrate",
+      "concentrate#s",
+      "attention",
+      "attention#s"
+    ]
+  },
+  {
+    "hanzi": "凹",
+    "meanings": [
+      "variant#s",
+      "variant",
+      "вдавить",
+      "вогнутый"
+    ]
+  },
+  {
+    "hanzi": "君",
+    "meanings": [
+      "monarch",
+      "monarch#s",
+      "lord#s",
+      "lord#ed",
+      "lord",
+      "lord#ing",
+      "gentleman"
+    ]
+  },
+  {
+    "hanzi": "衷",
+    "meanings": [
+      "inner",
+      "feelings",
+      "сущий"
+    ]
+  },
+  {
+    "hanzi": "粪",
+    "meanings": [
+      "manure",
+      "manure#d",
+      "manure#s",
+      "dung",
+      "кал#ы",
+      "кал#у",
+      "кал#ами",
+      "кал#ом",
+      "кал#ов",
+      "кал#ах",
+      "кал#а",
+      "кал#ам",
+      "кал#е",
+      "кал"
+    ]
+  },
+  {
+    "hanzi": "痰",
+    "meanings": [
+      "phlegm",
+      "spittle",
+      "мокрота#ми",
+      "мокрота#х",
+      "мокрота",
+      "мокрота#м"
+    ]
+  },
+  {
+    "hanzi": "宵",
+    "meanings": [
+      "night#s",
+      "night",
+      "сущий",
+      "ночь#ю",
+      "ночь"
+    ]
+  },
+  {
+    "hanzi": "筝",
+    "meanings": [
+      "zheng",
+      "guzheng",
+      "long#ing",
+      "long",
+      "long#est",
+      "long#s",
+      "long#er",
+      "long#ed"
+    ]
+  },
+  {
+    "hanzi": "郑",
+    "meanings": [
+      "bound#ed",
+      "bound#ing",
+      "bound",
+      "bound#s",
+      "form#s",
+      "form",
+      "form#ing",
+      "form#ed",
+      "used"
+    ]
+  },
+  {
+    "hanzi": "泌",
+    "meanings": [
+      "secrete#s",
+      "secrete#d",
+      "secrete",
+      "гл",
+      "бить"
+    ]
+  },
+  {
+    "hanzi": "梳",
+    "meanings": [
+      "comb#ed",
+      "comb#ing",
+      "comb",
+      "comb#s",
+      "расчёска#х",
+      "расчёска#м",
+      "расчёска#ми",
+      "расчёска",
+      "гребень"
+    ]
+  },
+  {
+    "hanzi": "乞",
+    "meanings": [
+      "beg#ging",
+      "beg",
+      "beg#s",
+      "beg#ged",
+      "просить",
+      "выпрашивать"
+    ]
+  },
+  {
+    "hanzi": "丐",
+    "meanings": [
+      "variant#s",
+      "variant",
+      "сущий",
+      "нищий"
+    ]
+  },
+  {
+    "hanzi": "膏",
+    "meanings": [
+      "moisten#ed",
+      "moisten#s",
+      "moisten#ing",
+      "moisten",
+      "grease#d",
+      "grease#s",
+      "grease",
+      "apply#ing",
+      "apply"
+    ]
+  },
+  {
+    "hanzi": "揽",
+    "meanings": [
+      "monopolize",
+      "monopolize#s",
+      "monopolize#d",
+      "seize#s",
+      "seize",
+      "seize#d",
+      "take",
+      "take#n",
+      "take#s"
+    ]
+  },
+  {
+    "hanzi": "绯",
+    "meanings": [
+      "dark#er",
+      "dark",
+      "dark#est",
+      "red#der",
+      "red#dest",
+      "red#s",
+      "red",
+      "purple#st",
+      "purple#r",
+      "purple",
+      "purple#s"
+    ]
+  },
+  {
+    "hanzi": "畸",
+    "meanings": [
+      "lopsided",
+      "unbalanced",
+      "abnormal#s",
+      "abnormal"
+    ]
+  },
+  {
+    "hanzi": "拣",
+    "meanings": [
+      "choose#s",
+      "choose",
+      "pick#s",
+      "pick#ing",
+      "pick",
+      "pick#ed",
+      "sort#ing",
+      "sort#ed",
+      "sort",
+      "sort#s"
+    ]
+  },
+  {
+    "hanzi": "剔",
+    "meanings": [
+      "scrape",
+      "scrape#d",
+      "scrape#s",
+      "meat",
+      "meat#s",
+      "bones"
+    ]
+  },
+  {
+    "hanzi": "捍",
+    "meanings": [
+      "ward#s",
+      "ward",
+      "ward#ed",
+      "ward#ing",
+      "off",
+      "withstand#s",
+      "withstand",
+      "withstand#ing"
+    ]
+  },
+  {
+    "hanzi": "殿",
+    "meanings": [
+      "palace",
+      "palace#s",
+      "hall#s",
+      "hall",
+      "сущий"
+    ]
+  },
+  {
+    "hanzi": "敷",
+    "meanings": [
+      "spread#s",
+      "spread",
+      "spread#ing",
+      "lay",
+      "lay#s",
+      "lay#ing",
+      "out",
+      "out#s"
+    ]
+  },
+  {
+    "hanzi": "姥",
+    "meanings": [
+      "governess#es",
+      "governess",
+      "old#est",
+      "old",
+      "old#s",
+      "old#er",
+      "woman"
+    ]
+  },
+  {
+    "hanzi": "俄",
+    "meanings": [
+      "suddenly",
+      "very",
+      "soon#est",
+      "soon#er",
+      "soon"
+    ]
+  },
+  {
+    "hanzi": "肆",
+    "meanings": [
+      "four",
+      "unrestrained",
+      "wanton",
+      "wanton#s"
+    ]
+  },
+  {
+    "hanzi": "躁",
+    "meanings": [
+      "impatient",
+      "hot#ting",
+      "hot#ter",
+      "hot",
+      "hot#s",
+      "hot#test",
+      "hot#ted",
+      "tempered"
+    ]
+  },
+  {
+    "hanzi": "搓",
+    "meanings": [
+      "rub#bing",
+      "rub#s",
+      "rub",
+      "rub#bed",
+      "roll",
+      "roll#ed",
+      "roll#s",
+      "roll#ing",
+      "between"
+    ]
+  },
+  {
+    "hanzi": "蹬",
+    "meanings": [
+      "step#s",
+      "step#ped",
+      "step#ping",
+      "step",
+      "tread",
+      "tread#s",
+      "tread#ing",
+      "wear#ing",
+      "wear#s",
+      "wear"
+    ]
+  },
+  {
+    "hanzi": "肢",
+    "meanings": [
+      "limb",
+      "limb#s",
+      "limb#ed",
+      "limb#ing",
+      "сущий",
+      "конечность",
+      "конечность#ю"
+    ]
+  },
+  {
+    "hanzi": "衰",
+    "meanings": [
+      "decay#s",
+      "decay#ed",
+      "decay#ing",
+      "decay",
+      "decline",
+      "decline#d",
+      "decline#s",
+      "wane#s",
+      "wane",
+      "wane#d"
+    ]
+  },
+  {
+    "hanzi": "仙",
+    "meanings": [
+      "variant#s",
+      "variant",
+      "сущий",
+      "даосский"
+    ]
+  },
+  {
+    "hanzi": "绷",
+    "meanings": [
+      "have",
+      "taut",
+      "taut#est",
+      "taut#er",
+      "face",
+      "face#s",
+      "face#d"
+    ]
+  },
+  {
+    "hanzi": "鸣",
+    "meanings": [
+      "cry",
+      "cry#ing",
+      "make",
+      "make#s",
+      "sound#est",
+      "sound#s",
+      "sound#er",
+      "sound",
+      "sound#ed",
+      "sound#ing"
+    ]
+  },
+  {
+    "hanzi": "撇",
+    "meanings": [
+      "throw#n",
+      "throw",
+      "throw#s",
+      "throw#ing",
+      "cast",
+      "cast#s",
+      "cast#ing",
+      "left#s",
+      "left"
+    ]
+  },
+  {
+    "hanzi": "颖",
+    "meanings": [
+      "head#ing",
+      "head#s",
+      "head",
+      "head#ed",
+      "grain#ing",
+      "grain#ed",
+      "grain#s",
+      "grain",
+      "husk#ed",
+      "husk#s",
+      "husk",
+      "husk#ing"
+    ]
+  },
+  {
+    "hanzi": "廓",
+    "meanings": [
+      "extensive",
+      "vast#est",
+      "vast#er",
+      "vast",
+      "outline#s",
+      "outline#d",
+      "outline"
+    ]
+  },
+  {
+    "hanzi": "婿",
+    "meanings": [
+      "son",
+      "son#s",
+      "law#s",
+      "law",
+      "husband#s",
+      "husband#ed",
+      "husband#ing",
+      "husband"
+    ]
+  },
+  {
+    "hanzi": "绞",
+    "meanings": [
+      "twist#s",
+      "twist#ing",
+      "twist",
+      "twist#ed",
+      "entangle#d",
+      "entangle#s",
+      "entangle",
+      "wring",
+      "wring#ing",
+      "wring#s"
+    ]
+  },
+  {
+    "hanzi": "崖",
+    "meanings": [
+      "precipice#s",
+      "precipice",
+      "cliff#s",
+      "cliff",
+      "taiwan"
+    ]
+  },
+  {
+    "hanzi": "僻",
+    "meanings": [
+      "remote#st",
+      "remote",
+      "remote#r",
+      "out",
+      "out#s",
+      "way",
+      "way#s"
+    ]
+  },
+  {
+    "hanzi": "呛",
+    "meanings": [
+      "irritate#s",
+      "irritate",
+      "irritate#d",
+      "nose#d",
+      "nose",
+      "nose#s",
+      "choke#s",
+      "choke",
+      "choke#d"
+    ]
+  },
+  {
+    "hanzi": "搁",
+    "meanings": [
+      "bear#ing",
+      "bear",
+      "bear#s",
+      "stand",
+      "stand#ing",
+      "stand#s",
+      "endure#s",
+      "endure#d",
+      "endure"
+    ]
+  },
+  {
+    "hanzi": "溅",
+    "meanings": [
+      "splash#ing",
+      "splash",
+      "splash#ed",
+      "splash#es",
+      "брызгать",
+      "ся"
+    ]
+  },
+  {
+    "hanzi": "恳",
+    "meanings": [
+      "earnest",
+      "гл",
+      "просить"
+    ]
+  },
+  {
+    "hanzi": "衅",
+    "meanings": [
+      "quarrel",
+      "quarrel#ing",
+      "quarrel#ling",
+      "quarrel#ed",
+      "quarrel#s",
+      "quarrel#led",
+      "dispute",
+      "dispute#d",
+      "dispute#s",
+      "blood",
+      "blood#s",
+      "blood#ing",
+      "blood#ed"
+    ]
+  },
+  {
+    "hanzi": "俘",
+    "meanings": [
+      "take",
+      "take#n",
+      "take#s",
+      "prisoner",
+      "prisoner#s",
+      "war#s",
+      "war",
+      "war#ring",
+      "war#red"
+    ]
+  },
+  {
+    "hanzi": "虏",
+    "meanings": [
+      "prisoner",
+      "prisoner#s",
+      "war#s",
+      "war",
+      "war#ring",
+      "war#red",
+      "capture#d",
+      "capture",
+      "capture#s"
+    ]
+  },
+  {
+    "hanzi": "诫",
+    "meanings": [
+      "commandment",
+      "commandment#s",
+      "prohibit#ing",
+      "prohibit",
+      "prohibit#ed",
+      "prohibit#s",
+      "гл"
+    ]
+  },
+  {
+    "hanzi": "苛",
+    "meanings": [
+      "severe#st",
+      "severe",
+      "severe#r",
+      "exacting",
+      "прил#ам",
+      "прил#ы",
+      "прил#у",
+      "прил",
+      "прил#е",
+      "прил#ом",
+      "прил#а",
+      "прил#ами",
+      "прил#ов",
+      "прил#ах"
+    ]
+  },
+  {
+    "hanzi": "沸",
+    "meanings": [
+      "boil#ed",
+      "boil#ing",
+      "boil#s",
+      "boil",
+      "кипеть",
+      "клокотать"
+    ]
+  },
+  {
+    "hanzi": "踹",
+    "meanings": [
+      "kick#ed",
+      "kick#s",
+      "kick#ing",
+      "kick",
+      "trample",
+      "trample#d",
+      "trample#s",
+      "tread",
+      "tread#s",
+      "tread#ing"
+    ]
+  },
+  {
+    "hanzi": "凳",
+    "meanings": [
+      "variant#s",
+      "variant",
+      "табурет#ах",
+      "табурет#у",
+      "табурет#ом",
+      "табурет#е",
+      "табурет#а",
+      "табурет#ов",
+      "табурет#ами",
+      "табурет#ам",
+      "табурет#ы",
+      "табурет",
+      "скамья#м",
+      "скамья#х",
+      "скамья",
+      "скамья#ми"
+    ]
+  },
+  {
+    "hanzi": "叼",
+    "meanings": [
+      "hold",
+      "hold#ing",
+      "hold#s",
+      "one#s",
+      "one",
+      "mouth#ed",
+      "mouth",
+      "mouth#s",
+      "mouth#ing"
+    ]
+  },
+  {
+    "hanzi": "枯",
+    "meanings": [
+      "dried",
+      "up",
+      "up#s",
+      "up#ping",
+      "up#ped",
+      "прил#ам",
+      "прил#ы",
+      "прил#у",
+      "прил",
+      "прил#е",
+      "прил#ом",
+      "прил#а",
+      "прил#ами",
+      "прил#ов",
+      "прил#ах"
+    ]
+  },
+  {
+    "hanzi": "绽",
+    "meanings": [
+      "burst#ing",
+      "burst",
+      "burst#s",
+      "open#ing",
+      "open#s",
+      "open",
+      "open#ed",
+      "split#ting",
+      "split#s",
+      "split"
+    ]
+  },
+  {
+    "hanzi": "淌",
+    "meanings": [
+      "drip#ping",
+      "drip#s",
+      "drip#ped",
+      "drip",
+      "trickle",
+      "trickle#d",
+      "trickle#s",
+      "shed#ding",
+      "shed",
+      "shed#s"
+    ]
+  },
+  {
+    "hanzi": "惭",
+    "meanings": [
+      "ashamed",
+      "гл",
+      "устыдиться"
+    ]
+  },
+  {
+    "hanzi": "颊",
+    "meanings": [
+      "cheeks",
+      "щека#ми",
+      "щека#х",
+      "щека",
+      "щека#м",
+      "скула#ми",
+      "скула#х",
+      "скула#м",
+      "скула"
+    ]
+  },
+  {
+    "hanzi": "碑",
+    "meanings": [
+      "monument#s",
+      "monument",
+      "upright#s",
+      "upright",
+      "stone#d",
+      "stone",
+      "stone#s"
+    ]
+  },
+  {
+    "hanzi": "镶",
+    "meanings": [
+      "inlay#s",
+      "inlay#ed",
+      "inlay#ing",
+      "inlay#inging",
+      "inlay",
+      "embed",
+      "embed#ded",
+      "embed#ding",
+      "embed#s",
+      "ridge",
+      "ridge#d",
+      "ridge#s"
+    ]
+  },
+  {
+    "hanzi": "洽",
+    "meanings": [
+      "accord#ing",
+      "accord",
+      "accord#s",
+      "accord#ed",
+      "make",
+      "make#s",
+      "contact#ing",
+      "contact",
+      "contact#ed",
+      "contact#s"
+    ]
+  },
+  {
+    "hanzi": "冤",
+    "meanings": [
+      "old#est",
+      "old",
+      "old#s",
+      "old#er",
+      "variant#s",
+      "variant",
+      "прил#ам",
+      "прил#ы",
+      "прил#у",
+      "прил",
+      "прил#е",
+      "прил#ом",
+      "прил#а",
+      "прил#ами",
+      "прил#ов",
+      "прил#ах"
+    ]
+  },
+  {
+    "hanzi": "枉",
+    "meanings": [
+      "twist#s",
+      "twist#ing",
+      "twist",
+      "twist#ed",
+      "crooked",
+      "unjust"
+    ]
+  },
+  {
+    "hanzi": "绰",
+    "meanings": [
+      "generous",
+      "ample#r",
+      "ample#st",
+      "ample",
+      "wide",
+      "wide#r",
+      "wide#s",
+      "wide#st"
+    ]
+  },
+  {
+    "hanzi": "屿",
+    "meanings": [
+      "islet#s",
+      "islet",
+      "устарый",
+      "остров#е",
+      "остров#ов",
+      "остров#ах",
+      "остров",
+      "остров#ом",
+      "остров#ами",
+      "остров#а",
+      "остров#ам",
+      "остров#у"
+    ]
+  },
+  {
+    "hanzi": "嚷",
+    "meanings": [
+      "shout#s",
+      "shout#ing",
+      "shout",
+      "shout#ed",
+      "bellow",
+      "bellow#s",
+      "bellow#ing",
+      "bellow#ed",
+      "make",
+      "make#s"
+    ]
+  },
+  {
+    "hanzi": "敛",
+    "meanings": [
+      "variant#s",
+      "variant",
+      "гл",
+      "собирать"
+    ]
+  },
+  {
+    "hanzi": "揣",
+    "meanings": [
+      "estimate#s",
+      "estimate",
+      "estimate#d",
+      "guess",
+      "guess#ed",
+      "guess#ing",
+      "guess#es",
+      "figure",
+      "figure#s",
+      "figure#d"
+    ]
+  },
+  {
+    "hanzi": "痹",
+    "meanings": [
+      "paralysis",
+      "numbness",
+      "гл"
+    ]
+  },
+  {
+    "hanzi": "伺",
+    "meanings": [
+      "watch#ed",
+      "watch#ing",
+      "watch#es",
+      "watch",
+      "wait#ing",
+      "wait#ed",
+      "wait",
+      "wait#s",
+      "examine#d",
+      "examine",
+      "examine#s"
+    ]
+  },
+  {
+    "hanzi": "驯",
+    "meanings": [
+      "attain#ed",
+      "attain",
+      "attain#ing",
+      "attain#s",
+      "gradually",
+      "tame#st",
+      "tame#s",
+      "tame",
+      "tame#d",
+      "tame#r"
+    ]
+  },
+  {
+    "hanzi": "津",
+    "meanings": [
+      "saliva",
+      "saliva#s",
+      "sweat",
+      "sweat#s",
+      "sweat#ed",
+      "sweat#ing",
+      "ferry#ing",
+      "ferry"
+    ]
+  },
+  {
+    "hanzi": "掺",
+    "meanings": [
+      "grasp#ing",
+      "grasp#ed",
+      "grasp#s",
+      "grasp",
+      "смешивать",
+      "подмешивать"
+    ]
+  },
+  {
+    "hanzi": "竭",
+    "meanings": [
+      "exhaust#s",
+      "exhaust",
+      "exhaust#ed",
+      "exhaust#ing",
+      "гл",
+      "истощаться"
+    ]
+  },
+  {
+    "hanzi": "掰",
+    "meanings": [
+      "break#ing",
+      "break#s",
+      "break",
+      "off",
+      "open#ing",
+      "open#s",
+      "open",
+      "open#ed"
+    ]
+  },
+  {
+    "hanzi": "痴",
+    "meanings": [
+      "variant#s",
+      "variant",
+      "прил#ам",
+      "прил#ы",
+      "прил#у",
+      "прил",
+      "прил#е",
+      "прил#ом",
+      "прил#а",
+      "прил#ами",
+      "прил#ов",
+      "прил#ах",
+      "наречие#м",
+      "наречие"
+    ]
+  },
+  {
+    "hanzi": "驭",
+    "meanings": [
+      "variant#s",
+      "variant",
+      "drive",
+      "drive#n",
+      "drive#s",
+      "manage#s",
+      "manage",
+      "manage#d"
+    ]
+  },
+  {
+    "hanzi": "哑",
+    "meanings": [
+      "mute#s",
+      "mute",
+      "mute#d",
+      "dumb#est",
+      "dumb",
+      "dumb#er",
+      "incapable"
+    ]
+  },
+  {
+    "hanzi": "卵",
+    "meanings": [
+      "egg",
+      "egg#ed",
+      "egg#s",
+      "egg#ing",
+      "ovum",
+      "spawn#ing",
+      "spawn#ed",
+      "spawn",
+      "spawn#s"
+    ]
+  },
+  {
+    "hanzi": "泽",
+    "meanings": [
+      "pool#ing",
+      "pool#s",
+      "pool#ed",
+      "pool",
+      "pond",
+      "pond#ing",
+      "pond#ed",
+      "pond#s",
+      "luster"
+    ]
+  },
+  {
+    "hanzi": "蒜",
+    "meanings": [
+      "garlic",
+      "garlic#s",
+      "cl",
+      "бот#ами",
+      "бот#ом",
+      "бот#е",
+      "бот#ах",
+      "бот#а",
+      "бот#у",
+      "бот#ам",
+      "бот#ов",
+      "бот#ы",
+      "бот"
+    ]
+  },
+  {
+    "hanzi": "榨",
+    "meanings": [
+      "press#es",
+      "press#ed",
+      "press",
+      "press#ing",
+      "extract",
+      "extract#s",
+      "extract#ed",
+      "extract#ing",
+      "device",
+      "device#s"
+    ]
+  },
+  {
+    "hanzi": "绸",
+    "meanings": [
+      "silk",
+      "silk#s",
+      "cl",
+      "шёлковый"
+    ]
+  },
+  {
+    "hanzi": "拴",
+    "meanings": [
+      "tie#d",
+      "tie",
+      "tie#ing",
+      "tie#s",
+      "up",
+      "up#s",
+      "up#ping",
+      "up#ped",
+      "привязывать"
+    ]
+  },
+  {
+    "hanzi": "塘",
+    "meanings": [
+      "dyke#s",
+      "dyke",
+      "dyke#d",
+      "embankment#s",
+      "embankment",
+      "pool#ing",
+      "pool#s",
+      "pool#ed",
+      "pool"
+    ]
+  },
+  {
+    "hanzi": "淹",
+    "meanings": [
+      "flood#s",
+      "flood",
+      "flood#ed",
+      "flood#ing",
+      "submerge#s",
+      "submerge",
+      "submerge#d",
+      "drown#s",
+      "drown#ed",
+      "drown",
+      "drown#ing"
+    ]
+  },
+  {
+    "hanzi": "髓",
+    "meanings": [
+      "marrow",
+      "marrow#s",
+      "essence",
+      "essence#s",
+      "quintessence#s",
+      "quintessence"
+    ]
+  },
+  {
+    "hanzi": "鞠",
+    "meanings": [
+      "incline#s",
+      "incline",
+      "incline#d",
+      "bow",
+      "bow#ing",
+      "bow#ed",
+      "bow#s",
+      "leather#ed",
+      "leather",
+      "leather#s",
+      "leather#ing"
+    ]
+  },
+  {
+    "hanzi": "躬",
+    "meanings": [
+      "old#est",
+      "old",
+      "old#s",
+      "old#er",
+      "variant#s",
+      "variant",
+      "сущий"
+    ]
+  },
+  {
+    "hanzi": "呐",
+    "meanings": [
+      "sentence",
+      "sentence#d",
+      "sentence#s",
+      "final",
+      "final#s",
+      "particle#s",
+      "particle"
+    ]
+  },
+  {
+    "hanzi": "晋",
+    "meanings": [
+      "move#s",
+      "move",
+      "move#d",
+      "forward#s",
+      "forward#ed",
+      "forward",
+      "forward#ing",
+      "promote",
+      "promote#s",
+      "promote#d"
+    ]
+  },
+  {
+    "hanzi": "缉",
+    "meanings": [
+      "stitch",
+      "stitch#es",
+      "stitch#ing",
+      "stitch#ed",
+      "finely",
+      "гл"
+    ]
+  },
+  {
+    "hanzi": "悼",
+    "meanings": [
+      "mourn#ing",
+      "mourn#ed",
+      "mourn",
+      "mourn#s",
+      "lament#s",
+      "lament#ed",
+      "lament#ing",
+      "lament",
+      "гл"
+    ]
+  }
+]

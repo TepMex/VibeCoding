@@ -1,0 +1,33 @@
+{
+  "name": "Hanzifier",
+  "description": "Replace some words on pages with Hanzi to help learn Chinese.",
+  "version": "0.1.0",
+  "manifest_version": 3,
+  "icons": {
+    "16": "icons/16.png",
+    "32": "icons/32.png",
+    "48": "icons/48.png",
+    "128": "icons/128.png"
+  },
+  "action": {
+    "default_title": "Hanzifier",
+    "default_popup": "popup/index.html"
+  },
+  "options_page": "options/index.html",
+  "background": {
+    "service_worker": "background.js"
+  },
+  "permissions": ["storage", "tabs"],
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["contentScript.js"]
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["data/processed/lists/*.json"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}

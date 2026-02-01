@@ -1,0 +1,1267 @@
+[
+  {
+    "hanzi": "为",
+    "meanings": [
+      "variant#s",
+      "variant",
+      "делать",
+      "действовать"
+    ]
+  },
+  {
+    "hanzi": "自",
+    "meanings": [
+      "self#ing",
+      "self#s",
+      "self",
+      "self#ed",
+      "oneself",
+      "since"
+    ]
+  },
+  {
+    "hanzi": "己",
+    "meanings": [
+      "self#ing",
+      "self#s",
+      "self",
+      "self#ed",
+      "oneself",
+      "sixth"
+    ]
+  },
+  {
+    "hanzi": "但",
+    "meanings": [
+      "but",
+      "yet",
+      "however"
+    ]
+  },
+  {
+    "hanzi": "可",
+    "meanings": [
+      "used",
+      "гл",
+      "модальный"
+    ]
+  },
+  {
+    "hanzi": "以",
+    "meanings": [
+      "use#d",
+      "use",
+      "use#s",
+      "means",
+      "according"
+    ]
+  },
+  {
+    "hanzi": "让",
+    "meanings": [
+      "yield#s",
+      "yield",
+      "yield#ing",
+      "yield#ed",
+      "permit#s",
+      "permit#ted",
+      "permit#ting",
+      "permit",
+      "let",
+      "let#s",
+      "let#ting"
+    ]
+  },
+  {
+    "hanzi": "又",
+    "meanings": [
+      "again",
+      "also",
+      "both"
+    ]
+  },
+  {
+    "hanzi": "已",
+    "meanings": [
+      "already",
+      "stop",
+      "stop#s",
+      "stop#ped",
+      "stop#ping",
+      "then"
+    ]
+  },
+  {
+    "hanzi": "经",
+    "meanings": [
+      "classics",
+      "sacred",
+      "book#ed",
+      "book#s",
+      "book",
+      "book#ing"
+    ]
+  },
+  {
+    "hanzi": "因",
+    "meanings": [
+      "cause",
+      "cause#d",
+      "cause#s",
+      "reason#s",
+      "reason#ing",
+      "reason",
+      "reason#ed",
+      "because"
+    ]
+  },
+  {
+    "hanzi": "题",
+    "meanings": [
+      "topic#s",
+      "topic",
+      "problem#s",
+      "problem",
+      "discussion",
+      "discussion#s"
+    ]
+  },
+  {
+    "hanzi": "如",
+    "meanings": [
+      "if",
+      "such",
+      "гл"
+    ]
+  },
+  {
+    "hanzi": "更",
+    "meanings": [
+      "more",
+      "even#s",
+      "even#ed",
+      "even",
+      "even#ing",
+      "further#s",
+      "further#ed",
+      "further",
+      "further#ing"
+    ]
+  },
+  {
+    "hanzi": "它",
+    "meanings": [
+      "местоить",
+      "он",
+      "она"
+    ]
+  },
+  {
+    "hanzi": "只",
+    "meanings": [
+      "classifier",
+      "birds",
+      "certain"
+    ]
+  },
+  {
+    "hanzi": "向",
+    "meanings": [
+      "variant#s",
+      "variant",
+      "direction",
+      "direction#s",
+      "orientation",
+      "orientation#s"
+    ]
+  },
+  {
+    "hanzi": "该",
+    "meanings": [
+      "should",
+      "ought",
+      "probably"
+    ]
+  },
+  {
+    "hanzi": "位",
+    "meanings": [
+      "position",
+      "position#ed",
+      "position#s",
+      "position#ing",
+      "location#s",
+      "location",
+      "place#d",
+      "place#s",
+      "place"
+    ]
+  },
+  {
+    "hanzi": "才",
+    "meanings": [
+      "just",
+      "now",
+      "only"
+    ]
+  },
+  {
+    "hanzi": "当",
+    "meanings": [
+      "very",
+      "suitable",
+      "adequate#s",
+      "adequate",
+      "adequate#d"
+    ]
+  },
+  {
+    "hanzi": "所",
+    "meanings": [
+      "actually",
+      "place#d",
+      "place#s",
+      "place",
+      "classifier"
+    ]
+  },
+  {
+    "hanzi": "公",
+    "meanings": [
+      "public#s",
+      "public",
+      "collectively",
+      "owned"
+    ]
+  },
+  {
+    "hanzi": "司",
+    "meanings": [
+      "take",
+      "take#n",
+      "take#s",
+      "charge#s",
+      "charge",
+      "charge#d",
+      "manage#s",
+      "manage",
+      "manage#d"
+    ]
+  },
+  {
+    "hanzi": "万",
+    "meanings": [
+      "ten",
+      "thousand",
+      "thousand#s",
+      "great#er",
+      "great",
+      "great#s",
+      "great#est"
+    ]
+  },
+  {
+    "hanzi": "像",
+    "meanings": [
+      "resemble#s",
+      "resemble#d",
+      "resemble",
+      "like#d",
+      "like#s",
+      "like",
+      "look",
+      "look#ing",
+      "look#s",
+      "look#ed"
+    ]
+  },
+  {
+    "hanzi": "活",
+    "meanings": [
+      "live",
+      "live#s",
+      "live#d",
+      "alive",
+      "living",
+      "living#s"
+    ]
+  },
+  {
+    "hanzi": "发",
+    "meanings": [
+      "hair#s",
+      "hair",
+      "taiwan",
+      "pr"
+    ]
+  },
+  {
+    "hanzi": "应",
+    "meanings": [
+      "answer#s",
+      "answer#ed",
+      "answer",
+      "answer#ing",
+      "respond#ed",
+      "respond#ing",
+      "respond",
+      "respond#s",
+      "comply",
+      "comply#ing"
+    ]
+  },
+  {
+    "hanzi": "成",
+    "meanings": [
+      "succeed#ed",
+      "succeed",
+      "succeed#ing",
+      "succeed#s",
+      "finish#ed",
+      "finish#ing",
+      "finish#es",
+      "finish",
+      "complete#s",
+      "complete",
+      "complete#d"
+    ]
+  },
+  {
+    "hanzi": "直",
+    "meanings": [
+      "straight#est",
+      "straight",
+      "straight#er",
+      "straight#s",
+      "straighten",
+      "straighten#s",
+      "straighten#ing",
+      "straighten#ed",
+      "fair#ing",
+      "fair#s",
+      "fair#est",
+      "fair#ed",
+      "fair#er",
+      "fair"
+    ]
+  },
+  {
+    "hanzi": "定",
+    "meanings": [
+      "fix#ed",
+      "fix#ing",
+      "fix",
+      "fix#es",
+      "set",
+      "set#s",
+      "set#ting",
+      "make",
+      "make#s"
+    ]
+  },
+  {
+    "hanzi": "带",
+    "meanings": [
+      "band#s",
+      "band#ing",
+      "band",
+      "band#ed",
+      "belt#ing",
+      "belt#s",
+      "belt",
+      "belt#ed",
+      "girdle",
+      "girdle#s",
+      "girdle#d"
+    ]
+  },
+  {
+    "hanzi": "或",
+    "meanings": [
+      "maybe",
+      "perhaps",
+      "might"
+    ]
+  },
+  {
+    "hanzi": "长",
+    "meanings": [
+      "chief#s",
+      "chief",
+      "head#ing",
+      "head#s",
+      "head",
+      "head#ed",
+      "elder#s",
+      "elder"
+    ]
+  },
+  {
+    "hanzi": "而",
+    "meanings": [
+      "well",
+      "well#s",
+      "well#ing",
+      "well#ed",
+      "so",
+      "but"
+    ]
+  },
+  {
+    "hanzi": "且",
+    "meanings": [
+      "moreover",
+      "yet",
+      "time#d",
+      "time#s",
+      "time"
+    ]
+  },
+  {
+    "hanzi": "其",
+    "meanings": [
+      "his",
+      "her",
+      "its"
+    ]
+  },
+  {
+    "hanzi": "通",
+    "meanings": [
+      "classifier",
+      "activity",
+      "taken"
+    ]
+  },
+  {
+    "hanzi": "必",
+    "meanings": [
+      "certainly",
+      "must",
+      "will"
+    ]
+  },
+  {
+    "hanzi": "须",
+    "meanings": [
+      "beard#s",
+      "beard",
+      "beard#ed",
+      "beard#ing",
+      "mustache",
+      "mustache#s",
+      "feeler#s",
+      "feeler"
+    ]
+  },
+  {
+    "hanzi": "求",
+    "meanings": [
+      "seek#ing",
+      "seek#s",
+      "seek",
+      "look",
+      "look#ing",
+      "look#s",
+      "look#ed",
+      "request#ed",
+      "request#ing",
+      "request#s",
+      "request"
+    ]
+  },
+  {
+    "hanzi": "虽",
+    "meanings": [
+      "although",
+      "even#s",
+      "even#ed",
+      "even",
+      "even#ing",
+      "though"
+    ]
+  },
+  {
+    "hanzi": "然",
+    "meanings": [
+      "correct",
+      "correct#ed",
+      "correct#ing",
+      "correct#s",
+      "right#est",
+      "right#er",
+      "right#ed",
+      "right",
+      "right#ing",
+      "right#s",
+      "so"
+    ]
+  },
+  {
+    "hanzi": "啊",
+    "meanings": [
+      "modal#s",
+      "modal",
+      "particle#s",
+      "particle",
+      "ending",
+      "ending#s"
+    ]
+  },
+  {
+    "hanzi": "参",
+    "meanings": [
+      "variant#s",
+      "variant",
+      "гл",
+      "принимать"
+    ]
+  },
+  {
+    "hanzi": "加",
+    "meanings": [
+      "add",
+      "add#ing",
+      "add#s",
+      "add#ed",
+      "plus#es",
+      "plus#ses",
+      "plus",
+      "apply#ing",
+      "apply"
+    ]
+  },
+  {
+    "hanzi": "件",
+    "meanings": [
+      "item#s",
+      "item",
+      "component",
+      "component#s",
+      "classifier"
+    ]
+  },
+  {
+    "hanzi": "情",
+    "meanings": [
+      "feelings",
+      "emotion#s",
+      "emotion",
+      "sentiment",
+      "sentiment#s"
+    ]
+  },
+  {
+    "hanzi": "结",
+    "meanings": [
+      "knot#s",
+      "knot",
+      "knot#ted",
+      "knot#ting",
+      "sturdy",
+      "bond",
+      "bond#ing",
+      "bond#ed",
+      "bond#s"
+    ]
+  },
+  {
+    "hanzi": "感",
+    "meanings": [
+      "feel#ing",
+      "feel",
+      "feel#s",
+      "move#s",
+      "move",
+      "move#d",
+      "touch#ed",
+      "touch#es",
+      "touch#ing",
+      "touch"
+    ]
+  },
+  {
+    "hanzi": "头",
+    "meanings": [
+      "suffix#es",
+      "suffix#ed",
+      "suffix",
+      "suffix#ing",
+      "nouns",
+      "сущий"
+    ]
+  },
+  {
+    "hanzi": "者",
+    "meanings": [
+      "one#s",
+      "one",
+      "who",
+      "person",
+      "person#s"
+    ]
+  },
+  {
+    "hanzi": "全",
+    "meanings": [
+      "all",
+      "whole#s",
+      "whole",
+      "entire"
+    ]
+  },
+  {
+    "hanzi": "入",
+    "meanings": [
+      "enter#ed",
+      "enter#ing",
+      "enter#s",
+      "enter",
+      "go#ing",
+      "go",
+      "go#es",
+      "go#ne",
+      "join#ing",
+      "join#ed",
+      "join",
+      "join#s"
+    ]
+  },
+  {
+    "hanzi": "安",
+    "meanings": [
+      "calm#s",
+      "calm#ed",
+      "calm#ing",
+      "calm",
+      "calm#er",
+      "calm#est",
+      "peaceful",
+      "set",
+      "set#s",
+      "set#ting"
+    ]
+  },
+  {
+    "hanzi": "够",
+    "meanings": [
+      "enough",
+      "really",
+      "reach",
+      "reach#ing",
+      "reach#ed",
+      "reach#es"
+    ]
+  },
+  {
+    "hanzi": "信",
+    "meanings": [
+      "letter#ed",
+      "letter#s",
+      "letter",
+      "letter#ing",
+      "mail#ing",
+      "mail",
+      "mail#s",
+      "mail#ed",
+      "cl"
+    ]
+  },
+  {
+    "hanzi": "完",
+    "meanings": [
+      "finish#ed",
+      "finish#ing",
+      "finish#es",
+      "finish",
+      "over#s",
+      "over#ed",
+      "over#ing",
+      "over",
+      "whole#s",
+      "whole"
+    ]
+  },
+  {
+    "hanzi": "响",
+    "meanings": [
+      "echo",
+      "echo#s",
+      "echo#ing",
+      "echo#es",
+      "echo#ed",
+      "sound#est",
+      "sound#s",
+      "sound#er",
+      "sound",
+      "sound#ed",
+      "sound#ing",
+      "noise#s",
+      "noise",
+      "noise#d"
+    ]
+  },
+  {
+    "hanzi": "原",
+    "meanings": [
+      "former#s",
+      "former",
+      "original",
+      "original#s",
+      "primary"
+    ]
+  },
+  {
+    "hanzi": "计",
+    "meanings": [
+      "calculate#s",
+      "calculate#d",
+      "calculate",
+      "compute#d",
+      "compute",
+      "compute#s",
+      "count",
+      "count#ing",
+      "count#ed",
+      "count#s"
+    ]
+  },
+  {
+    "hanzi": "划",
+    "meanings": [
+      "delimit",
+      "delimit#ed",
+      "delimit#s",
+      "delimit#ing",
+      "transfer#ring",
+      "transfer#s",
+      "transfer",
+      "transfer#red",
+      "assign#ed",
+      "assign#s",
+      "assign",
+      "assign#ing"
+    ]
+  },
+  {
+    "hanzi": "使",
+    "meanings": [
+      "make",
+      "make#s",
+      "cause",
+      "cause#d",
+      "cause#s",
+      "enable#s",
+      "enable",
+      "enable#d"
+    ]
+  },
+  {
+    "hanzi": "接",
+    "meanings": [
+      "receive#d",
+      "receive",
+      "receive#s",
+      "answer#s",
+      "answer#ed",
+      "answer",
+      "answer#ing",
+      "meet#ing",
+      "meet#s",
+      "meet"
+    ]
+  },
+  {
+    "hanzi": "受",
+    "meanings": [
+      "receive#d",
+      "receive",
+      "receive#s",
+      "accept#s",
+      "accept#ed",
+      "accept",
+      "accept#ing",
+      "suffer#s",
+      "suffer",
+      "suffer#ed",
+      "suffer#ing"
+    ]
+  },
+  {
+    "hanzi": "拉",
+    "meanings": [
+      "pull",
+      "pull#ed",
+      "pull#ing",
+      "pull#s",
+      "play#ed",
+      "play#s",
+      "play#ing",
+      "play",
+      "drag#ged",
+      "drag",
+      "drag#ging",
+      "drag#s"
+    ]
+  },
+  {
+    "hanzi": "周",
+    "meanings": [
+      "week",
+      "week#s",
+      "weekly",
+      "variant#s",
+      "variant"
+    ]
+  },
+  {
+    "hanzi": "特",
+    "meanings": [
+      "special#s",
+      "special",
+      "unique",
+      "distinguished"
+    ]
+  },
+  {
+    "hanzi": "部",
+    "meanings": [
+      "ministry",
+      "department#s",
+      "department",
+      "section",
+      "section#s",
+      "section#ing",
+      "section#ed"
+    ]
+  },
+  {
+    "hanzi": "短",
+    "meanings": [
+      "short#er",
+      "short#ed",
+      "short#est",
+      "short",
+      "short#s",
+      "short#ing",
+      "brief#ed",
+      "brief#s",
+      "brief#er",
+      "brief#ing",
+      "brief",
+      "brief#est",
+      "lack#s",
+      "lack#ed",
+      "lack",
+      "lack#ing"
+    ]
+  },
+  {
+    "hanzi": "务",
+    "meanings": [
+      "affair",
+      "affair#s",
+      "business",
+      "business#es",
+      "matter#s",
+      "matter",
+      "matter#ing",
+      "matter#ed"
+    ]
+  },
+  {
+    "hanzi": "片",
+    "meanings": [
+      "thin#nest",
+      "thin#ned",
+      "thin#ning",
+      "thin#ner",
+      "thin",
+      "thin#s",
+      "piece#d",
+      "piece#s",
+      "piece",
+      "flake",
+      "flake#d",
+      "flake#s"
+    ]
+  },
+  {
+    "hanzi": "钟",
+    "meanings": [
+      "clock",
+      "clock#ing",
+      "clock#s",
+      "clock#ed",
+      "time#d",
+      "time#s",
+      "time",
+      "measured"
+    ]
+  },
+  {
+    "hanzi": "表",
+    "meanings": [
+      "watch#ed",
+      "watch#ing",
+      "watch#es",
+      "watch",
+      "meter",
+      "meter#s",
+      "meter#ing",
+      "meter#ed",
+      "gauge#d",
+      "gauge#s",
+      "gauge"
+    ]
+  },
+  {
+    "hanzi": "示",
+    "meanings": [
+      "show#ing",
+      "show",
+      "show#ed",
+      "show#s",
+      "show#n",
+      "reveal#ing",
+      "reveal#s",
+      "reveal#ed",
+      "reveal",
+      "гл"
+    ]
+  },
+  {
+    "hanzi": "卡",
+    "meanings": [
+      "block#ed",
+      "block",
+      "block#ing",
+      "block#s",
+      "stuck",
+      "wedged"
+    ]
+  },
+  {
+    "hanzi": "刚",
+    "meanings": [
+      "hard#er",
+      "hard#est",
+      "hard",
+      "firm#est",
+      "firm",
+      "firm#ed",
+      "firm#ing",
+      "firm#s",
+      "firm#er",
+      "strong",
+      "strong#er",
+      "strong#est"
+    ]
+  },
+  {
+    "hanzi": "讲",
+    "meanings": [
+      "speak",
+      "speak#s",
+      "speak#ing",
+      "explain#ed",
+      "explain#s",
+      "explain#ing",
+      "explain",
+      "negotiate",
+      "negotiate#s",
+      "negotiate#d"
+    ]
+  },
+  {
+    "hanzi": "相",
+    "meanings": [
+      "appearance#s",
+      "appearance",
+      "portrait#s",
+      "portrait",
+      "picture#d",
+      "picture#s",
+      "picture"
+    ]
+  },
+  {
+    "hanzi": "助",
+    "meanings": [
+      "help#ed",
+      "help#s",
+      "help",
+      "help#ing",
+      "assist#ed",
+      "assist#s",
+      "assist#ing",
+      "assist",
+      "гл"
+    ]
+  },
+  {
+    "hanzi": "努",
+    "meanings": [
+      "exert#ing",
+      "exert#s",
+      "exert#ed",
+      "exert",
+      "strive",
+      "strive#d",
+      "strive#s",
+      "strive#n",
+      "напрягать"
+    ]
+  },
+  {
+    "hanzi": "力",
+    "meanings": [
+      "power#s",
+      "power",
+      "power#ed",
+      "power#ing",
+      "force",
+      "force#d",
+      "force#s",
+      "strength",
+      "strength#s"
+    ]
+  },
+  {
+    "hanzi": "心",
+    "meanings": [
+      "heart#s",
+      "heart",
+      "mind",
+      "mind#s",
+      "mind#ing",
+      "mind#ed",
+      "intention",
+      "intention#s"
+    ]
+  },
+  {
+    "hanzi": "越",
+    "meanings": [
+      "exceed#ed",
+      "exceed#ing",
+      "exceed",
+      "exceed#s",
+      "climb",
+      "climb#s",
+      "climb#ing",
+      "climb#ed",
+      "over#s",
+      "over#ed",
+      "over#ing",
+      "over"
+    ]
+  },
+  {
+    "hanzi": "主",
+    "meanings": [
+      "owner",
+      "owner#s",
+      "master#ed",
+      "master",
+      "master#s",
+      "master#ing",
+      "host#s",
+      "host",
+      "host#ing",
+      "host#ed"
+    ]
+  },
+  {
+    "hanzi": "千",
+    "meanings": [
+      "see#ing",
+      "see#n",
+      "see",
+      "see#s",
+      "числый",
+      "тысяча#х",
+      "тысяча#ми",
+      "тысяча#м",
+      "тысяча"
+    ]
+  },
+  {
+    "hanzi": "段",
+    "meanings": [
+      "paragraph#ed",
+      "paragraph#ing",
+      "paragraph",
+      "paragraph#s",
+      "section",
+      "section#s",
+      "section#ing",
+      "section#ed",
+      "segment",
+      "segment#ed",
+      "segment#ing",
+      "segment#s"
+    ]
+  },
+  {
+    "hanzi": "组",
+    "meanings": [
+      "form#s",
+      "form",
+      "form#ing",
+      "form#ed",
+      "organize#d",
+      "organize#s",
+      "organize",
+      "group",
+      "group#ed",
+      "group#s",
+      "group#ing"
+    ]
+  },
+  {
+    "hanzi": "卖",
+    "meanings": [
+      "sell",
+      "sell#ing",
+      "sell#s",
+      "betray",
+      "betray#ed",
+      "betray#s",
+      "betray#ing",
+      "spare#st",
+      "spare#d",
+      "spare",
+      "spare#r",
+      "spare#s"
+    ]
+  },
+  {
+    "hanzi": "办",
+    "meanings": [
+      "do#ing",
+      "do",
+      "do#ne",
+      "do#es",
+      "manage#s",
+      "manage",
+      "manage#d",
+      "handle#s",
+      "handle#d",
+      "handle"
+    ]
+  },
+  {
+    "hanzi": "法",
+    "meanings": [
+      "old#est",
+      "old",
+      "old#s",
+      "old#er",
+      "variant#s",
+      "variant",
+      "law#s",
+      "law"
+    ]
+  },
+  {
+    "hanzi": "闻",
+    "meanings": [
+      "hear#d",
+      "hear#s",
+      "hear#ing",
+      "hear",
+      "news",
+      "well",
+      "well#s",
+      "well#ing",
+      "well#ed"
+    ]
+  },
+  {
+    "hanzi": "般",
+    "meanings": [
+      "see#ing",
+      "see#n",
+      "see",
+      "see#s",
+      "служебный",
+      "сущий"
+    ]
+  },
+  {
+    "hanzi": "近",
+    "meanings": [
+      "near#est",
+      "near#ed",
+      "near#er",
+      "near",
+      "near#s",
+      "near#ing",
+      "close#d",
+      "close#r",
+      "close#st",
+      "close",
+      "close#s",
+      "approximately"
+    ]
+  },
+  {
+    "hanzi": "变",
+    "meanings": [
+      "change#d",
+      "change",
+      "change#s",
+      "become",
+      "become#s",
+      "different"
+    ]
+  },
+  {
+    "hanzi": "辆",
+    "meanings": [
+      "classifier",
+      "vehicles",
+      "счётный"
+    ]
+  },
+  {
+    "hanzi": "克",
+    "meanings": [
+      "variant#s",
+      "variant",
+      "гл",
+      "справиться"
+    ]
+  },
+  {
+    "hanzi": "庭",
+    "meanings": [
+      "main#s",
+      "main",
+      "hall#s",
+      "hall",
+      "front",
+      "front#ed",
+      "front#ing",
+      "front#s"
+    ]
+  },
+  {
+    "hanzi": "音",
+    "meanings": [
+      "sound#est",
+      "sound#s",
+      "sound#er",
+      "sound",
+      "sound#ed",
+      "sound#ing",
+      "noise#s",
+      "noise",
+      "noise#d",
+      "note",
+      "note#d",
+      "note#s"
+    ]
+  }
+]

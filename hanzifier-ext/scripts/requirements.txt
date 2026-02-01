@@ -1,0 +1,4 @@
+lemminflect==0.2.3
+nltk==3.8.1
+pymorphy2==0.9.1
+pymorphy2-dicts-ru==2.4.417127.4579844
