@@ -31,10 +31,10 @@ pub fn init(event_tx: Sender<PlatformEvent>) -> PlatformStatus {
 
                 let keycode =
                     event.get_integer_value_field(EventField::KEYBOARD_EVENT_KEYCODE) as u64;
-                if keycode == KeyCode::ANSI_Q as u64 {
+                if keycode == KeyCode::ANSI_V as u64 {
                     let flags = event.flags();
-                    let has_opt = flags.contains(CGEventFlags::CGEventFlagAlternate);
-                    if has_opt {
+                    let has_cmd = flags.contains(CGEventFlags::CGEventFlagCommand);
+                    if has_cmd {
                         if let Some(sender) = EVENT_SENDER.get() {
                             let _ = sender.send(PlatformEvent::PasteRequested);
                         }
@@ -52,7 +52,7 @@ pub fn init(event_tx: Sender<PlatformEvent>) -> PlatformStatus {
 
     PlatformStatus {
         listener: "active (CGEventTap)".to_string(),
-        hotkeys: "Option+Q".to_string(),
+        hotkeys: "Command+V".to_string(),
     }
 }
 

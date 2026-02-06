@@ -6,7 +6,7 @@ use std::thread;
 use windows::Win32::Foundation::{HINSTANCE, LPARAM, LRESULT, WPARAM};
 use windows::Win32::UI::Input::KeyboardAndMouse::{
     GetAsyncKeyState, SendInput, INPUT, INPUT_0, INPUT_KEYBOARD, KEYBDINPUT, KEYBD_EVENT_FLAGS,
-    KEYEVENTF_KEYUP, VK_CONTROL, VK_MENU, VK_Q, VK_V,
+    KEYEVENTF_KEYUP, VK_CONTROL, VK_V,
 };
 use windows::Win32::UI::WindowsAndMessaging::{
     CallNextHookEx, DispatchMessageW, GetMessageW, SetWindowsHookExW, TranslateMessage,
@@ -44,21 +44,21 @@ pub fn init(event_tx: Sender<PlatformEvent>) -> PlatformStatus {
 
     PlatformStatus {
         listener: "active (WH_KEYBOARD_LL)".to_string(),
-        hotkeys: "Alt+Q".to_string(),
+        hotkeys: "Ctrl+V".to_string(),
     }
 }
 
 pub fn simulate_paste() -> Result<(), String> {
-    let mut inputs = Vec::with_capacity(6);
-    let alt_down = unsafe { GetAsyncKeyState(VK_MENU.0 as i32) } as u16 & 0x8000 != 0;
-    if alt_down {
-        inputs.push(key_input(VK_MENU, KEYEVENTF_KEYUP));
-        std::thread::sleep(std::time::Duration::from_millis(10));
+    let mut inputs = Vec::with_capacity(4);
+    let ctrl_down = unsafe { GetAsyncKeyState(VK_CONTROL.0 as i32) } as u16 & 0x8000 != 0;
+    if !ctrl_down {
+        inputs.push(key_input(VK_CONTROL, KEYBD_EVENT_FLAGS(0)));
     }
-    inputs.push(key_input(VK_CONTROL, KEYBD_EVENT_FLAGS(0)));
     inputs.push(key_input(VK_V, KEYBD_EVENT_FLAGS(0)));
     inputs.push(key_input(VK_V, KEYEVENTF_KEYUP));
-    inputs.push(key_input(VK_CONTROL, KEYEVENTF_KEYUP));
+    if !ctrl_down {
+        inputs.push(key_input(VK_CONTROL, KEYEVENTF_KEYUP));
+    }
 
     INJECTING_PASTE.store(true, Ordering::Release);
     let sent = unsafe { SendInput(&inputs, std::mem::size_of::<INPUT>() as i32) };
@@ -106,9 +106,9 @@ unsafe extern "system" fn keyboard_hook(code: i32, wparam: WPARAM, lparam: LPARA
         return CallNextHookEx(None, code, wparam, lparam);
     }
 
-    if is_keydown && vk_code == VK_Q.0 as u32 {
-        let alt = (GetAsyncKeyState(VK_MENU.0 as i32) as u16 & 0x8000) != 0;
-        if alt {
+    if is_keydown && vk_code == VK_V.0 as u32 {
+        let ctrl = (GetAsyncKeyState(VK_CONTROL.0 as i32) as u16 & 0x8000) != 0;
+        if ctrl {
             if let Some(sender) = EVENT_SENDER.get() {
                 let _ = sender.send(PlatformEvent::PasteRequested);
             }
