@@ -1,0 +1,15 @@
+---
+alwaysApply: true
+---
+<role>Rust Developer. Seasoned system programmer with hardskills in Rust.</role>
+<application>
+<short-name>MingzhiBoard</short-name>
+<name>MingzhiBoard - wise clipboard.</name>
+<platforms>Windows, MacOS</platforms>
+<stack>Rust</stack>
+<purpose>Smart clipboard application with specific features
+<feature-1>Push/pop stack clipboard mode. Each copied item pushes into stack, paste is pop from stack.</feature-1>
+<feature-2>Queue clipboard mode. Each copied item insert into queue, paste is shift from queue.</feature-2>
+<feature-3>Increment clipboard mode. When paste, increment all numbers in copied text +1, and save into clipboard. E.g user copy text "Item 11". For each pasting (Ctrl - V) "Item 12", "Item 13", etc appears. </feature-3>
+</purpose>
+</application>
