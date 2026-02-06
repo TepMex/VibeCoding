@@ -107,6 +107,13 @@ impl MingzhiBoardApp {
             self.clipboard_error = Some(format!("Paste inject error: {err}"));
         }
     }
+
+    fn clear_app_history(&mut self) {
+        self.history.clear();
+        self.last_paste_preview = None;
+        self.last_written_text = None;
+        self.suppress_next_record = false;
+    }
 }
 
 impl eframe::App for MingzhiBoardApp {
@@ -160,6 +167,10 @@ impl eframe::App for MingzhiBoardApp {
                 ui.label(format!("Increment base: {text}"));
             } else {
                 ui.label("Increment base: <empty>");
+            }
+
+            if ui.button("Clear").clicked() {
+                self.clear_app_history();
             }
 
             if let Some(error) = &self.clipboard_error {

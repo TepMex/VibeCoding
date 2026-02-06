@@ -20,6 +20,7 @@ impl ClipboardHistory {
     }
 
     pub fn record_copy(&mut self, text: &str, mode: ClipboardMode) {
+        self.increment_text = Some(text.to_string());
         match mode {
             ClipboardMode::Stack => {
                 self.stack.push(text.to_string());
@@ -29,9 +30,7 @@ impl ClipboardHistory {
                 self.queue.push_back(text.to_string());
                 self.trim_queue();
             }
-            ClipboardMode::Increment => {
-                self.increment_text = Some(text.to_string());
-            }
+            ClipboardMode::Increment => {}
         }
     }
 
@@ -58,6 +57,12 @@ impl ClipboardHistory {
 
     pub fn increment_text(&self) -> Option<&str> {
         self.increment_text.as_deref()
+    }
+
+    pub fn clear(&mut self) {
+        self.stack.clear();
+        self.queue.clear();
+        self.increment_text = None;
     }
 
     fn trim_stack(&mut self) {
