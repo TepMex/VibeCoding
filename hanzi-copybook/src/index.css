@@ -1,3 +1,19 @@
+@font-face {
+  font-family: 'Ma Shan Zheng';
+  src: url('/fonts/MaShanZheng-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Noto Sans SC';
+  src: url('/fonts/NotoSansSC-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   font-family: 'Roboto', 'Helvetica', 'Arial', sans-serif;
 }
@@ -92,7 +108,7 @@ body {
 }
 
 .copybook-hanzi-header-text {
-  font-family: 'KaiTi', 'STKaiti', 'SimSun', 'Noto Serif SC', serif;
+  font-family: 'STKaiti', 'Noto Sans SC', 'Ma Shan Zheng', 'STKaiti', 'SimSun', serif;
   font-size: calc(var(--hanzi-header-cell-size) * 0.72);
   line-height: 1;
   color: #000;
@@ -177,7 +193,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: 'KaiTi', 'STKaiti', 'SimSun', 'Noto Serif SC', serif;
+  font-family: 'STKaiti', 'Noto Sans SC', 'Ma Shan Zheng', 'SimSun', serif;
   font-size: calc(var(--cell-size) * 0.78);
   color: #666;
   z-index: 1;
