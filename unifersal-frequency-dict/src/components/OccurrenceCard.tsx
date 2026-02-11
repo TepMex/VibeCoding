@@ -1,10 +1,13 @@
 import { Card, CardContent, Typography, IconButton, Box, Tooltip } from '@mui/material';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import NoteAddIcon from '@mui/icons-material/NoteAdd';
 import type { Language } from '../utils/languageDetection';
 import type { WordOccurrence } from '../utils/wordOccurrences';
 import { highlightWordInSentence } from '../utils/wordOccurrences';
 import { pinyin } from 'pinyin-pro';
 import { segmentText } from '../utils/wordSegmentation';
+import { loadAnkiSettings } from '../persistence/ankiSettingsStorage';
+import { createCard } from '../clients/ankiConnect';
 
 interface OccurrenceCardProps {
   occurrence: WordOccurrence;
@@ -12,6 +15,7 @@ interface OccurrenceCardProps {
   language: Language;
   hasNoUnknown: boolean;
   index: number;
+  onCardCreating?: (isCreating: boolean) => void;
 }
 
 export const OccurrenceCard = ({
@@ -20,6 +24,7 @@ export const OccurrenceCard = ({
   language,
   hasNoUnknown,
   index,
+  onCardCreating,
 }: OccurrenceCardProps) => {
   const highlightedSentence = highlightWordInSentence(
     occurrence.sentence,
@@ -67,6 +72,39 @@ export const OccurrenceCard = ({
       await navigator.clipboard.writeText(textToCopy);
     } catch (err) {
       console.error('Failed to copy to Anki:', err);
+    }
+  };
+
+  const handleCreateCardInAnki = async () => {
+    try {
+      onCardCreating?.(true);
+      const settings = loadAnkiSettings();
+      
+      let wordPinyin = '';
+      let sentencePinyin = '';
+      
+      if (language === 'chinese') {
+        wordPinyin = await convertChineseToPinyinWithSegmentation(selectedWord);
+        sentencePinyin = await convertChineseToPinyinWithSegmentation(occurrence.sentence);
+      }
+      
+      const key = Math.floor(Date.now() / 1000).toString();
+      
+      await createCard({
+        Key: key,
+        Simplified: selectedWord,
+        Pinyin: wordPinyin,
+        Meaning: '',
+        SentenceSimplified: occurrence.sentence,
+        SentencePinyin: sentencePinyin,
+        SentenceMeaning: '',
+        deckName: settings.deckName,
+        modelName: settings.modelName,
+      });
+    } catch (err) {
+      console.error('Failed to create card in Anki:', err);
+    } finally {
+      onCardCreating?.(false);
     }
   };
 
@@ -125,6 +163,20 @@ export const OccurrenceCard = ({
                 <Typography variant="button" sx={{ fontSize: '0.875rem', fontWeight: 'bold' }}>
                   A
                 </Typography>
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Create card in Anki">
+              <IconButton
+                size="small"
+                onClick={handleCreateCardInAnki}
+                sx={{ 
+                  color: 'text.secondary',
+                  '&:hover': {
+                    backgroundColor: 'action.hover',
+                  },
+                }}
+              >
+                <NoteAddIcon fontSize="small" />
               </IconButton>
             </Tooltip>
           </Box>

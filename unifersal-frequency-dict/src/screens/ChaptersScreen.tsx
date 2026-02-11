@@ -16,6 +16,7 @@ import {
   ListItemText,
   Button,
   Link,
+  Tooltip,
 } from '@mui/material';
 import { Close as CloseIcon, Menu as MenuIcon, Download as DownloadIcon } from '@mui/icons-material';
 import {
@@ -24,7 +25,7 @@ import {
   calculateWordFrequencies,
 } from '../utils/frequencyAnalysis';
 import type { Language } from '../utils/languageDetection';
-import { getDictionaryUrl } from '../utils/languageDetection';
+import { getDictionaryUrl, getPlecoUrl } from '../utils/languageDetection';
 import {
   findWordOccurrencesWithIndex,
   createSentenceIndex,
@@ -39,6 +40,7 @@ import { segmentText } from '../utils/wordSegmentation';
 import type { ChapterBoundary } from '../utils/textExtraction';
 import { LegendFilter, type CategoryCounts, type CategoryFilters } from '../components/LegendFilter';
 import { OccurrenceCard } from '../components/OccurrenceCard';
+import { getHSKLevel, getHSKLevelColor } from '../utils/hskLevel';
 
 interface ChaptersScreenProps {
   text: string;
@@ -49,6 +51,8 @@ interface ChaptersScreenProps {
   isProcessing: boolean;
   error: string | null;
   onExclusionListChange: (exclusionList: string) => void;
+  onCardCreating?: (isCreating: boolean) => void;
+  nativeLanguage: Language;
 }
 
 // Check if a character is a hanzi (Chinese character)
@@ -104,6 +108,7 @@ interface ChipStyle {
   variant: 'outlined' | 'filled';
   sx: object;
   knownHanziPercentage?: number;
+  hskLevel?: number | null;
 }
 
 export const ChaptersScreen = ({
@@ -115,6 +120,8 @@ export const ChaptersScreen = ({
   isProcessing,
   error,
   onExclusionListChange,
+  onCardCreating,
+  nativeLanguage,
 }: ChaptersScreenProps) => {
   const [selectedChapterIndex, setSelectedChapterIndex] = useState<number | null>(null);
   const [selectedWord, setSelectedWord] = useState<string | null>(null);
@@ -357,6 +364,12 @@ export const ChaptersScreen = ({
       
       let color: 'default' | 'success' | 'error' = 'default';
       let knownHanziPercentage: number | undefined = undefined;
+      let hskLevel: number | null | undefined = undefined;
+      
+      // Compute HSK level for all Chinese words (regardless of exclusion status)
+      if (language === 'chinese') {
+        hskLevel = getHSKLevel(word);
+      }
       
       if (!isExcluded) {
         // For Chinese, check known hanzi percentage
@@ -371,17 +384,34 @@ export const ChaptersScreen = ({
       }
       
       const isSelected = selectedWord === word;
-      const baseSx = {
+      const hasHSKLevel = language === 'chinese' && hskLevel !== undefined && hskLevel !== null;
+      
+      const baseSx: any = {
         fontSize: '0.875rem',
         height: 'auto',
         py: 0.5,
         cursor: 'pointer',
-        border: isSelected ? '2px solid' : 'none',
-        borderColor: isSelected ? 'primary.main' : 'transparent',
         '&:hover': {
           opacity: 0.8,
         },
       };
+
+      // Handle borders: preserve borderBottom for HSK level when selected
+      if (isSelected) {
+        if (hasHSKLevel) {
+          // When there's an HSK underline, set border on top/left/right only
+          baseSx.borderTop = '2px solid';
+          baseSx.borderLeft = '2px solid';
+          baseSx.borderRight = '2px solid';
+          baseSx.borderColor = 'primary.main';
+        } else {
+          baseSx.border = '2px solid';
+          baseSx.borderColor = 'primary.main';
+        }
+      } else {
+        baseSx.border = 'none';
+        baseSx.borderColor = 'transparent';
+      }
 
       let sx: object = baseSx;
       
@@ -396,11 +426,24 @@ export const ChaptersScreen = ({
         } as object;
       }
       
+      // Add colored underline for HSK level if available
+      if (hasHSKLevel) {
+        const hskColor = getHSKLevelColor(hskLevel!);
+        if (hskColor) {
+          sx = {
+            ...sx,
+            borderBottom: `3px solid ${hskColor}`,
+            borderRadius: '4px 4px 0 0',
+          } as object;
+        }
+      }
+      
       styles.set(word, {
         color,
         variant: isExcluded ? 'outlined' : 'filled',
         sx,
         knownHanziPercentage,
+        hskLevel,
       });
     });
     
@@ -700,7 +743,8 @@ export const ChaptersScreen = ({
                     const chipStyle = chipStyles.get(word);
                     if (!chipStyle) return null;
                     
-                    return (
+                    const hasHSKLevel = chipStyle.hskLevel !== undefined && chipStyle.hskLevel !== null;
+                    const chip = (
                       <Chip
                         key={word}
                         data-word={word}
@@ -710,6 +754,17 @@ export const ChaptersScreen = ({
                         sx={chipStyle.sx}
                       />
                     );
+                    
+                    // Add tooltip with HSK level if available
+                    if (hasHSKLevel) {
+                      return (
+                        <Tooltip key={word} title={`HSK Level ${chipStyle.hskLevel}`} arrow>
+                          {chip}
+                        </Tooltip>
+                      );
+                    }
+                    
+                    return chip;
                   })}
                 </Box>
               </>
@@ -741,15 +796,25 @@ export const ChaptersScreen = ({
           </IconButton>
         </Box>
         {selectedWord && (
-          <Box sx={{ mb: 2 }}>
+          <Box sx={{ mb: 2, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
             <Link
-              href={getDictionaryUrl(language, selectedWord)}
+              href={getDictionaryUrl(language, selectedWord, nativeLanguage)}
               target="_blank"
               rel="noopener noreferrer"
               sx={{ fontSize: '0.875rem' }}
             >
-              Look up in dictionary
+              Look up in Google Translate
             </Link>
+            {language === 'chinese' && (
+              <Link
+                href={getPlecoUrl(selectedWord)}
+                target="_blank"
+                rel="noopener noreferrer"
+                sx={{ fontSize: '0.875rem' }}
+              >
+                Look up in Pleco
+              </Link>
+            )}
           </Box>
         )}
         {selectedWord && wordOccurrences.length > 0 && (
@@ -827,6 +892,7 @@ export const ChaptersScreen = ({
                     language={language}
                     hasNoUnknown={hasNoUnknown}
                     index={filteredIndex}
+                    onCardCreating={onCardCreating}
                   />
                 ))}
             </Stack>

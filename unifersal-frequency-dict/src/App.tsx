@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Box, BottomNavigation, BottomNavigationAction } from '@mui/material';
+import { Box, BottomNavigation, BottomNavigationAction, Backdrop, CircularProgress } from '@mui/material';
 import { TextFields, Assessment, MenuBook, Settings } from '@mui/icons-material';
 import { TextInputScreen } from './screens/TextInputScreen';
 import { ReportScreen } from './screens/ReportScreen';
@@ -7,7 +7,9 @@ import { ChaptersScreen } from './screens/ChaptersScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
 import type { Language } from './utils/languageDetection';
 import type { ChapterBoundary } from './utils/textExtraction';
-import { loadExclusionList, saveExclusionList } from './utils/exclusionListStorage';
+import { loadExclusionList, saveExclusionList } from './persistence/exclusionListStorage';
+import { loadAnkiSettings, saveAnkiSettings, type AnkiSettings } from './persistence/ankiSettingsStorage';
+import { loadNativeLanguage, saveNativeLanguage } from './persistence/nativeLanguageStorage';
 import type { WordFrequency } from './utils/frequencyAnalysis';
 import type { WorkerMessage, WorkerResponse } from './workers/textProcessor.worker';
 
@@ -18,6 +20,8 @@ function App() {
   const [text, setText] = useState('');
   const [language, setLanguage] = useState<Language>('english');
   const [exclusionList, setExclusionList] = useState('');
+  const [ankiSettings, setAnkiSettings] = useState<AnkiSettings>(loadAnkiSettings());
+  const [nativeLanguage, setNativeLanguage] = useState<Language>(loadNativeLanguage());
   const [chapterBoundaries, setChapterBoundaries] = useState<ChapterBoundary[] | undefined>(undefined);
   
   // Background processing state
@@ -26,6 +30,9 @@ function App() {
   const [processingError, setProcessingError] = useState<string | null>(null);
   const workerRef = useRef<Worker | null>(null);
   const debounceTimerRef = useRef<number | null>(null);
+  
+  // Anki card creation loader
+  const [isCreatingAnkiCard, setIsCreatingAnkiCard] = useState(false);
 
   // Load exclusion list from localStorage on mount
   useEffect(() => {
@@ -43,6 +50,16 @@ function App() {
   useEffect(() => {
     saveExclusionList(language, exclusionList);
   }, [language, exclusionList]);
+
+  // Save Anki settings to localStorage whenever they change
+  useEffect(() => {
+    saveAnkiSettings(ankiSettings);
+  }, [ankiSettings]);
+
+  // Save native language to localStorage whenever it changes
+  useEffect(() => {
+    saveNativeLanguage(nativeLanguage);
+  }, [nativeLanguage]);
 
   // Initialize Web Worker for background text processing
   useEffect(() => {
@@ -140,6 +157,8 @@ function App() {
             isProcessing={isProcessing}
             error={processingError}
             onExclusionListChange={setExclusionList}
+            onCardCreating={setIsCreatingAnkiCard}
+            nativeLanguage={nativeLanguage}
           />
         )}
         {currentScreen === 'chapters' && (
@@ -152,6 +171,8 @@ function App() {
             isProcessing={isProcessing}
             error={processingError}
             onExclusionListChange={setExclusionList}
+            onCardCreating={setIsCreatingAnkiCard}
+            nativeLanguage={nativeLanguage}
           />
         )}
         {currentScreen === 'settings' && (
@@ -159,6 +180,10 @@ function App() {
             exclusionList={exclusionList}
             language={language}
             onExclusionListChange={setExclusionList}
+            ankiSettings={ankiSettings}
+            onAnkiSettingsChange={setAnkiSettings}
+            nativeLanguage={nativeLanguage}
+            onNativeLanguageChange={setNativeLanguage}
           />
         )}
       </Box>
@@ -193,6 +218,12 @@ function App() {
           icon={<Settings />}
         />
       </BottomNavigation>
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={isCreatingAnkiCard}
+      >
+        <CircularProgress color="inherit" />
+      </Backdrop>
     </Box>
   );
 }

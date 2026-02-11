@@ -12,6 +12,7 @@ import {
   Divider,
   Button,
   Link,
+  Tooltip,
 } from '@mui/material';
 import { Close as CloseIcon, Download as DownloadIcon } from '@mui/icons-material';
 import { List } from 'react-window';
@@ -20,7 +21,7 @@ import {
   type WordFrequency,
 } from '../utils/frequencyAnalysis';
 import type { Language } from '../utils/languageDetection';
-import { getDictionaryUrl } from '../utils/languageDetection';
+import { getDictionaryUrl, getPlecoUrl } from '../utils/languageDetection';
 import {
   findWordOccurrencesWithIndex,
   createSentenceIndex,
@@ -30,6 +31,7 @@ import {
 } from '../utils/wordOccurrences';
 import { LegendFilter, type CategoryCounts, type CategoryFilters } from '../components/LegendFilter';
 import { OccurrenceCard } from '../components/OccurrenceCard';
+import { getHSKLevel, getHSKLevelColor } from '../utils/hskLevel';
 
 interface ReportScreenProps {
   text: string;
@@ -39,6 +41,8 @@ interface ReportScreenProps {
   isProcessing: boolean;
   error: string | null;
   onExclusionListChange: (exclusionList: string) => void;
+  onCardCreating?: (isCreating: boolean) => void;
+  nativeLanguage: Language;
 }
 
 // Check if a character is a hanzi (Chinese character)
@@ -94,25 +98,33 @@ interface ChipStyle {
   variant: 'outlined' | 'filled';
   sx: object;
   knownHanziPercentage?: number;
+  hskLevel?: number | null;
 }
 
 interface WordChipProps {
   word: string;
   frequency: number;
-  baseStyle: Omit<ChipStyle, 'sx'> & { baseSx: object };
+  baseStyle: Omit<ChipStyle, 'sx'> & { baseSx: object; hskLevel?: number | null };
   isSelected: boolean;
   onWordClick: (word: string, event: React.MouseEvent) => void;
 }
 
 // Memoized chip component to prevent unnecessary re-renders
 const WordChip = memo(({ word, frequency, baseStyle, isSelected, onWordClick }: WordChipProps) => {
-  const sx = {
+  const sx: any = {
     ...baseStyle.baseSx,
-    border: isSelected ? '2px solid' : 'none',
-    borderColor: isSelected ? 'primary.main' : 'transparent',
   };
 
-  return (
+  // Add selection border
+  if (isSelected) {
+    sx.border = '2px solid';
+    sx.borderColor = 'primary.main';
+  } else {
+    sx.border = 'none';
+    sx.borderColor = 'transparent';
+  }
+
+  const chip = (
     <Chip
       data-word={word}
       label={`${word} (${frequency})`}
@@ -122,6 +134,42 @@ const WordChip = memo(({ word, frequency, baseStyle, isSelected, onWordClick }: 
       onClick={(e) => onWordClick(word, e)}
     />
   );
+
+  // Add colored underline wrapper for HSK level if available
+  const hasHSKLevel = baseStyle.hskLevel !== undefined && baseStyle.hskLevel !== null;
+  if (hasHSKLevel) {
+    const hskColor = getHSKLevelColor(baseStyle.hskLevel!);
+    if (hskColor) {
+      const wrappedChip = (
+        <Box
+          sx={{
+            display: 'inline-flex',
+            position: 'relative',
+            '&::after': {
+              content: '""',
+              position: 'absolute',
+              bottom: -3,
+              left: 0,
+              right: 0,
+              height: '3px',
+              backgroundColor: hskColor,
+              borderRadius: '0 0 4px 4px',
+            },
+          }}
+        >
+          {chip}
+        </Box>
+      );
+      return (
+        <Tooltip title={`HSK Level ${baseStyle.hskLevel}`} arrow>
+          {wrappedChip}
+        </Tooltip>
+      );
+    }
+  }
+
+  // Add tooltip without wrapper if no HSK level
+  return chip;
 });
 
 WordChip.displayName = 'WordChip';
@@ -134,6 +182,8 @@ export const ReportScreen = ({
   isProcessing,
   error,
   onExclusionListChange,
+  onCardCreating,
+  nativeLanguage,
 }: ReportScreenProps) => {
   const [selectedWord, setSelectedWord] = useState<string | null>(null);
   const [wordOccurrences, setWordOccurrences] = useState<WordOccurrence[]>([]);
@@ -293,6 +343,12 @@ export const ReportScreen = ({
       
       let color: 'default' | 'success' | 'error' = 'default';
       let knownHanziPercentage: number | undefined = undefined;
+      let hskLevel: number | null | undefined = undefined;
+      
+      // Compute HSK level for all Chinese words (regardless of exclusion status)
+      if (language === 'chinese') {
+        hskLevel = getHSKLevel(word);
+      }
       
       if (!isExcluded) {
         // For Chinese, check known hanzi percentage
@@ -334,6 +390,7 @@ export const ReportScreen = ({
         variant: isExcluded ? 'outlined' : 'filled',
         baseSx: sx,
         knownHanziPercentage,
+        hskLevel,
       });
     });
     
@@ -519,7 +576,7 @@ export const ReportScreen = ({
                 >
                   <List
                     rowCount={rowCount}
-                    rowHeight={36}
+                    rowHeight={42}
                     style={{ height: 600 }}
                     rowComponent={({ index, style, ...props }) => {
                       // Calculate which chips belong to this row
@@ -535,6 +592,8 @@ export const ReportScreen = ({
                             flexWrap: 'wrap',
                             gap: 1,
                             px: 0.5,
+                            alignItems: 'flex-start',
+                            py: 0.5,
                           }} 
                           {...props}
                         >
@@ -587,15 +646,25 @@ export const ReportScreen = ({
           </IconButton>
         </Box>
         {selectedWord && (
-          <Box sx={{ mb: 2 }}>
+          <Box sx={{ mb: 2, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
             <Link
-              href={getDictionaryUrl(language, selectedWord)}
+              href={getDictionaryUrl(language, selectedWord, nativeLanguage)}
               target="_blank"
               rel="noopener noreferrer"
               sx={{ fontSize: '0.875rem' }}
             >
-              Look up in dictionary
+              Look up in Google Translate
             </Link>
+            {language === 'chinese' && (
+              <Link
+                href={getPlecoUrl(selectedWord)}
+                target="_blank"
+                rel="noopener noreferrer"
+                sx={{ fontSize: '0.875rem' }}
+              >
+                Look up in Pleco
+              </Link>
+            )}
           </Box>
         )}
         {selectedWord && wordOccurrences.length > 0 && (
@@ -673,6 +742,7 @@ export const ReportScreen = ({
                     language={language}
                     hasNoUnknown={hasNoUnknown}
                     index={filteredIndex}
+                    onCardCreating={onCardCreating}
                   />
                 ))}
             </Stack>

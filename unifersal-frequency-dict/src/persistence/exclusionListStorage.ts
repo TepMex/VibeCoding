@@ -1,4 +1,4 @@
-import type { Language } from './languageDetection';
+import type { Language } from '../utils/languageDetection';
 
 const STORAGE_KEY_PREFIX = 'exclusionList_';
 
@@ -23,8 +23,6 @@ export function saveExclusionList(language: Language, exclusionList: string): vo
     console.error('Failed to save exclusion list to localStorage:', error);
   }
 }
-
-
 
 
 

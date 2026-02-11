@@ -150,7 +150,7 @@ export function detectLanguage(text: string): Language {
 
 // Map our language identifiers to Google Translate language codes (ISO 639-1)
 const LANGUAGE_TO_GOOGLE_CODE: Record<Language, string> = {
-  'chinese': 'zh',
+  'chinese': 'zh-CN',
   'english': 'en',
   'hindi': 'hi',
   'spanish': 'es',
@@ -203,12 +203,24 @@ const LANGUAGE_TO_GOOGLE_CODE: Record<Language, string> = {
   'other': 'en', // Default to English for 'other'
 };
 
-export function getDictionaryUrl(language: Language, word: string): string {
-  if (language === 'chinese') {
-    return `plecoapi://x-callback-url/s?q=${encodeURIComponent(word)}`;
+export function getDictionaryUrl(language: Language, word: string, nativeLanguage: Language = 'english'): string {
+  // Ensure we get the correct language code - explicitly check the mapping
+  let sourceLanguageCode = LANGUAGE_TO_GOOGLE_CODE[language];
+  if (!sourceLanguageCode) {
+    console.warn(`Language code not found for language: ${language}, defaulting to 'en'`);
+    sourceLanguageCode = 'en';
   }
   
-  const languageCode = LANGUAGE_TO_GOOGLE_CODE[language] || 'en';
-  return `https://translate.google.ru/?sl=${languageCode}&tl=en&text=${encodeURIComponent(word)}&op=translate`;
+  let targetLanguageCode = LANGUAGE_TO_GOOGLE_CODE[nativeLanguage];
+  if (!targetLanguageCode) {
+    console.warn(`Language code not found for native language: ${nativeLanguage}, defaulting to 'en'`);
+    targetLanguageCode = 'en';
+  }
+  
+  return `https://translate.google.ru/?sl=${sourceLanguageCode}&tl=${targetLanguageCode}&text=${encodeURIComponent(word)}&op=translate`;
+}
+
+export function getPlecoUrl(word: string): string {
+  return `plecoapi://x-callback-url/s?q=${encodeURIComponent(word)}`;
 }
 
