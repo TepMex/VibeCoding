@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback, memo } from 'react';
 import {
   Box,
   Typography,
@@ -106,10 +106,78 @@ const calculateKnownHanziPercentage = (
 interface ChipStyle {
   color: 'default' | 'success' | 'error';
   variant: 'outlined' | 'filled';
-  sx: object;
+  baseSx: object;
   knownHanziPercentage?: number;
   hskLevel?: number | null;
 }
+
+interface WordChipProps {
+  word: string;
+  wholeTextFreq: number;
+  chapterFreq: number;
+  baseStyle: ChipStyle;
+  isSelected: boolean;
+  onWordClick: (word: string, event: React.MouseEvent) => void;
+}
+
+const WordChip = memo(({ word, wholeTextFreq, chapterFreq, baseStyle, isSelected, onWordClick }: WordChipProps) => {
+  const sx: any = {
+    ...baseStyle.baseSx,
+  };
+
+  // Add selection border
+  if (isSelected) {
+    sx.border = '2px solid';
+    sx.borderColor = 'primary.main';
+  } else {
+    sx.border = 'none';
+    sx.borderColor = 'transparent';
+  }
+
+  const hasHSKLevel = baseStyle.hskLevel !== undefined && baseStyle.hskLevel !== null;
+  const hskColor = hasHSKLevel ? getHSKLevelColor(baseStyle.hskLevel!) : null;
+
+  const chip = (
+    <Chip
+      data-word={word}
+      label={
+        <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}>
+          {word}
+          {hasHSKLevel && hskColor && (
+            <Box
+              component="span"
+              sx={{
+                width: 8,
+                height: 8,
+                borderRadius: '50%',
+                backgroundColor: hskColor,
+                display: 'inline-block',
+                ml: 0.5,
+              }}
+            />
+          )}
+          {` (${wholeTextFreq}/${chapterFreq})`}
+        </Box>
+      }
+      color={baseStyle.color}
+      variant={baseStyle.variant}
+      sx={sx}
+      onClick={(e) => onWordClick(word, e)}
+    />
+  );
+
+  if (hasHSKLevel) {
+    return (
+      <Tooltip title={`HSK Level ${baseStyle.hskLevel}`} arrow>
+        {chip}
+      </Tooltip>
+    );
+  }
+
+  return chip;
+});
+
+WordChip.displayName = 'WordChip';
 
 export const ChaptersScreen = ({
   text,
@@ -383,9 +451,6 @@ export const ChaptersScreen = ({
         }
       }
       
-      const isSelected = selectedWord === word;
-      const hasHSKLevel = language === 'chinese' && hskLevel !== undefined && hskLevel !== null;
-      
       const baseSx: any = {
         fontSize: '0.875rem',
         height: 'auto',
@@ -395,23 +460,6 @@ export const ChaptersScreen = ({
           opacity: 0.8,
         },
       };
-
-      // Handle borders: preserve borderBottom for HSK level when selected
-      if (isSelected) {
-        if (hasHSKLevel) {
-          // When there's an HSK underline, set border on top/left/right only
-          baseSx.borderTop = '2px solid';
-          baseSx.borderLeft = '2px solid';
-          baseSx.borderRight = '2px solid';
-          baseSx.borderColor = 'primary.main';
-        } else {
-          baseSx.border = '2px solid';
-          baseSx.borderColor = 'primary.main';
-        }
-      } else {
-        baseSx.border = 'none';
-        baseSx.borderColor = 'transparent';
-      }
 
       let sx: object = baseSx;
       
@@ -426,29 +474,17 @@ export const ChaptersScreen = ({
         } as object;
       }
       
-      // Add colored underline for HSK level if available
-      if (hasHSKLevel) {
-        const hskColor = getHSKLevelColor(hskLevel!);
-        if (hskColor) {
-          sx = {
-            ...sx,
-            borderBottom: `3px solid ${hskColor}`,
-            borderRadius: '4px 4px 0 0',
-          } as object;
-        }
-      }
-      
       styles.set(word, {
         color,
         variant: isExcluded ? 'outlined' : 'filled',
-        sx,
+        baseSx: sx,
         knownHanziPercentage,
         hskLevel,
       });
     });
     
     return styles;
-  }, [filteredMergedFrequencies, exclusionSet, knownHanziSet, language, selectedWord, hanziCache]);
+  }, [filteredMergedFrequencies, exclusionSet, knownHanziSet, language, hanziCache]);
 
   // Pre-compute sentence index for selected chapter
   const chapterSentenceIndex = useMemo<SentenceIndex | null>(() => {
@@ -456,7 +492,29 @@ export const ChaptersScreen = ({
     return createSentenceIndex(selectedChapter.text, language);
   }, [selectedChapter, language]);
 
-  const handleWordClick = useCallback((word: string) => {
+  const handleWordClick = useCallback((word: string, event: React.MouseEvent) => {
+    if (event.ctrlKey || event.metaKey) {
+      event.preventDefault();
+      
+      // Check if word is already in exclusion list
+      const lowerWord = word.toLowerCase();
+      if (!exclusionSet.has(lowerWord)) {
+        // Add word to exclusion list
+        const trimmedExclusionList = exclusionList.trim();
+        const newExclusionList = trimmedExclusionList 
+          ? `${trimmedExclusionList}\n${word}`
+          : word;
+        onExclusionListChange(newExclusionList);
+      }
+      return;
+    }
+    
+    if (event.shiftKey) {
+      event.preventDefault();
+      alert('Clicked with shift');
+      return;
+    }
+    
     setSelectedWord(word);
     
     if (chapterSentenceIndex) {
@@ -465,7 +523,7 @@ export const ChaptersScreen = ({
     } else {
       setWordOccurrences([]);
     }
-  }, [chapterSentenceIndex]);
+  }, [chapterSentenceIndex, exclusionSet, exclusionList, onExclusionListChange]);
 
   // Compute which occurrences have no unknown words except the selected one
   useEffect(() => {
@@ -497,41 +555,6 @@ export const ChaptersScreen = ({
 
     computeUnknownWords();
   }, [wordOccurrences, selectedWord, language, exclusionSet, knownHanziSet]);
-
-  // Event delegation handler for chip clicks
-  const handleContainerClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    const target = e.target as HTMLElement;
-    const chip = target.closest('[data-word]') as HTMLElement;
-    
-    if (chip) {
-      const word = chip.getAttribute('data-word');
-      if (word) {
-        if (e.ctrlKey || e.metaKey) {
-          e.preventDefault();
-          
-          // Check if word is already in exclusion list
-          const lowerWord = word.toLowerCase();
-          if (!exclusionSet.has(lowerWord)) {
-            // Add word to exclusion list
-            const trimmedExclusionList = exclusionList.trim();
-            const newExclusionList = trimmedExclusionList 
-              ? `${trimmedExclusionList}\n${word}`
-              : word;
-            onExclusionListChange(newExclusionList);
-          }
-          return;
-        }
-        
-        if (e.shiftKey) {
-          e.preventDefault();
-          alert('Clicked with shift');
-          return;
-        }
-        
-        handleWordClick(word);
-      }
-    }
-  }, [handleWordClick, exclusionSet, exclusionList, onExclusionListChange]);
 
   const handleCloseDrawer = useCallback(() => {
     setSelectedWord(null);
@@ -729,7 +752,6 @@ export const ChaptersScreen = ({
                   additionalInfo="Format: word (whole text frequency / chapter frequency)"
                 />
                 <Box
-                  onClick={handleContainerClick}
                   sx={{
                     display: 'flex',
                     flexWrap: 'wrap',
@@ -740,31 +762,20 @@ export const ChaptersScreen = ({
                   }}
                 >
                   {filteredMergedFrequencies.map(({ word, wholeTextFreq, chapterFreq }) => {
-                    const chipStyle = chipStyles.get(word);
-                    if (!chipStyle) return null;
+                    const baseStyle = chipStyles.get(word);
+                    if (!baseStyle) return null;
                     
-                    const hasHSKLevel = chipStyle.hskLevel !== undefined && chipStyle.hskLevel !== null;
-                    const chip = (
-                      <Chip
+                    return (
+                      <WordChip
                         key={word}
-                        data-word={word}
-                        label={`${word} (${wholeTextFreq}/${chapterFreq})`}
-                        color={chipStyle.color}
-                        variant={chipStyle.variant}
-                        sx={chipStyle.sx}
+                        word={word}
+                        wholeTextFreq={wholeTextFreq}
+                        chapterFreq={chapterFreq}
+                        baseStyle={baseStyle}
+                        isSelected={selectedWord === word}
+                        onWordClick={handleWordClick}
                       />
                     );
-                    
-                    // Add tooltip with HSK level if available
-                    if (hasHSKLevel) {
-                      return (
-                        <Tooltip key={word} title={`HSK Level ${chipStyle.hskLevel}`} arrow>
-                          {chip}
-                        </Tooltip>
-                      );
-                    }
-                    
-                    return chip;
                   })}
                 </Box>
               </>

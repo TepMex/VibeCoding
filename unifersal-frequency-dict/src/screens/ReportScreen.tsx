@@ -124,10 +124,31 @@ const WordChip = memo(({ word, frequency, baseStyle, isSelected, onWordClick }: 
     sx.borderColor = 'transparent';
   }
 
+  const hasHSKLevel = baseStyle.hskLevel !== undefined && baseStyle.hskLevel !== null;
+  const hskColor = hasHSKLevel ? getHSKLevelColor(baseStyle.hskLevel!) : null;
+
   const chip = (
     <Chip
       data-word={word}
-      label={`${word} (${frequency})`}
+      label={
+        <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}>
+          {word}
+          {hasHSKLevel && hskColor && (
+            <Box
+              component="span"
+              sx={{
+                width: 8,
+                height: 8,
+                borderRadius: '50%',
+                backgroundColor: hskColor,
+                display: 'inline-block',
+                ml: 0.5,
+              }}
+            />
+          )}
+          {` (${frequency})`}
+        </Box>
+      }
       color={baseStyle.color}
       variant={baseStyle.variant}
       sx={sx}
@@ -135,40 +156,14 @@ const WordChip = memo(({ word, frequency, baseStyle, isSelected, onWordClick }: 
     />
   );
 
-  // Add colored underline wrapper for HSK level if available
-  const hasHSKLevel = baseStyle.hskLevel !== undefined && baseStyle.hskLevel !== null;
   if (hasHSKLevel) {
-    const hskColor = getHSKLevelColor(baseStyle.hskLevel!);
-    if (hskColor) {
-      const wrappedChip = (
-        <Box
-          sx={{
-            display: 'inline-flex',
-            position: 'relative',
-            '&::after': {
-              content: '""',
-              position: 'absolute',
-              bottom: -3,
-              left: 0,
-              right: 0,
-              height: '3px',
-              backgroundColor: hskColor,
-              borderRadius: '0 0 4px 4px',
-            },
-          }}
-        >
-          {chip}
-        </Box>
-      );
-      return (
-        <Tooltip title={`HSK Level ${baseStyle.hskLevel}`} arrow>
-          {wrappedChip}
-        </Tooltip>
-      );
-    }
+    return (
+      <Tooltip title={`HSK Level ${baseStyle.hskLevel}`} arrow>
+        {chip}
+      </Tooltip>
+    );
   }
 
-  // Add tooltip without wrapper if no HSK level
   return chip;
 });
 
