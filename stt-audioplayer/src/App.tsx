@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Box,
   Chip,
@@ -14,9 +14,11 @@ import UploadFileIcon from '@mui/icons-material/UploadFile';
 import AudioFileIcon from '@mui/icons-material/AudioFile';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import { AudioPlayer } from './components/AudioPlayer';
+import { FilePickerModal } from './components/FilePickerModal';
 import { extractTextFromFile } from './utils/textExtractor';
 import { createSearchIndex, getAllChunks, searchText } from './utils/textSearch';
 import { transcribe } from './utils/whisperWrapper';
+import { getCurrentFile, type FileType } from './utils/fileStorage';
 
 interface PerformanceLogEntry {
   id: string;
@@ -37,12 +39,10 @@ function App() {
   const [highlightedChunkIndex, setHighlightedChunkIndex] = useState<number | null>(null);
   const [performanceLogs, setPerformanceLogs] = useState<PerformanceLogEntry[]>([]);
   const [showPerformanceLog, setShowPerformanceLog] = useState(false);
+  const [activePickerType, setActivePickerType] = useState<FileType | null>(null);
   const textDisplayRef = useRef<HTMLDivElement>(null);
 
-  const handleTextFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
+  const loadTextFile = async (file: File) => {
     setTextFile(file);
     setIsLoadingText(true);
     setError(null);
@@ -61,13 +61,38 @@ function App() {
     }
   };
 
-  const handleAudioFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      setAudioFile(file);
-      setError(null);
-    }
+  const handleTextFileSelect = async (file: File) => {
+    await loadTextFile(file);
   };
+
+  const handleAudioFileSelect = async (file: File) => {
+    setAudioFile(file);
+    setError(null);
+  };
+
+  useEffect(() => {
+    const restoreFiles = async () => {
+      try {
+        const [restoredAudio, restoredText] = await Promise.all([
+          getCurrentFile('audio'),
+          getCurrentFile('text'),
+        ]);
+
+        if (restoredAudio) {
+          setAudioFile(restoredAudio);
+        }
+        if (restoredText) {
+          await loadTextFile(restoredText);
+        }
+      } catch (restoreError) {
+        console.warn('[App] Failed to restore files:', restoreError);
+      }
+    };
+
+    restoreFiles().catch((restoreError) => {
+      console.warn('[App] Restore process failed:', restoreError);
+    });
+  }, []);
 
   const handleStop = async (last5Seconds: AudioBuffer) => {
     console.log('[App] handleStop called with AudioBuffer:', {
@@ -200,25 +225,23 @@ function App() {
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1, minHeight: 48 }}>
           <Tooltip title="Upload text file">
-            <IconButton component="label" size="small" color="primary" aria-label="upload text file">
+            <IconButton
+              size="small"
+              color="primary"
+              aria-label="upload text file"
+              onClick={() => setActivePickerType('text')}
+            >
               <UploadFileIcon />
-              <input
-                type="file"
-                hidden
-                accept=".txt,.html,.htm,.epub,.fb2"
-                onChange={handleTextFileChange}
-              />
             </IconButton>
           </Tooltip>
           <Tooltip title="Upload audio file">
-            <IconButton component="label" size="small" color="primary" aria-label="upload audio file">
+            <IconButton
+              size="small"
+              color="primary"
+              aria-label="upload audio file"
+              onClick={() => setActivePickerType('audio')}
+            >
               <AudioFileIcon />
-              <input
-                type="file"
-                hidden
-                accept="audio/mpeg,audio/mp3,.mp3"
-                onChange={handleAudioFileChange}
-              />
             </IconButton>
           </Tooltip>
           <Tooltip title="Toggle performance log">
@@ -315,6 +338,21 @@ function App() {
         onClose={() => setError(null)}
         message={error}
       />
+
+      {activePickerType && (
+        <FilePickerModal
+          open={Boolean(activePickerType)}
+          type={activePickerType}
+          onClose={() => setActivePickerType(null)}
+          onFileSelect={async (file) => {
+            if (activePickerType === 'text') {
+              await handleTextFileSelect(file);
+              return;
+            }
+            await handleAudioFileSelect(file);
+          }}
+        />
+      )}
     </Box>
   );
 }
