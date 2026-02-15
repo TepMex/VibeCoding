@@ -6,7 +6,11 @@ import {
   IconButton,
   Paper,
   CircularProgress,
+  FormControl,
+  InputLabel,
+  MenuItem,
   Snackbar,
+  Select,
   Tooltip,
   Typography,
 } from '@mui/material';
@@ -15,9 +19,9 @@ import AudioFileIcon from '@mui/icons-material/AudioFile';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import { AudioPlayer } from './components/AudioPlayer';
 import { FilePickerModal } from './components/FilePickerModal';
-import { extractTextFromFile } from './utils/textExtractor';
+import { extractTextFromFile, type Chapter } from './utils/textExtractor';
 import { createSearchIndex, getAllChunks, searchText } from './utils/textSearch';
-import { transcribe } from './utils/whisperWrapper';
+import { preloadModel, transcribe } from './utils/whisperWrapper';
 import { getCurrentFile, type FileType } from './utils/fileStorage';
 
 interface PerformanceLogEntry {
@@ -33,6 +37,8 @@ function App() {
   const [audioFile, setAudioFile] = useState<File | null>(null);
   const [bookText, setBookText] = useState<string>('');
   const [bookTitle, setBookTitle] = useState<string>('');
+  const [chapters, setChapters] = useState<Chapter[]>([]);
+  const [selectedChapterId, setSelectedChapterId] = useState<string>('');
   const [isLoadingText, setIsLoadingText] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -51,11 +57,16 @@ function App() {
       const extracted = await extractTextFromFile(file);
       setBookText(extracted.text);
       setBookTitle(extracted.title || file.name);
-      await createSearchIndex(extracted.text, extracted.title || file.name);
+      const extractedChapters = extracted.chapters || [];
+      setChapters(extractedChapters);
+      setSelectedChapterId('');
+      await createSearchIndex(extracted.text, extracted.title || file.name, undefined, extractedChapters);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to extract text from file');
       setBookText('');
       setBookTitle('');
+      setChapters([]);
+      setSelectedChapterId('');
     } finally {
       setIsLoadingText(false);
     }
@@ -93,6 +104,19 @@ function App() {
       console.warn('[App] Restore process failed:', restoreError);
     });
   }, []);
+
+  useEffect(() => {
+    preloadModel().catch((warmupError: unknown) => {
+      console.warn('[App] Model warm-up on app mount failed:', warmupError);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!audioFile) return;
+    preloadModel().catch((warmupError: unknown) => {
+      console.warn('[App] Model warm-up after audio load failed:', warmupError);
+    });
+  }, [audioFile]);
 
   const handleStop = async (last5Seconds: AudioBuffer) => {
     console.log('[App] handleStop called with AudioBuffer:', {
@@ -140,7 +164,7 @@ function App() {
       // Search for the transcript in the book text
       console.log('[App] Searching for transcript in book text...');
       const searchStart = performance.now();
-      const searchResult = searchText(transcript.trim());
+      const searchResult = searchText(transcript.trim(), selectedChapterId || undefined);
       const searchMs = performance.now() - searchStart;
       console.log('[App] Search result:', searchResult);
 
@@ -263,6 +287,27 @@ function App() {
           {isLoadingText && <CircularProgress size={16} />}
           {isTranscribing && <CircularProgress size={16} color="secondary" />}
         </Box>
+
+        {chapters.length > 0 && (
+          <FormControl size="small" fullWidth sx={{ mb: 1 }}>
+            <InputLabel id="chapter-selector-label">Chapter</InputLabel>
+            <Select
+              labelId="chapter-selector-label"
+              value={selectedChapterId}
+              label="Chapter"
+              onChange={(event) => setSelectedChapterId(event.target.value)}
+            >
+              <MenuItem value="">
+                <em>All chapters</em>
+              </MenuItem>
+              {chapters.map((chapter) => (
+                <MenuItem key={chapter.id} value={chapter.id}>
+                  {chapter.title}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        )}
 
         <AudioPlayer
           audioFile={audioFile}

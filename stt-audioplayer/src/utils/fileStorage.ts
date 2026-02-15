@@ -18,6 +18,7 @@ const RECENT_AUDIO_KEY = 'recentAudioFiles';
 const RECENT_TEXT_KEY = 'recentTextFiles';
 const CURRENT_AUDIO_KEY = 'currentAudioFile';
 const CURRENT_TEXT_KEY = 'currentTextFile';
+const PLAYBACK_POSITION_PREFIX = 'audioPlaybackPosition:';
 
 const DB_NAME = 'RecentFilesDB';
 const DB_VERSION = 1;
@@ -33,12 +34,22 @@ interface StoredHandle {
   lastOpened: number;
 }
 
+interface StoredPlaybackPosition {
+  position: number;
+  updatedAt: number;
+}
+
 function getRecentStorageKey(type: FileType): string {
   return type === 'audio' ? RECENT_AUDIO_KEY : RECENT_TEXT_KEY;
 }
 
 function getCurrentStorageKey(type: FileType): string {
   return type === 'audio' ? CURRENT_AUDIO_KEY : CURRENT_TEXT_KEY;
+}
+
+function getPlaybackStorageKey(file: Pick<File, 'name' | 'size' | 'lastModified'>): string {
+  const identity = `${file.name}|${file.size}|${file.lastModified}`;
+  return `${PLAYBACK_POSITION_PREFIX}${encodeURIComponent(identity)}`;
 }
 
 function parseRecentFiles(raw: string | null): RecentFile[] {
@@ -449,4 +460,36 @@ export async function clearRecentFiles(type: FileType, keepCount = 0): Promise<v
   if (currentId && !kept.some((file) => file.id === currentId)) {
     setCurrentFileId(type, null);
   }
+}
+
+export function savePlaybackPosition(file: Pick<File, 'name' | 'size' | 'lastModified'>, position: number): void {
+  if (typeof localStorage === 'undefined') return;
+  if (!Number.isFinite(position) || position < 0) return;
+  const key = getPlaybackStorageKey(file);
+  const payload: StoredPlaybackPosition = {
+    position,
+    updatedAt: Date.now(),
+  };
+  localStorage.setItem(key, JSON.stringify(payload));
+}
+
+export function getPlaybackPosition(file: Pick<File, 'name' | 'size' | 'lastModified'>): number | null {
+  if (typeof localStorage === 'undefined') return null;
+  const key = getPlaybackStorageKey(file);
+  const value = localStorage.getItem(key);
+  if (!value) return null;
+  try {
+    const parsed = JSON.parse(value) as Partial<StoredPlaybackPosition> | null;
+    if (!parsed || typeof parsed.position !== 'number' || !Number.isFinite(parsed.position) || parsed.position < 0) {
+      return null;
+    }
+    return parsed.position;
+  } catch {
+    return null;
+  }
+}
+
+export function clearPlaybackPosition(file: Pick<File, 'name' | 'size' | 'lastModified'>): void {
+  if (typeof localStorage === 'undefined') return;
+  localStorage.removeItem(getPlaybackStorageKey(file));
 }

@@ -12,6 +12,14 @@ export interface BookIndexMetadata {
   chunkCount: number;
   createdAt: number;
   version: number;
+  chapters?: ChapterRange[];
+}
+
+export interface ChapterRange {
+  id: string;
+  title: string;
+  startChunkIndex: number;
+  endChunkIndex: number;
 }
 
 export interface BookIndex {

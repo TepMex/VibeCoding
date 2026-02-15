@@ -1,11 +1,13 @@
 import { fuzzySearch, normalizeText, generateNGrams } from './fuzzySearch';
-import { 
-  generateBookHash, 
-  indexExists, 
-  loadIndex, 
-  saveIndex, 
-  type BookIndex 
+import {
+  generateBookHash,
+  indexExists,
+  loadIndex,
+  saveIndex,
+  type BookIndex,
+  type ChapterRange,
 } from './searchIndex';
+import type { Chapter } from './textExtractor';
 
 export interface SearchResult {
   index: number;
@@ -16,6 +18,37 @@ export interface SearchResult {
 let textChunks: string[] = [];
 let currentBookHash: string | null = null;
 let bookIndex: BookIndex | null = null;
+let chapterRanges: ChapterRange[] = [];
+
+function splitTextToChunks(text: string): string[] {
+  return text
+    .split(/([.!?]\s+|\n\n+)/)
+    .filter((chunk) => chunk.trim().length > 10)
+    .map((chunk) => chunk.trim());
+}
+
+function buildChapterRanges(chapters: Chapter[] | undefined): ChapterRange[] {
+  if (!chapters || chapters.length === 0) return [];
+
+  const ranges: ChapterRange[] = [];
+  let cursor = 0;
+  for (const chapter of chapters) {
+    const chapterChunks = splitTextToChunks(chapter.text || '');
+    if (chapterChunks.length === 0) continue;
+
+    const startChunkIndex = cursor;
+    const endChunkIndex = cursor + chapterChunks.length - 1;
+    ranges.push({
+      id: chapter.id,
+      title: chapter.title,
+      startChunkIndex,
+      endChunkIndex,
+    });
+    cursor += chapterChunks.length;
+  }
+
+  return ranges;
+}
 
 /**
  * Build search index from chunks (normalize, compute n-grams, etc.)
@@ -82,6 +115,7 @@ async function buildIndex(
       chunkCount: chunks.length,
       createdAt: Date.now(),
       version: 1,
+      chapters: chapterRanges,
     },
   };
 }
@@ -93,15 +127,13 @@ async function buildIndex(
 export async function createSearchIndex(
   text: string,
   title?: string,
-  onProgress?: (progress: number) => void
+  onProgress?: (progress: number) => void,
+  chapters?: Chapter[],
 ): Promise<void> {
-  // Split text into sentences and paragraphs for better matching
-  const chunks = text
-    .split(/([.!?]\s+|\n\n+)/)
-    .filter((chunk) => chunk.trim().length > 10) // Filter out very short chunks
-    .map((chunk) => chunk.trim());
+  const chunks = splitTextToChunks(text);
 
   textChunks = chunks;
+  chapterRanges = buildChapterRanges(chapters);
 
   // Generate book hash
   currentBookHash = await generateBookHash(text);
@@ -112,6 +144,7 @@ export async function createSearchIndex(
     const loaded = await loadIndex(currentBookHash);
     if (loaded) {
       bookIndex = loaded;
+      chapterRanges = loaded.metadata.chapters || [];
       return;
     }
   }
@@ -130,27 +163,28 @@ export async function createSearchIndex(
  * Uses pre-normalized chunks from IndexedDB if available
  * Uses n-gram index for candidate filtering when available
  */
-export function searchText(query: string): SearchResult | null {
+export function searchText(query: string, chapterId?: string): SearchResult | null {
   if (textChunks.length === 0) {
     return null;
   }
 
-  // Use pre-normalized chunks from index if available, otherwise use original chunks
-  const chunksToSearch = bookIndex?.normalizedChunks || textChunks;
-  
-  // Use n-gram index for candidate filtering if available
-  const nGramIndex = bookIndex?.nGrams;
-
-  const result = fuzzySearch(query, chunksToSearch, 0.25, nGramIndex);
+  const chapter = chapterId ? chapterRanges.find((item) => item.id === chapterId) : null;
+  const fullChunks = bookIndex?.normalizedChunks || textChunks;
+  const rangeStart = chapter ? chapter.startChunkIndex : 0;
+  const rangeEnd = chapter ? chapter.endChunkIndex : fullChunks.length - 1;
+  const scopedChunks = fullChunks.slice(rangeStart, rangeEnd + 1);
+  const result = fuzzySearch(query, scopedChunks, 0.25);
 
   if (!result) {
     return null;
   }
 
+  const absoluteIndex = rangeStart + result.index;
+
   // Return original chunk text (not normalized) for display
   return {
-    index: result.index,
-    text: textChunks[result.index] || result.text,
+    index: absoluteIndex,
+    text: textChunks[absoluteIndex] || result.text,
     score: result.score,
   };
 }
@@ -170,6 +204,10 @@ export function getChunkByIndex(index: number): string | null {
  */
 export function getAllChunks(): string[] {
   return textChunks;
+}
+
+export function getChapterRanges(): ChapterRange[] {
+  return chapterRanges;
 }
 
 

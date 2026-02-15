@@ -10,6 +10,7 @@ import PauseIcon from '@mui/icons-material/Pause';
 import StopIcon from '@mui/icons-material/Stop';
 import Replay10Icon from '@mui/icons-material/Replay10';
 import Forward10Icon from '@mui/icons-material/Forward10';
+import { getPlaybackPosition, savePlaybackPosition } from '../utils/fileStorage';
 
 interface AudioPlayerProps {
   audioFile: File | null;
@@ -28,21 +29,40 @@ export function AudioPlayer({ audioFile, mediaTitle, onStop }: AudioPlayerProps)
   const [duration, setDuration] = useState(0);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const audioBufferRef = useRef<ArrayBuffer | null>(null);
+  const restorePositionRef = useRef<number | null>(null);
+  const lastPersistAtRef = useRef(0);
+
+  const persistPlaybackPosition = (force = false) => {
+    if (!audioFile) return;
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (!Number.isFinite(audio.currentTime) || audio.currentTime < 0) return;
+
+    const now = Date.now();
+    if (!force && now - lastPersistAtRef.current < 2000) {
+      return;
+    }
+    savePlaybackPosition(audioFile, audio.currentTime);
+    lastPersistAtRef.current = now;
+  };
 
   useEffect(() => {
     if (audioFile) {
       const url = URL.createObjectURL(audioFile);
       setAudioUrl(url);
+      restorePositionRef.current = getPlaybackPosition(audioFile);
       audioFile.arrayBuffer().then((buffer) => {
         audioBufferRef.current = buffer;
       });
 
       return () => {
+        persistPlaybackPosition(true);
         URL.revokeObjectURL(url);
       };
     } else {
       setAudioUrl(null);
       audioBufferRef.current = null;
+      restorePositionRef.current = null;
     }
   }, [audioFile]);
 
@@ -50,9 +70,23 @@ export function AudioPlayer({ audioFile, mediaTitle, onStop }: AudioPlayerProps)
     const audio = audioRef.current;
     if (!audio) return;
 
-    const updateTime = () => setCurrentTime(audio.currentTime);
-    const updateDuration = () => setDuration(audio.duration);
-    const handleEnded = () => setIsPlaying(false);
+    const updateTime = () => {
+      setCurrentTime(audio.currentTime);
+      persistPlaybackPosition(false);
+    };
+    const updateDuration = () => {
+      setDuration(audio.duration);
+      const restorePosition = restorePositionRef.current;
+      if (restorePosition !== null && Number.isFinite(audio.duration) && audio.duration > 0) {
+        audio.currentTime = Math.min(Math.max(0, restorePosition), audio.duration);
+        setCurrentTime(audio.currentTime);
+      }
+      restorePositionRef.current = null;
+    };
+    const handleEnded = () => {
+      setIsPlaying(false);
+      persistPlaybackPosition(true);
+    };
 
     audio.addEventListener('timeupdate', updateTime);
     audio.addEventListener('loadedmetadata', updateDuration);
@@ -77,6 +111,7 @@ export function AudioPlayer({ audioFile, mediaTitle, onStop }: AudioPlayerProps)
     if (!audio) return;
     audio.pause();
     setIsPlaying(false);
+    persistPlaybackPosition(true);
   };
 
   const handlePlayPause = () => {
@@ -94,6 +129,7 @@ export function AudioPlayer({ audioFile, mediaTitle, onStop }: AudioPlayerProps)
     if (!audio) return;
 
     audio.currentTime = Math.max(0, Math.min(audio.duration, audio.currentTime + seconds));
+    persistPlaybackPosition(true);
   };
 
   const handleSliderChange = (_event: Event, value: number | number[]) => {
@@ -102,6 +138,7 @@ export function AudioPlayer({ audioFile, mediaTitle, onStop }: AudioPlayerProps)
 
     audio.currentTime = value as number;
     setCurrentTime(value as number);
+    persistPlaybackPosition(true);
   };
 
   const handleStop = async () => {
@@ -176,6 +213,7 @@ export function AudioPlayer({ audioFile, mediaTitle, onStop }: AudioPlayerProps)
       console.log('[AudioPlayer] Segment extracted, calling onStop callback');
       // Pass AudioBuffer directly
       await onStop(segmentBuffer);
+      persistPlaybackPosition(true);
       console.log('[AudioPlayer] onStop callback completed');
     } catch (error) {
       console.error('[AudioPlayer] Error in handleStop:', {

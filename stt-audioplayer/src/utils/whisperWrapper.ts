@@ -447,3 +447,10 @@ export function isLoadingModel(): boolean {
   return isLoading;
 }
 
+
+/**
+ * Warm-up helper that starts model initialization ahead of the first request.
+ */
+export async function preloadModel(): Promise<void> {
+  await initializeModel();
+}
