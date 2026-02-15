@@ -1,0 +1,10 @@
+---
+description: changing ui, buttons, apperance user interface, layout, css
+alwaysApply: false
+---
+<ui-guidelines>
+<guideline-0>Interface should be accessible on mobile devices, Android phone - first class citizen.</guideline-0>
+<guideline-1>audio selector and text file selector should be compact and minimalistic, and take minimum of screen space</guideline-1>
+<guideline-2>Book's text is the main part of the interface. Text should take minimum 2/3 of the screen.</guideline-2>
+<guideline-3>On Android should use MediaSession API properly to create media sessions.</guideline-3>
+</ui-guidelines>
