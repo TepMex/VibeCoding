@@ -15,7 +15,26 @@ interface WasmModule {
   sequence_alignment_similarity(transcriptWords: string[], chunkWords: string[]): number;
   word_level_similarity(transcript: string, chunk: string): number;
   calculate_combined_similarity(transcript: string, chunk: string): number;
+  TextLocator?: {
+    new (): WasmTextLocatorInstance;
+    from_json?(json: string): WasmTextLocatorInstance;
+  };
   default?(module_or_path?: string | Request | URL | WebAssembly.Module): Promise<void>;
+}
+
+interface WasmTextLocatorInstance {
+  preprocess(bookText: string): void;
+  query(transcriptSnippet: string): unknown;
+  serialize?(): string;
+}
+
+export interface TextLocatorQueryResult {
+  window_id: number;
+  start_word_index: number;
+  end_word_index: number;
+  matched_text: string;
+  alignment_score: number;
+  confidence: number;
 }
 
 // WASM module (loaded lazily)
@@ -516,4 +535,56 @@ export function fuzzySearch(
   }
 
   return bestMatch;
+}
+
+export class WasmTextLocator {
+  private instance: WasmTextLocatorInstance | null = null;
+
+  static async create(): Promise<WasmTextLocator | null> {
+    const wasm = await loadWasm();
+    if (!wasm?.TextLocator) {
+      return null;
+    }
+    const wrapper = new WasmTextLocator();
+    wrapper.instance = new wasm.TextLocator();
+    return wrapper;
+  }
+
+  static async fromSerialized(serialized: string): Promise<WasmTextLocator | null> {
+    const wasm = await loadWasm();
+    if (!wasm?.TextLocator) {
+      return null;
+    }
+    const wrapper = new WasmTextLocator();
+    if (wasm.TextLocator.from_json) {
+      wrapper.instance = wasm.TextLocator.from_json(serialized);
+    } else {
+      wrapper.instance = new wasm.TextLocator();
+    }
+    return wrapper;
+  }
+
+  preprocess(bookText: string): void {
+    this.instance?.preprocess(bookText);
+  }
+
+  query(transcriptSnippet: string): TextLocatorQueryResult | null {
+    if (!this.instance) {
+      return null;
+    }
+
+    const result = this.instance.query(transcriptSnippet);
+    if (!result || typeof result !== 'object') {
+      return null;
+    }
+
+    return result as TextLocatorQueryResult;
+  }
+
+  serialize(): string | null {
+    if (!this.instance?.serialize) {
+      return null;
+    }
+    return this.instance.serialize();
+  }
 }

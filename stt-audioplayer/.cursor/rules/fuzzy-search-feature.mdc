@@ -1,0 +1,188 @@
+---
+alwaysApply: false
+---
+<task>
+    Implement a fast and robust text-fragment locator for aligning noisy ASR output
+    (Whisper tiny transcript) to a large reference book text.
+</task>
+
+<objective>
+    Given:
+        - A full book as plain text
+        - A short noisy transcript snippet (5–30 words)
+
+    Return:
+        - The best matching location in the book
+        - Start word index
+        - End word index
+        - Matched text fragment
+        - Alignment score
+</objective>
+
+<constraints>
+    - Must work with noisy ASR (substitutions, insertions, deletions)
+    - Must be fast (<50ms per query for ~100k word book)
+    - Must not use semantic embeddings
+    - Must operate fully offline
+    - Must scale to books up to 1 million words
+</constraints>
+
+<architecture>
+
+    <phase name="preprocessing">
+
+        <step>
+            Normalize book text:
+                - lowercase
+                - remove punctuation
+                - collapse whitespace
+        </step>
+
+        <step>
+            Tokenize into word tokens (split by whitespace).
+        </step>
+
+        <step>
+            Create overlapping sliding windows:
+                - window_size_words = 100
+                - step_size_words = 30
+                - store:
+                    window_id
+                    start_word_index
+                    end_word_index
+                    token_list
+        </step>
+
+        <step>
+            Build inverted index of word-level 3-grams:
+                - For each window:
+                    generate 3-word shingles
+                - Store mapping:
+                    3gram_string -> set(window_ids)
+        </step>
+
+    </phase>
+
+    <phase name="runtime_query">
+
+        <step>
+            Normalize transcript snippet same way as book.
+        </step>
+
+        <step>
+            Tokenize transcript into words.
+        </step>
+
+        <step>
+            Generate transcript 3-grams.
+        </step>
+
+        <step>
+            Candidate retrieval:
+                - For each transcript 3-gram:
+                    retrieve window_ids from inverted index
+                - Count overlaps per window
+                - Rank windows by overlap count (descending)
+                - Select top_k = 20 windows
+        </step>
+
+        <step>
+            For each candidate window:
+                Compute local alignment score using
+                Smith–Waterman algorithm on word tokens.
+        </step>
+
+        <step>
+            Return the window with highest alignment score.
+        </step>
+
+    </phase>
+
+</architecture>
+
+<alignment_algorithm>
+
+    <type>Smith-Waterman (local alignment)</type>
+
+    <input>
+        sequence_a = transcript_tokens
+        sequence_b = window_tokens
+    </input>
+
+    <scoring>
+        exact_word_match = +2
+        fuzzy_word_match (edit_distance <= 1) = +1
+        mismatch = -1
+        gap_penalty = -1
+    </scoring>
+
+    <requirements>
+        - Word-level comparison
+        - Use Levenshtein distance for fuzzy_word_match
+        - Return:
+            alignment_score
+            start_index_in_window
+            end_index_in_window
+    </requirements>
+
+</alignment_algorithm>
+
+<optimization_rules>
+
+    <rule>
+        Precompute and cache:
+            - window token arrays
+            - window 3-grams
+    </rule>
+
+    <rule>
+        Use sets for inverted index storage.
+    </rule>
+
+    <rule>
+        Abort alignment early if:
+            current max possible score < best_score_found
+    </rule>
+
+    <rule>
+        Avoid character-level alignment for full window.
+    </rule>
+
+</optimization_rules>
+
+<optional_extensions>
+
+    <extension name="phonetic_tolerance">
+        Add phonetic encoding (Double Metaphone) for tokens.
+        Grant +1 score if phonetic match.
+    </extension>
+
+    <extension name="progressive_tracking">
+        If previous match exists:
+            Search only windows near previous location.
+    </extension>
+
+    <extension name="confidence_score">
+        confidence = alignment_score / (2 * transcript_length)
+    </extension>
+
+</optional_extensions>
+
+<deliverables>
+
+    <module name="TextLocator">
+        <methods>
+            preprocess(book_text)
+            query(transcript_snippet)
+        </methods>
+    </module>
+
+    <tests>
+        - Exact match
+        - 1-word substitution
+        - Missing word
+        - Extra word
+        - Completely wrong snippet
+    </tests>
+
+</deliverables>

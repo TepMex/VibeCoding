@@ -13,6 +13,14 @@ import { extractTextFromFile } from './utils/textExtractor';
 import { createSearchIndex, getAllChunks, searchText } from './utils/textSearch';
 import { transcribe } from './utils/whisperWrapper';
 
+interface PerformanceLogEntry {
+  id: string;
+  createdAt: number;
+  recognitionMs: number;
+  searchMs: number | null;
+  matched: boolean;
+}
+
 function App() {
   const [textFile, setTextFile] = useState<File | null>(null);
   const [audioFile, setAudioFile] = useState<File | null>(null);
@@ -22,6 +30,7 @@ function App() {
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [highlightedChunkIndex, setHighlightedChunkIndex] = useState<number | null>(null);
+  const [performanceLogs, setPerformanceLogs] = useState<PerformanceLogEntry[]>([]);
   const textDisplayRef = useRef<HTMLDivElement>(null);
 
   const handleTextFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -75,27 +84,62 @@ function App() {
     try {
       // Transcribe the last 5 seconds
       console.log('[App] Calling transcribe function...');
+      const recognitionStart = performance.now();
       const transcript = await transcribe(last5Seconds);
+      const recognitionMs = performance.now() - recognitionStart;
       console.log('[App] Transcription completed:', { transcript });
       
       if (!transcript || transcript.trim().length === 0) {
         console.warn('[App] Empty transcript received');
         setError('No speech detected in the last 5 seconds');
+        setPerformanceLogs((prev) => [
+          {
+            id: `${Date.now()}-${Math.random()}`,
+            createdAt: Date.now(),
+            recognitionMs,
+            searchMs: null,
+            matched: false,
+          },
+          ...prev,
+        ].slice(0, 10));
         setIsTranscribing(false);
         return;
       }
 
       // Search for the transcript in the book text
       console.log('[App] Searching for transcript in book text...');
+      const searchStart = performance.now();
       const searchResult = searchText(transcript.trim());
+      const searchMs = performance.now() - searchStart;
       console.log('[App] Search result:', searchResult);
 
       if (!searchResult) {
         console.warn('[App] Transcript not found in book text');
         setError(`Could not find transcript in text: "${transcript}"`);
+        setPerformanceLogs((prev) => [
+          {
+            id: `${Date.now()}-${Math.random()}`,
+            createdAt: Date.now(),
+            recognitionMs,
+            searchMs,
+            matched: false,
+          },
+          ...prev,
+        ].slice(0, 10));
         setIsTranscribing(false);
         return;
       }
+
+      setPerformanceLogs((prev) => [
+        {
+          id: `${Date.now()}-${Math.random()}`,
+          createdAt: Date.now(),
+          recognitionMs,
+          searchMs,
+          matched: true,
+        },
+        ...prev,
+      ].slice(0, 10));
 
       // Scroll to the found location
       console.log('[App] Scrolling to chunk:', searchResult.index);
@@ -183,6 +227,27 @@ function App() {
             {error}
           </Alert>
         )}
+
+        <Paper variant="outlined" sx={{ p: 1.5, mb: 2 }}>
+          <Typography variant="subtitle2" sx={{ mb: 1 }}>
+            Performance Log
+          </Typography>
+          {performanceLogs.length === 0 ? (
+            <Typography variant="body2" color="text.secondary">
+              No measurements yet. Press stop during playback to run sync.
+            </Typography>
+          ) : (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+              {performanceLogs.map((entry) => (
+                <Typography key={entry.id} variant="body2" color={entry.matched ? 'text.primary' : 'warning.main'}>
+                  {new Date(entry.createdAt).toLocaleTimeString()} - STT: {entry.recognitionMs.toFixed(1)}ms - Search:{' '}
+                  {entry.searchMs === null ? 'n/a' : `${entry.searchMs.toFixed(1)}ms`} - Match:{' '}
+                  {entry.matched ? 'yes' : 'no'}
+                </Typography>
+              ))}
+            </Box>
+          )}
+        </Paper>
 
         <AudioPlayer audioFile={audioFile} onStop={handleStop} />
       </Box>
