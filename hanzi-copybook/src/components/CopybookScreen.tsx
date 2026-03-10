@@ -10,9 +10,10 @@ import {
 import { useEffect, useMemo, useState, type CSSProperties } from 'react'
 import CopybookPage from './CopybookPage'
 import CopybookSheet from './CopybookSheet'
-import type { GridStyle, LinesPerHanzi } from '../types/copybook'
+import type { GridStyle, HanziRow, LinesPerHanzi } from '../types/copybook'
 import { buildCopybookFilename, downloadCopybookPdf } from '../utils/pdf'
 import { getBrowserTranslations } from '../i18n'
+import { pinyin } from 'pinyin-pro'
 
 type CopybookScreenProps = {
   hanziList: string[]
@@ -52,9 +53,20 @@ function CopybookScreen({
   const [isDownloading, setIsDownloading] = useState(false)
   const [pageScale, setPageScale] = useState(1)
 
-  const normalizedList = useMemo(
-    () => hanziList.filter((item) => item.trim().length > 0),
+  const rows = useMemo<HanziRow[]>(
+    () =>
+      hanziList
+        .map((item) => item.trim())
+        .filter((item) => item.length > 0)
+        .map((hanzi) => ({
+          hanzi,
+          pinyin: pinyin(hanzi, { toneType: 'symbol' }),
+        })),
     [hanziList],
+  )
+  const normalizedList = useMemo(
+    () => rows.map((row) => row.hanzi),
+    [rows],
   )
   const renderFullPages = linesPerHanzi === 'full'
 
@@ -129,10 +141,11 @@ function CopybookScreen({
       </Box>
       <Stack spacing={4} alignItems="center">
         {renderFullPages ? (
-          normalizedList.map((hanzi) => (
+          rows.map((row) => (
             <CopybookPage
-              key={`page-${hanzi}`}
-              hanzi={hanzi}
+              key={`page-${row.hanzi}`}
+              hanzi={row.hanzi}
+              pinyin={row.pinyin}
               cellSizeMm={cellSizeMm}
               exampleLines={exampleLines}
               exampleCells={exampleCells}
@@ -144,7 +157,7 @@ function CopybookScreen({
           ))
         ) : (
           <CopybookSheet
-            hanziList={normalizedList}
+            rows={rows}
             cellSizeMm={cellSizeMm}
             exampleLines={exampleLines}
             exampleCells={exampleCells}

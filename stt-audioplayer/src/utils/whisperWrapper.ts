@@ -65,7 +65,7 @@ let loadPromise: Promise<any> | null = null;
 /**
  * Initialize the Whisper model pipeline (singleton pattern)
  */
-async function initializeModel(): Promise<any> {
+export async function initializeModel(): Promise<any> {
   if (transcriber) {
     console.log('[Whisper] Model already loaded, reusing');
     return transcriber;
@@ -447,9 +447,8 @@ export function isLoadingModel(): boolean {
   return isLoading;
 }
 
-
 /**
- * Warm-up helper that starts model initialization ahead of the first request.
+ * Warm-up helper to start model initialization before first transcription request.
  */
 export async function preloadModel(): Promise<void> {
   await initializeModel();

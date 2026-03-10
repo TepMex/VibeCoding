@@ -1,13 +1,13 @@
 import { Box, Link } from '@mui/material'
 import { useEffect, useMemo, useState } from 'react'
-import type { GridStyle, LinesPerHanzi } from '../types/copybook'
+import type { GridStyle, HanziRow, LinesPerHanzi } from '../types/copybook'
 import {
   loadHanziStrokeData,
   type HanziStrokeData,
 } from '../utils/hanziStrokeData'
 
 type CopybookSheetProps = {
-  hanziList: string[]
+  rows: HanziRow[]
   cellSizeMm: number
   exampleLines: number
   exampleCells: number
@@ -19,6 +19,7 @@ type CopybookSheetProps = {
 
 type CopybookSectionProps = {
   hanzi: string
+  pinyin: string
   columns: number
   rows: number
   cellSizeMm: number
@@ -41,6 +42,7 @@ const clamp = (value: number, min: number) => Math.max(value, min)
 
 function CopybookSection({
   hanzi,
+  pinyin,
   columns,
   rows,
   cellSizeMm,
@@ -135,63 +137,84 @@ function CopybookSection({
           )
         })}
       </Box>
-      <Box
-        className={`copybook-grid copybook-grid-${gridStyle}`}
-        sx={{
-          gridTemplateColumns: `repeat(${columns}, var(--cell-size))`,
-          gridTemplateRows: `repeat(${rows}, var(--cell-size))`,
-        }}
-      >
-        {cells.map((cellIndex) => {
-          const rowIndex = Math.floor(cellIndex / columns)
-          const columnIndex = cellIndex % columns
-          const isExampleRow = rowIndex < exampleLines
-          const isExampleCell = isExampleRow && columnIndex < exampleCellsPerRow
-          const exampleCellIndex = rowIndex * exampleCellsPerRow + columnIndex
-          const showStrokeOrder = isExampleCell && useStrokeOrder && strokeData
-          const stageCount = showStrokeOrder
-            ? exampleCellIndex < totalExampleStages
-              ? Math.min(stageOffset + exampleCellIndex + 1, strokeCount)
-              : strokeCount
-            : 0
-          const showFallbackText = isExampleCell && (!useStrokeOrder || !strokeData)
-          return (
+      <Box className="copybook-grid-with-pinyin">
+        <Box className="copybook-pinyin-column">
+          {Array.from({ length: rows }, (_, rowIndex) => (
             <Box
-              className={`copybook-cell ${
-                isExampleCell ? 'copybook-cell-example' : ''
-              } ${isExampleCell && columnIndex === 0 ? 'copybook-cell-example-first' : ''}`}
-              key={`${hanzi}-${cellIndex}`}
+              key={`${hanzi}-pinyin-${rowIndex}`}
+              className={`copybook-pinyin-cell ${
+                rowIndex < exampleLines ? 'copybook-pinyin-cell-example' : ''
+              }`}
             >
-              <span className="copybook-cell-diagonal copybook-cell-diagonal-1" />
-              <span className="copybook-cell-diagonal copybook-cell-diagonal-2" />
-              {showStrokeOrder && strokeData && (
-                <svg
-                  className="copybook-cell-strokes"
-                  viewBox="0 -100 1024 1024"
-                  aria-hidden="true"
-                >
-                  <g transform="translate(0 824) scale(1 -1)">
-                    {strokeData.strokes
-                      .slice(0, stageCount)
-                      .map((stroke, index) => (
-                        <path key={`${hanzi}-stroke-${index}`} d={stroke} />
-                      ))}
-                  </g>
-                </svg>
-              )}
-              {showFallbackText && (
-                <span className="copybook-cell-hanzi">{hanzi}</span>
+              {rowIndex < exampleLines && (
+                <span className="copybook-pinyin-text">{pinyin}</span>
               )}
             </Box>
-          )
-        })}
+          ))}
+        </Box>
+        <Box
+          className={`copybook-grid copybook-grid-${gridStyle}`}
+          sx={{
+            gridTemplateColumns: `repeat(${columns}, var(--cell-size))`,
+            gridTemplateRows: `repeat(${rows}, var(--cell-size))`,
+          }}
+        >
+          {cells.map((cellIndex) => {
+            const rowIndex = Math.floor(cellIndex / columns)
+            const columnIndex = cellIndex % columns
+            const isExampleRow = rowIndex < exampleLines
+            const isExampleCell = isExampleRow && columnIndex < exampleCellsPerRow
+            const exampleCellIndex = rowIndex * exampleCellsPerRow + columnIndex
+            const showStrokeOrder = isExampleCell && useStrokeOrder && strokeData
+            const stageCount = showStrokeOrder
+              ? exampleCellIndex < totalExampleStages
+                ? Math.min(stageOffset + exampleCellIndex + 1, strokeCount)
+                : strokeCount
+              : 0
+            const showFallbackText =
+              isExampleCell && (!useStrokeOrder || !strokeData)
+            return (
+              <Box
+                className={`copybook-cell ${
+                  isExampleCell ? 'copybook-cell-example' : ''
+                } ${
+                  isExampleCell && columnIndex === 0
+                    ? 'copybook-cell-example-first'
+                    : ''
+                }`}
+                key={`${hanzi}-${cellIndex}`}
+              >
+                <span className="copybook-cell-diagonal copybook-cell-diagonal-1" />
+                <span className="copybook-cell-diagonal copybook-cell-diagonal-2" />
+                {showStrokeOrder && strokeData && (
+                  <svg
+                    className="copybook-cell-strokes"
+                    viewBox="0 -100 1024 1024"
+                    aria-hidden="true"
+                  >
+                    <g transform="translate(0 824) scale(1 -1)">
+                      {strokeData.strokes
+                        .slice(0, stageCount)
+                        .map((stroke, index) => (
+                          <path key={`${hanzi}-stroke-${index}`} d={stroke} />
+                        ))}
+                    </g>
+                  </svg>
+                )}
+                {showFallbackText && (
+                  <span className="copybook-cell-hanzi">{hanzi}</span>
+                )}
+              </Box>
+            )
+          })}
+        </Box>
       </Box>
     </Box>
   )
 }
 
 function CopybookSheet({
-  hanziList,
+  rows,
   cellSizeMm,
   exampleLines,
   exampleCells,
@@ -225,12 +248,12 @@ function CopybookSheet({
   }, [cellSizeMm, hanziHeaderHeightMm, linesPerHanzi])
 
   const pages = useMemo(() => {
-    const result: string[][] = []
-    for (let index = 0; index < hanziList.length; index += layout.sectionsPerPage) {
-      result.push(hanziList.slice(index, index + layout.sectionsPerPage))
+    const result: HanziRow[][] = []
+    for (let index = 0; index < rows.length; index += layout.sectionsPerPage) {
+      result.push(rows.slice(index, index + layout.sectionsPerPage))
     }
     return result
-  }, [hanziList, layout.sectionsPerPage])
+  }, [rows, layout.sectionsPerPage])
 
   const styleVars = useMemo(
     () =>
@@ -264,10 +287,11 @@ function CopybookSheet({
                 https://premium-chinese.ru/
               </Link>
             </Box>
-            {page.map((hanzi, sectionIndex) => (
+            {page.map((row, sectionIndex) => (
               <CopybookSection
-                key={`sheet-${pageIndex}-${sectionIndex}-${hanzi}`}
-                hanzi={hanzi}
+                key={`sheet-${pageIndex}-${sectionIndex}-${row.hanzi}`}
+                hanzi={row.hanzi}
+                pinyin={row.pinyin}
                 columns={layout.columns}
                 rows={layout.rowsPerSection}
                 cellSizeMm={cellSizeMm}

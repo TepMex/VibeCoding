@@ -65,7 +65,8 @@ body {
 
 .copybook-page-inner {
   height: 100%;
-  padding: var(--page-margin);
+  padding: var(--page-margin) calc(var(--page-margin) * 1.6)
+    var(--page-margin) 0;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -87,6 +88,7 @@ body {
   gap: 12px;
   border-bottom: 0.3mm solid #111;
   padding-bottom: 2mm;
+  margin-left: 75px;
 }
 
 .copybook-header-link {
@@ -106,6 +108,7 @@ body {
   border: none;
   box-sizing: border-box;
   overflow: hidden;
+  padding-left: calc(var(--cell-size) * 1.1 + 2mm);
 }
 
 .copybook-hanzi-header-cell {
@@ -147,6 +150,34 @@ body {
   display: grid;
   align-content: start;
   gap: 0;
+}
+
+.copybook-grid-with-pinyin {
+  display: grid;
+  grid-template-columns: calc(var(--cell-size) * 1.1) 1fr;
+  column-gap: 2mm;
+  align-items: start;
+}
+
+.copybook-pinyin-column {
+  display: flex;
+  flex-direction: column;
+}
+
+.copybook-pinyin-cell {
+  height: var(--cell-size);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 0;
+  box-sizing: border-box;
+}
+
+.copybook-pinyin-text {
+  font-family: 'Noto Sans SC', 'Roboto', 'Helvetica', 'Arial', sans-serif;
+  font-size: calc(var(--cell-size) * 0.3);
+  color: #111;
+  white-space: nowrap;
 }
 
 .copybook-cell {
