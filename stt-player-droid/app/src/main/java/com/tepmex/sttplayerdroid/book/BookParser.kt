@@ -7,7 +7,12 @@ import android.util.Xml
 import com.tepmex.sttplayerdroid.BookChapter
 import com.tepmex.sttplayerdroid.BookChunk
 import com.tepmex.sttplayerdroid.BookDocument
+import com.tepmex.sttplayerdroid.util.AppException
+import com.tepmex.sttplayerdroid.util.ErrorCode
 import com.tepmex.sttplayerdroid.util.Hashing
+import com.tepmex.sttplayerdroid.util.appError
+import com.tepmex.sttplayerdroid.util.describeCause
+import com.tepmex.sttplayerdroid.util.logError
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jsoup.Jsoup
@@ -21,29 +26,63 @@ interface BookParser {
     suspend fun parse(uri: Uri): BookDocument
 }
 
-class BookParseException(message: String, cause: Throwable? = null) : Exception(message, cause)
+class BookParseException(
+    code: ErrorCode,
+    userMessage: String,
+    debugMessage: String = userMessage,
+    cause: Throwable? = null,
+    context: Map<String, Any?> = emptyMap(),
+) : AppException(code, userMessage, debugMessage, cause, context) {
+    override fun withContext(extra: Map<String, Any?>): BookParseException = BookParseException(
+        code = code,
+        userMessage = userMessage,
+        debugMessage = debugMessage,
+        cause = cause,
+        context = context + extra,
+    )
+}
 
 class AndroidBookParser(private val context: Context) : BookParser {
     private data class RawChapter(val title: String, val paragraphs: List<String>)
 
     override suspend fun parse(uri: Uri): BookDocument = withContext(Dispatchers.IO) {
+        val nameHint = runCatching { displayName(uri) }.getOrNull()
         try {
             val bytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
-                ?: throw BookParseException("Не удалось открыть файл")
-            val name = displayName(uri)
+                ?: throw BookParseException(
+                    ErrorCode.BOOK_OPEN_FAILED,
+                    userMessage = "Не удалось открыть файл книги. Выберите файл ещё раз.",
+                    debugMessage = "contentResolver.openInputStream returned null for uri=$uri name=$nameHint",
+                    context = mapOf("uri" to uri.toString(), "name" to nameHint),
+                )
+            val name = nameHint ?: displayName(uri)
             val extension = name.substringAfterLast('.', "").lowercase()
             val (title, rawChapters) = when (extension) {
                 "txt" -> name.substringBeforeLast('.') to parseTxt(bytes)
                 "html", "htm" -> parseHtml(bytes.toString(Charsets.UTF_8), name)
                 "epub" -> parseEpub(bytes, name)
                 "fb2" -> parseFb2(bytes, name)
-                else -> throw BookParseException("Поддерживаются TXT, HTML, EPUB и FB2")
+                else -> throw BookParseException(
+                    ErrorCode.BOOK_UNSUPPORTED_FORMAT,
+                    userMessage = "Этот формат не поддерживается. Выберите TXT, HTML, EPUB или FB2.",
+                    debugMessage = "Unsupported book extension='$extension' name='$name' uri=$uri size=${bytes.size}",
+                    context = mapOf("extension" to extension, "name" to name, "uri" to uri.toString(), "bytes" to bytes.size),
+                )
             }
             buildDocument(uri, title, rawChapters)
         } catch (error: BookParseException) {
-            throw error
+            throw logError("BookParser", error, mapOf("uri" to uri.toString(), "name" to nameHint)) as BookParseException
         } catch (error: Exception) {
-            throw BookParseException("Файл повреждён или имеет неподдерживаемую структуру", error)
+            throw logError(
+                "BookParser",
+                BookParseException(
+                    ErrorCode.BOOK_CORRUPT,
+                    userMessage = "Файл повреждён или имеет неподдерживаемую структуру.",
+                    debugMessage = "Book parse failed for uri=$uri name=$nameHint | cause: ${describeCause(error)}",
+                    cause = error,
+                    context = mapOf("uri" to uri.toString(), "name" to nameHint),
+                ),
+            ) as BookParseException
         }
     }
 
@@ -94,12 +133,26 @@ class AndroidBookParser(private val context: Context) : BookParser {
             }
         }
         val container = entries["META-INF/container.xml"]?.toString(Charsets.UTF_8)
-            ?: throw BookParseException("EPUB: отсутствует container.xml")
+            ?: throw BookParseException(
+                ErrorCode.EPUB_MISSING_CONTAINER,
+                userMessage = "EPUB повреждён: нет container.xml. Попробуйте другой файл.",
+                debugMessage = "EPUB missing META-INF/container.xml; entries=${entries.keys.take(20)}",
+                context = mapOf("entryCount" to entries.size, "sampleEntries" to entries.keys.take(20).joinToString()),
+            )
         val containerDoc = Jsoup.parse(container, "", Parser.xmlParser())
         val opfPath = containerDoc.selectFirst("rootfile")?.attr("full-path")
-            ?: throw BookParseException("EPUB: не найден OPF")
+            ?: throw BookParseException(
+                ErrorCode.EPUB_MISSING_OPF,
+                userMessage = "EPUB повреждён: не найден путь к OPF. Попробуйте другой файл.",
+                debugMessage = "EPUB container.xml has no rootfile full-path",
+            )
         val opf = entries[opfPath]?.toString(Charsets.UTF_8)
-            ?: throw BookParseException("EPUB: OPF недоступен")
+            ?: throw BookParseException(
+                ErrorCode.EPUB_OPF_UNAVAILABLE,
+                userMessage = "EPUB повреждён: файл OPF недоступен. Попробуйте другой файл.",
+                debugMessage = "EPUB OPF path='$opfPath' not present in zip entries",
+                context = mapOf("opfPath" to opfPath),
+            )
         val opfDoc = Jsoup.parse(opf, "", Parser.xmlParser())
         val title = opfDoc.selectFirst("dc|title, title")?.text()?.let(::clean)
             .orEmpty().ifBlank { fallbackName.substringBeforeLast('.') }
@@ -120,7 +173,14 @@ class AndroidBookParser(private val context: Context) : BookParser {
                 paragraphs,
             )
         }
-        if (chapters.isEmpty()) throw BookParseException("EPUB: spine не содержит текста")
+        if (chapters.isEmpty()) {
+            throw BookParseException(
+                ErrorCode.EPUB_NO_TEXT,
+                userMessage = "В EPUB нет текстовых глав. Проверьте файл.",
+                debugMessage = "EPUB spine produced zero chapters; title='$title' manifest=${manifest.size}",
+                context = mapOf("title" to title, "manifestSize" to manifest.size),
+            )
+        }
         return title to chapters
     }
 
@@ -176,12 +236,26 @@ class AndroidBookParser(private val context: Context) : BookParser {
             parser.next()
         }
         flushSection()
-        if (chapters.isEmpty()) throw BookParseException("FB2 не содержит разделов с текстом")
+        if (chapters.isEmpty()) {
+            throw BookParseException(
+                ErrorCode.FB2_NO_SECTIONS,
+                userMessage = "FB2 не содержит разделов с текстом. Проверьте файл.",
+                debugMessage = "FB2 parse finished with zero sections; bookTitle='$bookTitle'",
+                context = mapOf("bookTitle" to bookTitle, "fallbackName" to fallbackName),
+            )
+        }
         return clean(bookTitle).ifBlank { fallbackName.substringBeforeLast('.') } to chapters
     }
 
     private fun buildDocument(uri: Uri, title: String, raw: List<RawChapter>): BookDocument {
-        if (raw.isEmpty()) throw BookParseException("В книге нет текста")
+        if (raw.isEmpty()) {
+            throw BookParseException(
+                ErrorCode.BOOK_EMPTY,
+                userMessage = "В книге нет текста для отображения.",
+                debugMessage = "buildDocument received empty chapter list for uri=$uri title='$title'",
+                context = mapOf("uri" to uri.toString(), "title" to title),
+            )
+        }
         val canonical = raw.joinToString("\n") { chapter ->
             chapter.title + "\n" + chapter.paragraphs.joinToString("\n")
         }

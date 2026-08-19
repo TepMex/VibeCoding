@@ -9,6 +9,10 @@ import com.tepmex.sttplayerdroid.SttLanguage
 import com.tepmex.sttplayerdroid.data.BookEntity
 import com.tepmex.sttplayerdroid.data.ChunkEntity
 import com.tepmex.sttplayerdroid.data.LibraryDao
+import com.tepmex.sttplayerdroid.util.ErrorCode
+import com.tepmex.sttplayerdroid.util.appError
+import com.tepmex.sttplayerdroid.util.describeCause
+import com.tepmex.sttplayerdroid.util.logError
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -37,7 +41,24 @@ class BookRepository(
                 chunk.paragraph, chunk.ordinal, chunk.text)
         }
         libraryDao.replaceBook(book, entities)
-        locator.index(document)
+        try {
+            locator.index(document)
+        } catch (error: Exception) {
+            throw logError(
+                "BookRepository",
+                appError(
+                    code = ErrorCode.BOOK_INDEX_FAILED,
+                    userMessage = "Книга открыта, но поиск по тексту недоступен. Попробуйте открыть файл снова.",
+                    debugMessage = "Text index build failed for uri=$uri hash=${document.sourceHash}: ${describeCause(error)}",
+                    cause = error,
+                    context = mapOf(
+                        "uri" to uri.toString(),
+                        "hash" to document.sourceHash,
+                        "chunks" to document.chunks.size,
+                    ),
+                ),
+            )
+        }
         document
     }
 
@@ -52,7 +73,24 @@ class BookRepository(
             })
         }
         val document = BookDocument(uri, book.textHash, book.title, chapters)
-        locator.index(document)
+        try {
+            locator.index(document)
+        } catch (error: Exception) {
+            throw logError(
+                "BookRepository",
+                appError(
+                    code = ErrorCode.BOOK_INDEX_FAILED,
+                    userMessage = "Не удалось подготовить поиск по книге. Откройте файл снова.",
+                    debugMessage = "Text index restore failed for uri=$uri hash=${document.sourceHash}: ${describeCause(error)}",
+                    cause = error,
+                    context = mapOf(
+                        "uri" to uri.toString(),
+                        "hash" to document.sourceHash,
+                        "chunks" to document.chunks.size,
+                    ),
+                ),
+            )
+        }
         document
     }
 
@@ -63,7 +101,17 @@ class BookRepository(
         runCatching {
             context.contentResolver.takePersistableUriPermission(
                 uri, android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }.onFailure { error ->
+            logError(
+                "BookRepository",
+                appError(
+                    code = ErrorCode.BOOK_OPEN_FAILED,
+                    userMessage = "Нет постоянного доступа к файлу. Выберите книгу снова через кнопку «Открыть».",
+                    debugMessage = "takePersistableUriPermission failed for book uri=$uri: ${describeCause(error)}",
+                    cause = error,
+                    context = mapOf("uri" to uri.toString()),
+                ),
+            )
         }
     }
 }
-

@@ -10,6 +10,10 @@ import com.google.ai.edge.litert.TensorType
 import com.tepmex.sttplayerdroid.PerformanceTiming
 import com.tepmex.sttplayerdroid.SttLanguage
 import com.tepmex.sttplayerdroid.TranscriptionResult
+import com.tepmex.sttplayerdroid.util.ErrorCode
+import com.tepmex.sttplayerdroid.util.appError
+import com.tepmex.sttplayerdroid.util.describeCause
+import com.tepmex.sttplayerdroid.util.logError
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.withContext
@@ -52,18 +56,42 @@ class WhisperSpeechTranscriber(
             created.warmUp(features, language)
             created
         } catch (error: Exception) {
-            modelManager.discardIncompatible("Модель несовместима с этим LiteRT runtime: ${error.message}")
-            throw error
+            val appError = appError(
+                code = ErrorCode.MODEL_INCOMPATIBLE,
+                userMessage = "Модель несовместима с runtime на этом устройстве. Скачайте её заново.",
+                debugMessage = "LiteRT model init/warm-up failed for language=${language.code} pcmSamples=${pcm.size}: ${describeCause(error)}",
+                cause = error,
+                context = mapOf(
+                    "language" to language.code,
+                    "pcmSamples" to pcm.size,
+                    "features" to features.size,
+                ),
+            )
+            modelManager.discardIncompatible(appError.debugMessage)
+            throw logError("SpeechTranscriber", appError)
         }
-        val decoded = activeRunner.run(features, language)
-        val text = tokenizer!!.decode(decoded.ids.toIntArray())
-        TranscriptionResult(text, decoded.ids, PerformanceTiming(
-            preprocessingMs = preprocessingMs,
-            modelInitializationMs = initializationMs,
-            encodeMs = decoded.encodeMs,
-            decodeMs = decoded.decodeMs,
-            totalMs = SystemClock.elapsedRealtime() - totalStart,
-        ))
+        try {
+            val decoded = activeRunner.run(features, language)
+            val text = tokenizer!!.decode(decoded.ids.toIntArray())
+            TranscriptionResult(text, decoded.ids, PerformanceTiming(
+                preprocessingMs = preprocessingMs,
+                modelInitializationMs = initializationMs,
+                encodeMs = decoded.encodeMs,
+                decodeMs = decoded.decodeMs,
+                totalMs = SystemClock.elapsedRealtime() - totalStart,
+            ))
+        } catch (error: Exception) {
+            throw logError(
+                "SpeechTranscriber",
+                appError(
+                    code = ErrorCode.TRANSCRIBE_FAILED,
+                    userMessage = "Распознавание речи не удалось. Попробуйте ещё раз на другом фрагменте.",
+                    debugMessage = "Inference failed language=${language.code} pcmSamples=${pcm.size}: ${describeCause(error)}",
+                    cause = error,
+                    context = mapOf("language" to language.code, "pcmSamples" to pcm.size),
+                ),
+            )
+        }
     }
 
     fun releaseForCriticalMemory() = close()

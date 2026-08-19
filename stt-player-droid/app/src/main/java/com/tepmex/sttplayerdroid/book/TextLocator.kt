@@ -20,6 +20,7 @@ import kotlin.math.max
 interface TextLocator {
     suspend fun index(document: BookDocument)
     suspend fun locate(query: String, chapterId: String? = null, anchorChunkId: String? = null): MatchResult?
+    fun hasActiveIndex(): Boolean = true
 }
 
 object TextNormalization {
@@ -54,6 +55,8 @@ class IndexedTextLocator(
     )
 
     @Volatile private var active: ActiveIndex? = null
+
+    override fun hasActiveIndex(): Boolean = active != null
 
     override suspend fun index(document: BookDocument) = withContext(Dispatchers.Default) {
         val indexed = document.chunks.map { chunk ->

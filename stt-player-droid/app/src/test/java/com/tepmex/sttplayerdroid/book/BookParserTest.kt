@@ -55,7 +55,12 @@ class BookParserTest {
 
     @Test fun `corrupt EPUB reports parse error`() {
         val file = fixture("broken.epub", "not a zip")
-        assertThrows(BookParseException::class.java) { runBlocking { parser.parse(Uri.fromFile(file)) } }
+        val error = assertThrows(BookParseException::class.java) {
+            runBlocking { parser.parse(Uri.fromFile(file)) }
+        }
+        assertEquals(com.tepmex.sttplayerdroid.util.ErrorCode.EPUB_MISSING_CONTAINER, error.code)
+        assertTrue(error.userMessage.contains("EPUB", ignoreCase = true))
+        assertTrue(error.debugMessage.isNotBlank())
     }
 
     private fun fixture(name: String, content: String) = File(context.cacheDir, name).apply { writeText(content) }
