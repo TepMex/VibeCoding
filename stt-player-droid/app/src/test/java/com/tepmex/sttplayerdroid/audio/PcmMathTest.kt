@@ -3,6 +3,7 @@ package com.tepmex.sttplayerdroid.audio
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class PcmMathTest {
@@ -33,5 +34,18 @@ class PcmMathTest {
         val parts = listOf(input.copyOfRange(0, 7_777), input.copyOfRange(7_777, 31_111), input.copyOfRange(31_111, input.size))
             .flatMap { streaming.process(it).toList() }.toFloatArray()
         assertArrayEquals(whole, parts, 0.0001f)
+    }
+
+    @Test fun `capture sink accepts pcm16 frames without throwing`() {
+        val capture = CaptureAudioProcessor(targetRate = 16_000, seconds = 2)
+        capture.flush(48_000, 2, androidx.media3.common.C.ENCODING_PCM_16BIT)
+        val frameCount = 4_800 // 100 ms at 48 kHz
+        val bytes = ByteArray(frameCount * 2 * 2)
+        val buffer = java.nio.ByteBuffer.wrap(bytes).order(java.nio.ByteOrder.LITTLE_ENDIAN)
+        capture.handleBuffer(buffer)
+        assertTrue(capture.bufferedSeconds > 0.05f)
+        val snap = capture.snapshot(1)
+        assertTrue(snap != null && snap.isNotEmpty())
+        assertEquals(1_600, snap!!.size) // 100 ms at 16 kHz
     }
 }
