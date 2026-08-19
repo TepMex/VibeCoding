@@ -1,0 +1,310 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+    inputs:
+      full_deploy:
+        description: Build and deploy all projects (skip change detection)
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+env:
+  ANDROID_APPS: stt-player-droid
+
+jobs:
+  detect:
+    runs-on: ubuntu-latest
+    outputs:
+      has_previous: ${{ steps.plan.outputs.has_previous }}
+      full_deploy: ${{ steps.plan.outputs.full_deploy }}
+      build_stt_player_droid: ${{ steps.plan.outputs.build_stt_player_droid }}
+      refresh_android_landings: ${{ steps.plan.outputs.refresh_android_landings }}
+      any_android_apk_build: ${{ steps.plan.outputs.any_android_apk_build }}
+      any_android_landing: ${{ steps.plan.outputs.any_android_landing }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 2
+
+      - name: Detect changed paths
+        uses: dorny/paths-filter@v3
+        id: changes
+        with:
+          filters: |
+            stt-player-droid:
+              - 'stt-player-droid/**'
+            shared-android-signing:
+              - 'android/sideload-signing.gradle.kts'
+              - 'android/verify-apk-sideload-cert.sh'
+              - 'android/expected-sideload-cert-sha256.txt'
+            shared-android-landing:
+              - 'android/landing/**'
+            shared-scripts:
+              - 'scripts/**'
+            shared-workflow:
+              - '.github/workflows/deploy.yml'
+
+      - name: Fetch previous gh-pages site
+        id: previous
+        continue-on-error: true
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: previous-site
+          fetch-depth: 1
+
+      - name: Compute deploy plan
+        id: plan
+        env:
+          FULL_DEPLOY_INPUT: ${{ github.event_name == 'workflow_dispatch' && inputs.full_deploy }}
+          HAS_PREVIOUS: ${{ steps.previous.outcome == 'success' }}
+          CHANGED_STT_PLAYER_DROID: ${{ steps.changes.outputs.stt-player-droid }}
+          CHANGED_ANDROID_SIGNING: ${{ steps.changes.outputs.shared-android-signing }}
+          CHANGED_ANDROID_LANDING: ${{ steps.changes.outputs.shared-android-landing }}
+          CHANGED_SCRIPTS: ${{ steps.changes.outputs.shared-scripts }}
+          CHANGED_WORKFLOW: ${{ steps.changes.outputs.shared-workflow }}
+        run: |
+          set -euo pipefail
+
+          is_true() { [[ "${1:-}" == "true" ]]; }
+
+          full_deploy=false
+          if is_true "$FULL_DEPLOY_INPUT"; then
+            full_deploy=true
+          fi
+          if ! is_true "$HAS_PREVIOUS"; then
+            full_deploy=true
+          fi
+          if is_true "$CHANGED_WORKFLOW"; then
+            full_deploy=true
+          fi
+
+          build_stt_player_droid=false
+          refresh_android_landings=false
+
+          if $full_deploy; then
+            build_stt_player_droid=true
+          else
+            is_true "$CHANGED_STT_PLAYER_DROID" && build_stt_player_droid=true
+            if is_true "$CHANGED_ANDROID_SIGNING"; then
+              build_stt_player_droid=true
+            fi
+            if is_true "$CHANGED_ANDROID_LANDING" || is_true "$CHANGED_SCRIPTS"; then
+              refresh_android_landings=true
+            fi
+          fi
+
+          any_android_apk_build=false
+          $build_stt_player_droid && any_android_apk_build=true
+
+          any_android_landing=false
+          $any_android_apk_build || $refresh_android_landings && any_android_landing=true
+
+          {
+            echo "has_previous=$HAS_PREVIOUS"
+            echo "full_deploy=$full_deploy"
+            echo "build_stt_player_droid=$build_stt_player_droid"
+            echo "refresh_android_landings=$refresh_android_landings"
+            echo "any_android_apk_build=$any_android_apk_build"
+            echo "any_android_landing=$any_android_landing"
+          } >> "$GITHUB_OUTPUT"
+
+          echo "Deploy plan:"
+          cat "$GITHUB_OUTPUT"
+
+  build-and-deploy:
+    needs: detect
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 1
+
+      - name: Fetch previous gh-pages site
+        if: needs.detect.outputs.has_previous == 'true'
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: previous-site
+          fetch-depth: 1
+
+      - name: Log deploy plan
+        run: |
+          echo "full_deploy=${{ needs.detect.outputs.full_deploy }}"
+          echo "any_android_apk_build=${{ needs.detect.outputs.any_android_apk_build }}"
+          echo "refresh_android_landings=${{ needs.detect.outputs.refresh_android_landings }}"
+
+      - name: Setup Bun
+        if: needs.detect.outputs.any_android_landing == 'true'
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Set deployment timestamp
+        if: needs.detect.outputs.any_android_landing == 'true'
+        run: echo "DEPLOYED_AT=$(date -u +"%Y-%m-%dT%H:%M:%S UTC")" >> "$GITHUB_ENV"
+
+      - name: Setup Java
+        if: needs.detect.outputs.any_android_apk_build == 'true'
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Setup Android SDK
+        if: needs.detect.outputs.any_android_apk_build == 'true'
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK packages
+        if: needs.detect.outputs.any_android_apk_build == 'true'
+        run: |
+          set -euo pipefail
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager \
+            "platforms;android-36" \
+            "build-tools;35.0.0" \
+            "ndk;28.2.13676358" \
+            "cmake;3.22.1"
+
+      - name: Build STT Player Droid APK
+        if: needs.detect.outputs.build_stt_player_droid == 'true'
+        working-directory: stt-player-droid
+        run: chmod +x gradlew && ./gradlew --no-daemon --stacktrace assembleRelease
+
+      - name: Verify APK sideload signing
+        if: needs.detect.outputs.any_android_apk_build == 'true'
+        env:
+          BUILD_STT_PLAYER_DROID: ${{ needs.detect.outputs.build_stt_player_droid }}
+        run: |
+          set -euo pipefail
+          chmod +x android/verify-apk-sideload-cert.sh
+          is_true() { [[ "${1:-}" == "true" ]]; }
+          if is_true "$BUILD_STT_PLAYER_DROID"; then
+            android/verify-apk-sideload-cert.sh stt-player-droid/app/build/outputs/apk/release/app-release.apk
+          fi
+
+      - name: Prepare GitHub Pages site
+        env:
+          HAS_PREVIOUS: ${{ needs.detect.outputs.has_previous }}
+          BUILD_STT_PLAYER_DROID: ${{ needs.detect.outputs.build_stt_player_droid }}
+          REFRESH_ANDROID_LANDINGS: ${{ needs.detect.outputs.refresh_android_landings }}
+        run: |
+          set -euo pipefail
+
+          is_true() { [[ "${1:-}" == "true" ]]; }
+
+          mkdir -p deploy
+          touch deploy/.nojekyll
+
+          if is_true "$HAS_PREVIOUS" && [[ -d previous-site ]]; then
+            shopt -s dotglob
+            cp -a previous-site/. deploy/
+            shopt -u dotglob
+          fi
+
+          require_dir() {
+            local name="$1"
+            if [[ ! -d "deploy/$name" ]] || [[ -z "$(ls -A "deploy/$name" 2>/dev/null || true)" ]]; then
+              echo "Missing deploy artifact for $name (not built and no previous gh-pages copy)" >&2
+              exit 1
+            fi
+          }
+
+          copy_android_landing() {
+            local app="$1"
+            mkdir -p "deploy/$app"
+            cp -r "$app/site/." "deploy/$app/"
+            cp android/landing/styles.css "deploy/$app/styles.css"
+          }
+
+          copy_android_apk() {
+            local app="$1"
+            local apk_name="$1.apk"
+            cp "$app/app/build/outputs/apk/release/app-release.apk" "deploy/$app/$apk_name"
+          }
+
+          android_should_build() {
+            case "$1" in
+              stt-player-droid) is_true "$BUILD_STT_PLAYER_DROID" ;;
+              *) return 1 ;;
+            esac
+          }
+
+          for app in stt-player-droid; do
+            if android_should_build "$app"; then
+              copy_android_landing "$app"
+              copy_android_apk "$app"
+            elif is_true "$REFRESH_ANDROID_LANDINGS"; then
+              copy_android_landing "$app"
+              apk_file="deploy/$app/$app.apk"
+              if [[ ! -f "$apk_file" ]]; then
+                echo "Missing APK for $app during landing refresh" >&2
+                exit 1
+              fi
+            else
+              require_dir "$app"
+              apk_file="deploy/$app/$app.apk"
+              if [[ ! -f "$apk_file" ]]; then
+                echo "Missing APK for $app" >&2
+                exit 1
+              fi
+            fi
+          done
+
+          cat > deploy/index.html << 'HTML'
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+            <meta charset="utf-8" />
+            <meta name="viewport" content="width=device-width, initial-scale=1" />
+            <title>VibeCoding</title>
+            <style>
+              body { font-family: system-ui, sans-serif; margin: 2rem; line-height: 1.5; }
+              a { color: #315DA8; }
+            </style>
+          </head>
+          <body>
+            <h1>VibeCoding</h1>
+            <ul>
+              <li><a href="stt-player-droid/">STT Player Droid</a></li>
+            </ul>
+          </body>
+          </html>
+          HTML
+
+      - name: Inject deploy footers (static landing pages)
+        if: needs.detect.outputs.any_android_landing == 'true'
+        env:
+          BUILD_STT_PLAYER_DROID: ${{ needs.detect.outputs.build_stt_player_droid }}
+          REFRESH_ANDROID_LANDINGS: ${{ needs.detect.outputs.refresh_android_landings }}
+        run: |
+          set -euo pipefail
+          is_true() { [[ "${1:-}" == "true" ]]; }
+          should_inject() {
+            is_true "$2" || is_true "$REFRESH_ANDROID_LANDINGS"
+          }
+          pages=()
+          should_inject stt-player-droid "$BUILD_STT_PLAYER_DROID" && pages+=(deploy/stt-player-droid/index.html)
+          if [[ ${#pages[@]} -eq 0 ]]; then
+            echo "No Android landing pages to update"
+            exit 0
+          fi
+          bun run scripts/inject-static-site-footer.ts "${pages[@]}"
+
+      - name: Deploy to gh-pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./deploy
+          publish_branch: gh-pages
