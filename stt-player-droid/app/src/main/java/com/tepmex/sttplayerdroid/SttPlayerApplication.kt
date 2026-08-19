@@ -13,6 +13,12 @@ import com.tepmex.sttplayerdroid.playback.PlaybackController
 import com.tepmex.sttplayerdroid.sync.SyncCoordinator
 
 class SttPlayerApplication : Application() {
+    /**
+     * Owned by Application (not [AppContainer]) so [com.tepmex.sttplayerdroid.playback.PlaybackService]
+     * can access it while [container] is still being constructed via MediaController bind.
+     */
+    val captureProcessor = CaptureAudioProcessor()
+
     val container by lazy { AppContainer(this) }
 
     override fun onTrimMemory(level: Int) {
@@ -23,9 +29,9 @@ class SttPlayerApplication : Application() {
     }
 }
 
-class AppContainer(application: Application) {
+class AppContainer(application: SttPlayerApplication) {
     val database = AppDatabase.create(application)
-    val captureProcessor = CaptureAudioProcessor()
+    val captureProcessor = application.captureProcessor
     val modelManager = DefaultModelManager(application)
     val locator = IndexedTextLocator(application, database.metadata())
     val bookRepository = BookRepository(application, AndroidBookParser(application), locator, database.library())
@@ -35,4 +41,3 @@ class AppContainer(application: Application) {
         playback, captureProcessor, transcriber, locator, database.library(), database.metadata(),
     )
 }
-

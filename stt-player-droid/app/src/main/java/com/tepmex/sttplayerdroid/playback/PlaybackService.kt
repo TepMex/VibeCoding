@@ -23,7 +23,9 @@ class PlaybackService : MediaSessionService() {
 
     override fun onCreate() {
         super.onCreate()
-        val capture = (application as SttPlayerApplication).container.captureProcessor
+        // Must not touch Application.container here: MediaController bind can run while
+        // AppContainer is still constructing, which would re-enter the lazy initializer.
+        val capture = (application as SttPlayerApplication).captureProcessor
         val renderersFactory = object : DefaultRenderersFactory(this) {
             override fun buildAudioSink(
                 context: Context,

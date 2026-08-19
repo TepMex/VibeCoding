@@ -145,7 +145,14 @@ class DefaultModelManager(private val context: Context) : ModelManager {
     companion object {
         const val WORK_NAME = "install-whisper-tiny"
         const val MODEL_SHA256 = "6748ac565a228c4a00b18d11ea1e2fd7cead3db6fba94e3f0bf35756b13ba4a9"
+        /** Upstream Hugging Face resolve URL (redirects to CDN). */
         const val MODEL_URL = "https://huggingface.co/litert-community/whisper-tiny/resolve/main/whisper_tiny_30s_i8.tflite"
+        /**
+         * Same file mirrored on GitHub Pages next to the APK — preferred for regions where
+         * huggingface.co / CDN is unreachable or rate-limited.
+         */
+        const val MODEL_MIRROR_URL = "https://tepmex.github.io/VibeCoding/stt-player-droid/whisper_tiny_30s_i8.tflite"
+        val MODEL_URLS: List<String> = listOf(MODEL_MIRROR_URL, MODEL_URL)
         const val MODEL_FILE = "whisper_tiny_30s_i8.tflite"
 
         fun modelFile(context: Context) = File(File(context.noBackupFilesDir, "models"), MODEL_FILE)

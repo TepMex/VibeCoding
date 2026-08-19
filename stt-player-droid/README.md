@@ -54,9 +54,12 @@ Instrumentation содержит clean-install UI smoke test. `benchmark` сод
 
 ## Модель
 
-- URL: `litert-community/whisper-tiny/whisper_tiny_30s_i8.tflite`
+- Зеркало (приоритет): `https://tepmex.github.io/VibeCoding/stt-player-droid/whisper_tiny_30s_i8.tflite`
+- Upstream: `litert-community/whisper-tiny/whisper_tiny_30s_i8.tflite`
 - SHA-256: `6748ac565a228c4a00b18d11ea1e2fd7cead3db6fba94e3f0bf35756b13ba4a9`
 - tokenizer: `openai/whisper-tiny/tokenizer.json`, встроен в APK
+
+При установке приложение сначала качает зеркало с GitHub Pages, при ошибке — Hugging Face. CI публикует тот же файл рядом с APK.
 
 ## Лицензии
 
