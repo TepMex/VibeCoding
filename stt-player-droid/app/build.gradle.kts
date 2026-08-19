@@ -1,3 +1,5 @@
+import java.io.File
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -5,26 +7,56 @@ plugins {
     alias(libs.plugins.ksp)
 }
 
+extra["sideloadPropertyPrefix"] = "sttplayerdroid"
+apply(from = rootProject.file("../android/sideload-signing.gradle.kts"))
+
+val autoVersionCode: Int = extra["autoVersionCode"] as Int
+val useCustomSigning: Boolean = extra["useCustomSigning"] as Boolean
+
 android {
     namespace = "com.tepmex.sttplayerdroid"
     compileSdk = 36
+    ndkVersion = "28.2.13676358"
+
+    signingConfigs {
+        if (useCustomSigning) {
+            create("sideload") {
+                storeFile = extra["sideloadStoreFile"] as File
+                storePassword = extra["sideloadStorePassword"] as String
+                keyAlias = extra["sideloadKeyAlias"] as String
+                keyPassword = extra["sideloadKeyPassword"] as String
+            }
+        }
+    }
 
     defaultConfig {
         applicationId = "com.tepmex.sttplayerdroid"
         minSdk = 31
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = autoVersionCode
+        versionName = "1.0.$autoVersionCode"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         ndk { abiFilters += "arm64-v8a" }
     }
 
     buildTypes {
-        debug { applicationIdSuffix = ".debug" }
+        debug {
+            applicationIdSuffix = ".debug"
+            signingConfig = if (useCustomSigning) {
+                signingConfigs.getByName("sideload")
+            } else {
+                signingConfigs.getByName("debug")
+            }
+        }
         release {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            signingConfig = if (useCustomSigning) {
+                signingConfigs.getByName("sideload")
+            } else {
+                signingConfigs.getByName("debug")
+            }
         }
         create("benchmark") {
             initWith(getByName("release"))

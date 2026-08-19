@@ -21,14 +21,30 @@
 
 ## Сборка
 
-Нужны JDK 17, Android SDK 36, NDK 28.2 и CMake 3.22.1.
+Нужны JDK 17+, Android SDK 36, NDK 28.2 и CMake 3.22.1.
 
 ```bash
 ./gradlew testDebugUnitTest assembleDebug
 ./gradlew assembleRelease lintDebug
 ```
 
-Debug APK: `app/build/outputs/apk/debug/app-debug.apk`. Release APK намеренно unsigned: `app/build/outputs/apk/release/app-release-unsigned.apk`.
+Release (и debug) подписываются committed **sideload keystore** (`sideload.keystore` + `sideload-signing.properties`), чтобы каждый CI/локальный билд использовал один и тот же ключ и новый APK ставился **поверх** предыдущего. Не для Play Store.
+
+APK: `app/build/outputs/apk/release/app-release.apk`.
+
+Опционально: переопределить подпись через `sttplayerdroid.signing*` в `local.properties`.
+
+### Обновление на телефоне
+
+1. Скачайте свежий `stt-player-droid.apk` с GitHub Pages и установите поверх текущего приложения.
+2. Если Android отказывает (например, стояла сборка с другим ключом) — один раз удалите приложение, поставьте новый APK; дальше обновления снова встанут поверх.
+
+## CI и скачивание
+
+При пуше в `master` workflow `.github/workflows/deploy.yml` собирает release APK, проверяет sideload-подпись и публикует на GitHub Pages:
+
+- лендинг: `/VibeCoding/stt-player-droid/`
+- APK: `/VibeCoding/stt-player-droid/stt-player-droid.apk`
 
 ## Тесты
 
