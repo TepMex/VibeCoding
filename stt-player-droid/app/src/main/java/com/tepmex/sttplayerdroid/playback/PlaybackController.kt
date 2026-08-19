@@ -45,7 +45,6 @@ class PlaybackController(private val context: Context, private val libraryDao: L
     val errors: SharedFlow<String> = mutableErrors.asSharedFlow()
     val recentAudio = libraryDao.observeAudio()
     private var controller: MediaController? = null
-    private var lastPersistAt = 0L
 
     init {
         val token = SessionToken(context, ComponentName(context, PlaybackService::class.java))
@@ -71,6 +70,7 @@ class PlaybackController(private val context: Context, private val libraryDao: L
                 .getOrNull()
             controller?.addListener(listener)
             update()
+            scope.launch { restoreLastSessionIfIdle() }
         }, MoreExecutors.directExecutor())
         scope.launch {
             while (true) {
@@ -96,7 +96,18 @@ class PlaybackController(private val context: Context, private val libraryDao: L
             )
         }
         val saved = libraryDao.audio(uri.toString())
-        libraryDao.putAudio(AudioFileEntity(uri.toString(), displayName, saved?.positionMs ?: 0, saved?.durationMs ?: 0))
+        val now = System.currentTimeMillis()
+        libraryDao.putAudio(
+            AudioFileEntity(
+                uri = uri.toString(),
+                displayName = displayName,
+                positionMs = saved?.positionMs ?: 0,
+                durationMs = saved?.durationMs ?: 0,
+                lastOpenedAt = now,
+                lastPausedAt = saved?.lastPausedAt ?: 0,
+                lastPlayedAt = saved?.lastPlayedAt ?: now,
+            ),
+        )
         val position = saved?.positionMs ?: 0
         Log.i(TAG, "open() via service intent uri=$uri name=$displayName positionMs=$position")
         // Open directly inside PlaybackService so prepare() does not go through MediaController.
@@ -104,6 +115,18 @@ class PlaybackController(private val context: Context, private val libraryDao: L
         PlaybackService.startOpen(context, uri, displayName, position)
         // Optimistic UI title while the service applies the item.
         mutableState.value = mutableState.value.copy(title = displayName, uri = uri.toString(), positionMs = position)
+    }
+
+    /**
+     * When the MediaSession has no current item (cold UI start), reload the last played SAF audio
+     * at the persisted position without auto-play.
+     */
+    private suspend fun restoreLastSessionIfIdle() {
+        val player = controller ?: return
+        if (player.currentMediaItem != null) return
+        val recent = runCatching { libraryDao.mostRecentlyPlayedAudio() }.getOrNull() ?: return
+        Log.i(TAG, "Restoring last session uri=${recent.uri} positionMs=${recent.positionMs}")
+        open(Uri.parse(recent.uri), recent.displayName)
     }
 
     fun playPause() { controller?.let { if (it.isPlaying) it.pause() else it.play() } }
@@ -187,12 +210,6 @@ class PlaybackController(private val context: Context, private val libraryDao: L
             positionMs = player.currentPosition.coerceAtLeast(0),
             durationMs = player.duration.coerceAtLeast(0),
         )
-        val current = mutableState.value
-        val now = android.os.SystemClock.elapsedRealtime()
-        if (current.uri != null && now - lastPersistAt >= 2_000) scope.launch(Dispatchers.IO) {
-            lastPersistAt = now
-            libraryDao.savePosition(current.uri, current.positionMs, current.durationMs)
-        }
     }
 
     private companion object {

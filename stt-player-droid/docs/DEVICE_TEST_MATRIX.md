@@ -16,6 +16,8 @@
 
 - Playback в фоне и при выключенном экране; уведомление и lock-screen metadata/actions.
 - Bluetooth play/pause и seek; системные ±15 секунд.
+- Cold start / playback resumption: после убийства сервиса или reboot System UI / BT play поднимает `PlaybackService` через `MediaButtonReceiver` + `onPlaybackResumption` и продолжает с сохранённой позиции (если это было последнее аудиоприложение).
+- Позиция пишется в Room раз в 30 с во время play; каждая пауза — сразу с `lastPausedAt` и событием `pause`; seek ≥ 5 минут — событие `seek_origin` с начальной точкой.
 - Seek и смена MP3 очищают PCM: «Найти» disabled до новых двух секунд.
 - Конец MP3, принудительное закрытие UI и повторный запуск сохраняют позицию.
 - Большой MP3: memory profiler не показывает загрузку полного файла, STT preparation не зависит от размера.

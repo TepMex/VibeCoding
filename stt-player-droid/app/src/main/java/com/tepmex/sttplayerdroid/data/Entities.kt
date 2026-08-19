@@ -17,14 +17,37 @@ data class BookEntity(
     val lastOpenedAt: Long = System.currentTimeMillis(),
 )
 
-@Entity(tableName = "audio_files", indices = [Index(value = ["lastOpenedAt"])])
+@Entity(tableName = "audio_files", indices = [Index(value = ["lastOpenedAt"]), Index(value = ["lastPlayedAt"])])
 data class AudioFileEntity(
     @PrimaryKey val uri: String,
     val displayName: String,
     val positionMs: Long = 0,
     val durationMs: Long = 0,
     val lastOpenedAt: Long = System.currentTimeMillis(),
+    /** Wall-clock time of the latest pause (0 = never paused). */
+    val lastPausedAt: Long = 0,
+    /** Wall-clock time of the latest progress write / play activity for cold-start ordering. */
+    val lastPlayedAt: Long = System.currentTimeMillis(),
 )
+
+@Entity(
+    tableName = "playback_events",
+    indices = [Index(value = ["audioUri", "createdAt"])],
+)
+data class PlaybackEventEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val audioUri: String,
+    /** [PlaybackEventKind.PAUSE] or [PlaybackEventKind.SEEK_ORIGIN]. */
+    val kind: String,
+    /** Pause position, or the origin of a large seek jump. */
+    val positionMs: Long,
+    val createdAt: Long = System.currentTimeMillis(),
+)
+
+object PlaybackEventKind {
+    const val PAUSE = "pause"
+    const val SEEK_ORIGIN = "seek_origin"
+}
 
 @Entity(
     tableName = "chunks",
