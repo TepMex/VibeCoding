@@ -234,6 +234,33 @@ jobs:
             cp "$app/app/build/outputs/apk/release/app-release.apk" "deploy/$app/$apk_name"
           }
 
+          # Mirror Whisper Tiny next to the APK so the app can download without Hugging Face.
+          mirror_stt_player_droid_model() {
+            local dest="deploy/stt-player-droid/whisper_tiny_30s_i8.tflite"
+            local expected_sha="6748ac565a228c4a00b18d11ea1e2fd7cead3db6fba94e3f0bf35756b13ba4a9"
+            local url="https://huggingface.co/litert-community/whisper-tiny/resolve/main/whisper_tiny_30s_i8.tflite"
+            if [[ -f "$dest" ]]; then
+              local got
+              got="$(sha256sum "$dest" | awk '{print $1}')"
+              if [[ "$got" == "$expected_sha" ]]; then
+                echo "Reusing existing Whisper Tiny mirror ($got)"
+                return 0
+              fi
+              echo "Existing mirror SHA mismatch ($got), re-downloading"
+              rm -f "$dest"
+            fi
+            echo "Downloading Whisper Tiny mirror for GitHub Pages..."
+            curl -fsSL --retry 3 --retry-delay 2 -A "VibeCoding-CI/1.0" -o "$dest" "$url"
+            local got
+            got="$(sha256sum "$dest" | awk '{print $1}')"
+            if [[ "$got" != "$expected_sha" ]]; then
+              echo "Whisper Tiny mirror SHA-256 mismatch: got=$got expected=$expected_sha" >&2
+              rm -f "$dest"
+              exit 1
+            fi
+            echo "Published Whisper Tiny mirror ($got, $(wc -c < "$dest") bytes)"
+          }
+
           android_should_build() {
             case "$1" in
               stt-player-droid) is_true "$BUILD_STT_PLAYER_DROID" ;;
@@ -245,6 +272,7 @@ jobs:
             if android_should_build "$app"; then
               copy_android_landing "$app"
               copy_android_apk "$app"
+              mirror_stt_player_droid_model
             elif is_true "$REFRESH_ANDROID_LANDINGS"; then
               copy_android_landing "$app"
               apk_file="deploy/$app/$app.apk"
@@ -252,6 +280,7 @@ jobs:
                 echo "Missing APK for $app during landing refresh" >&2
                 exit 1
               fi
+              mirror_stt_player_droid_model
             else
               require_dir "$app"
               apk_file="deploy/$app/$app.apk"
@@ -259,6 +288,8 @@ jobs:
                 echo "Missing APK for $app" >&2
                 exit 1
               fi
+              # Keep / refresh model mirror even when APK is reused from previous gh-pages.
+              mirror_stt_player_droid_model
             fi
           done
 
