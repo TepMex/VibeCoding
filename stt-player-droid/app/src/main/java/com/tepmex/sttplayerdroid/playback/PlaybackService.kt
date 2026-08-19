@@ -24,13 +24,22 @@ import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
+import com.google.common.util.concurrent.SettableFuture
 import com.tepmex.sttplayerdroid.SttPlayerApplication
+import com.tepmex.sttplayerdroid.data.LibraryDao
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
+import java.util.concurrent.Executors
 
 @OptIn(UnstableApi::class)
 class PlaybackService : MediaSessionService() {
     private lateinit var player: ExoPlayer
     private var session: MediaSession? = null
     private val mainHandler = Handler(Looper.getMainLooper())
+    private var progressTracker: PlaybackProgressTracker? = null
+
+    private val libraryDao: LibraryDao
+        get() = (application as SttPlayerApplication).container.database.library()
 
     override fun onCreate() {
         super.onCreate()
@@ -78,8 +87,16 @@ class PlaybackService : MediaSessionService() {
                     }
                 })
             }
+        // Progress tracker touches Room lazily after AppContainer exists.
+        mainHandler.post {
+            runCatching {
+                val tracker = PlaybackProgressTracker(libraryDao)
+                tracker.attach(player)
+                progressTracker = tracker
+            }.onFailure { Log.e(TAG, "Failed to attach PlaybackProgressTracker", it) }
+        }
         session = MediaSession.Builder(this, player)
-            .setCallback(PlaybackSessionCallback)
+            .setCallback(PlaybackSessionCallback { loadResumptionPlaylist() })
             .build()
         Log.i(TAG, "PlaybackService created player=${player.hashCode()}")
     }
@@ -121,6 +138,25 @@ class PlaybackService : MediaSessionService() {
         }
     }
 
+    private fun loadResumptionPlaylist(): MediaSession.MediaItemsWithStartPosition? {
+        val audio = runCatching {
+            // Room must not touch the main thread; this runs on the resumption executor.
+            runBlocking(Dispatchers.IO) { libraryDao.mostRecentlyPlayedAudio() }
+        }.onFailure { Log.e(TAG, "Failed to load resumable audio", it) }.getOrNull()
+            ?: return null
+        Log.i(
+            TAG,
+            "Playback resumption audio=${audio.displayName} positionMs=${audio.positionMs} " +
+                "lastPausedAt=${audio.lastPausedAt}",
+        )
+        val item = restorePlayableMediaItem(PlaybackProgressTracker.mediaItemForResumption(audio))
+        return MediaSession.MediaItemsWithStartPosition(
+            listOf(item),
+            /* startIndex= */ 0,
+            audio.positionMs.coerceAtLeast(0L),
+        )
+    }
+
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? = session
 
     override fun onTaskRemoved(rootIntent: Intent?) {
@@ -128,6 +164,8 @@ class PlaybackService : MediaSessionService() {
     }
 
     override fun onDestroy() {
+        progressTracker?.detach()
+        progressTracker = null
         session?.release(); session = null
         if (::player.isInitialized) player.release()
         super.onDestroy()
@@ -170,8 +208,17 @@ class PlaybackService : MediaSessionService() {
 /**
  * Rebuild a playable item if a controller somehow omitted localConfiguration.
  * Media3 1.10+ usually includes it via toBundleIncludeLocalConfiguration.
+ *
+ * Also implements Media3 playback resumption (System UI / Bluetooth cold start).
  */
-internal object PlaybackSessionCallback : MediaSession.Callback {
+@OptIn(UnstableApi::class)
+internal class PlaybackSessionCallback(
+    private val loadResumption: () -> MediaSession.MediaItemsWithStartPosition?,
+) : MediaSession.Callback {
+    private val resumptionExecutor = Executors.newSingleThreadExecutor { runnable ->
+        Thread(runnable, "stt-playback-resumption").apply { isDaemon = true }
+    }
+
     override fun onAddMediaItems(
         mediaSession: MediaSession,
         controller: MediaSession.ControllerInfo,
@@ -193,6 +240,29 @@ internal object PlaybackSessionCallback : MediaSession.Callback {
                 startPositionMs,
             ),
         )
+
+    override fun onPlaybackResumption(
+        mediaSession: MediaSession,
+        controller: MediaSession.ControllerInfo,
+        isForPlayback: Boolean,
+    ): ListenableFuture<MediaSession.MediaItemsWithStartPosition> {
+        Log.i(TAG_RESTORE, "onPlaybackResumption isForPlayback=$isForPlayback package=${controller.packageName}")
+        val future = SettableFuture.create<MediaSession.MediaItemsWithStartPosition>()
+        resumptionExecutor.execute {
+            try {
+                val playlist = loadResumption()
+                if (playlist == null || playlist.mediaItems.isEmpty()) {
+                    future.setException(UnsupportedOperationException("No resumable audio session"))
+                } else {
+                    future.set(playlist)
+                }
+            } catch (error: Exception) {
+                Log.e(TAG_RESTORE, "onPlaybackResumption failed", error)
+                future.setException(error)
+            }
+        }
+        return future
+    }
 }
 
 internal fun restorePlayableMediaItem(item: MediaItem): MediaItem {
