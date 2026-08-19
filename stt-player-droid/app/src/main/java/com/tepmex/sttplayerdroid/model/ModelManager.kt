@@ -6,7 +6,10 @@ import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
+import com.tepmex.sttplayerdroid.util.ErrorCode
 import com.tepmex.sttplayerdroid.util.Hashing
+import com.tepmex.sttplayerdroid.util.appError
+import com.tepmex.sttplayerdroid.util.logError
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -46,7 +49,30 @@ class DefaultModelManager(private val context: Context) : ModelManager {
                 scope.launch { mutableState.value = validateInstalled() }
                 ModelState.Downloading(100)
             }
-            WorkInfo.State.FAILED -> ModelState.Error(info.outputData.getString(ModelDownloadWorker.KEY_ERROR) ?: "Не удалось загрузить модель")
+            WorkInfo.State.FAILED -> {
+                val raw = info.outputData.getString(ModelDownloadWorker.KEY_ERROR)
+                val debug = info.outputData.getString(ModelDownloadWorker.KEY_ERROR_DEBUG)
+                val appError = if (raw != null) {
+                    appError(
+                        code = ErrorCode.MODEL_DOWNLOAD_FAILED,
+                        userMessage = raw,
+                        debugMessage = debug ?: raw,
+                        context = mapOf(
+                            "workState" to info.state.name,
+                            "runAttemptCount" to info.runAttemptCount,
+                        ),
+                    )
+                } else {
+                    appError(
+                        code = ErrorCode.MODEL_DOWNLOAD_FAILED,
+                        userMessage = "Не удалось загрузить модель Whisper Tiny. Повторите попытку.",
+                        debugMessage = "ModelDownloadWorker failed without error payload; attempt=${info.runAttemptCount}",
+                        context = mapOf("runAttemptCount" to info.runAttemptCount),
+                    )
+                }
+                logError("ModelManager", appError)
+                ModelState.Error(appError.userMessage)
+            }
             WorkInfo.State.CANCELLED -> ModelState.Missing
         }
     }
@@ -70,12 +96,27 @@ class DefaultModelManager(private val context: Context) : ModelManager {
         val validated = validateInstalled()
         mutableState.value = validated
         return (validated as? ModelState.Ready)?.file
-            ?: throw IllegalStateException("Модель Whisper Tiny не установлена")
+            ?: throw logError(
+                "ModelManager",
+                appError(
+                    code = ErrorCode.MODEL_NOT_INSTALLED,
+                    userMessage = "Модель Whisper Tiny ещё не установлена. Загрузите её на экране установки.",
+                    debugMessage = "openModel() called while state=${validated::class.simpleName}",
+                    context = mapOf("state" to validated::class.simpleName),
+                ),
+            )
     }
 
     override fun discardIncompatible(message: String) {
         modelFile(context).delete()
-        mutableState.value = ModelState.Error(message)
+        val appError = appError(
+            code = ErrorCode.MODEL_INCOMPATIBLE,
+            userMessage = "Модель несовместима с этим устройством. Скачайте её заново.",
+            debugMessage = message,
+            context = mapOf("modelFile" to modelFile(context).absolutePath),
+        )
+        logError("ModelManager", appError)
+        mutableState.value = ModelState.Error(appError.userMessage)
     }
 
     private fun validateInstalled(): ModelState {
@@ -84,7 +125,19 @@ class DefaultModelManager(private val context: Context) : ModelManager {
         val checksum = runCatching { file.inputStream().use(Hashing::sha256) }.getOrNull()
         if (checksum != MODEL_SHA256) {
             file.delete()
-            return ModelState.Error("Контрольная сумма модели не совпала")
+            val appError = appError(
+                code = ErrorCode.MODEL_CHECKSUM_MISMATCH,
+                userMessage = "Файл модели повреждён (не совпала контрольная сумма). Скачайте снова.",
+                debugMessage = "Installed model SHA-256 mismatch: got=$checksum expected=$MODEL_SHA256 path=${file.absolutePath} size=${file.length()}",
+                context = mapOf(
+                    "got" to checksum,
+                    "expected" to MODEL_SHA256,
+                    "path" to file.absolutePath,
+                    "size" to file.length(),
+                ),
+            )
+            logError("ModelManager", appError)
+            return ModelState.Error(appError.userMessage)
         }
         return ModelState.Ready(file)
     }

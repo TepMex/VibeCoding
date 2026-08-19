@@ -5,17 +5,25 @@ import android.content.Context
 import android.net.Uri
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
+import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
 import com.google.common.util.concurrent.MoreExecutors
 import com.tepmex.sttplayerdroid.data.AudioFileEntity
 import com.tepmex.sttplayerdroid.data.LibraryDao
+import com.tepmex.sttplayerdroid.util.ErrorCode
+import com.tepmex.sttplayerdroid.util.appError
+import com.tepmex.sttplayerdroid.util.describeCause
+import com.tepmex.sttplayerdroid.util.logError
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -33,6 +41,8 @@ class PlaybackController(private val context: Context, private val libraryDao: L
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val mutableState = MutableStateFlow(PlaybackUiState())
     val state: StateFlow<PlaybackUiState> = mutableState.asStateFlow()
+    private val mutableErrors = MutableSharedFlow<String>(extraBufferCapacity = 1)
+    val errors: SharedFlow<String> = mutableErrors.asSharedFlow()
     val recentAudio = libraryDao.observeAudio()
     private var controller: MediaController? = null
     private var pendingItem: Pair<MediaItem, Long>? = null
@@ -42,7 +52,20 @@ class PlaybackController(private val context: Context, private val libraryDao: L
         val token = SessionToken(context, ComponentName(context, PlaybackService::class.java))
         val future = MediaController.Builder(context, token).buildAsync()
         future.addListener({
-            controller = runCatching { future.get() }.getOrNull()
+            controller = runCatching { future.get() }
+                .onFailure { error ->
+                    val appError = logError(
+                        "PlaybackController",
+                        appError(
+                            code = ErrorCode.PLAYBACK_ERROR,
+                            userMessage = "Не удалось подключить аудиоплеер. Перезапустите приложение.",
+                            debugMessage = "MediaController build failed: ${describeCause(error)}",
+                            cause = error,
+                        ),
+                    )
+                    scope.launch { mutableErrors.emit(appError.userMessage) }
+                }
+                .getOrNull()
             controller?.addListener(listener)
             pendingItem?.let { (item, position) -> controller?.setMediaItem(item, position); controller?.prepare(); pendingItem = null }
             update()
@@ -56,13 +79,45 @@ class PlaybackController(private val context: Context, private val libraryDao: L
     }
 
     suspend fun open(uri: Uri, displayName: String) {
-        runCatching { context.contentResolver.takePersistableUriPermission(uri, android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION) }
+        runCatching {
+            context.contentResolver.takePersistableUriPermission(uri, android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }.onFailure { error ->
+            logError(
+                "PlaybackController",
+                appError(
+                    code = ErrorCode.PLAYBACK_OPEN_FAILED,
+                    userMessage = "Нет постоянного доступа к файлу. Выберите MP3 снова через кнопку «Открыть».",
+                    debugMessage = "takePersistableUriPermission failed for uri=$uri: ${describeCause(error)}",
+                    cause = error,
+                    context = mapOf("uri" to uri.toString(), "displayName" to displayName),
+                ),
+            )
+        }
         val saved = libraryDao.audio(uri.toString())
         libraryDao.putAudio(AudioFileEntity(uri.toString(), displayName, saved?.positionMs ?: 0, saved?.durationMs ?: 0))
         val item = MediaItem.Builder().setUri(uri).setMediaId(uri.toString())
             .setMediaMetadata(MediaMetadata.Builder().setTitle(displayName).build()).build()
         val position = saved?.positionMs ?: 0
-        controller?.apply { setMediaItem(item, position); prepare() } ?: run { pendingItem = item to position }
+        val active = controller
+        if (active == null) {
+            pendingItem = item to position
+            return
+        }
+        try {
+            active.setMediaItem(item, position)
+            active.prepare()
+        } catch (error: Exception) {
+            throw logError(
+                "PlaybackController",
+                appError(
+                    code = ErrorCode.PLAYBACK_OPEN_FAILED,
+                    userMessage = "Не удалось открыть аудиофайл. Выберите корректный MP3.",
+                    debugMessage = "setMediaItem/prepare failed for uri=$uri name=$displayName: ${describeCause(error)}",
+                    cause = error,
+                    context = mapOf("uri" to uri.toString(), "displayName" to displayName, "positionMs" to position),
+                ),
+            )
+        }
     }
 
     fun playPause() { controller?.let { if (it.isPlaying) it.pause() else it.play() } }
@@ -72,6 +127,52 @@ class PlaybackController(private val context: Context, private val libraryDao: L
 
     private val listener = object : Player.Listener {
         override fun onEvents(player: Player, events: Player.Events) = update()
+        override fun onPlayerError(error: PlaybackException) {
+            val appError = logError(
+                "PlaybackController",
+                appError(
+                    code = mapPlaybackError(error),
+                    userMessage = userMessageForPlayback(error),
+                    debugMessage = "ExoPlayer error code=${error.errorCode} name=${error.errorCodeName} message=${error.message} cause=${describeCause(error.cause)}",
+                    cause = error,
+                    context = mapOf(
+                        "errorCode" to error.errorCode,
+                        "errorCodeName" to error.errorCodeName,
+                        "uri" to mutableState.value.uri,
+                        "title" to mutableState.value.title,
+                    ),
+                ),
+            )
+            scope.launch { mutableErrors.emit(appError.userMessage) }
+        }
+    }
+
+    private fun mapPlaybackError(error: PlaybackException): ErrorCode = when (error.errorCode) {
+        PlaybackException.ERROR_CODE_IO_FILE_NOT_FOUND,
+        PlaybackException.ERROR_CODE_IO_NO_PERMISSION,
+        PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED,
+        PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_TIMEOUT,
+        -> ErrorCode.PLAYBACK_OPEN_FAILED
+        PlaybackException.ERROR_CODE_PARSING_CONTAINER_MALFORMED,
+        PlaybackException.ERROR_CODE_PARSING_CONTAINER_UNSUPPORTED,
+        PlaybackException.ERROR_CODE_PARSING_MANIFEST_MALFORMED,
+        PlaybackException.ERROR_CODE_PARSING_MANIFEST_UNSUPPORTED,
+        PlaybackException.ERROR_CODE_DECODER_INIT_FAILED,
+        PlaybackException.ERROR_CODE_DECODER_QUERY_FAILED,
+        PlaybackException.ERROR_CODE_DECODING_FAILED,
+        PlaybackException.ERROR_CODE_DECODING_FORMAT_EXCEEDS_CAPABILITIES,
+        PlaybackException.ERROR_CODE_DECODING_FORMAT_UNSUPPORTED,
+        -> ErrorCode.AUDIO_FORMAT_UNSUPPORTED
+        else -> ErrorCode.PLAYBACK_ERROR
+    }
+
+    private fun userMessageForPlayback(error: PlaybackException): String = when (mapPlaybackError(error)) {
+        ErrorCode.PLAYBACK_OPEN_FAILED ->
+            "Аудиофайл недоступен. Выберите MP3 снова через кнопку «Открыть»."
+        ErrorCode.AUDIO_FORMAT_UNSUPPORTED ->
+            "Этот аудиофайл не удалось декодировать. Выберите корректный MP3."
+        else ->
+            "Ошибка воспроизведения. Попробуйте другой файл или перезапустите приложение."
     }
 
     private fun update() {

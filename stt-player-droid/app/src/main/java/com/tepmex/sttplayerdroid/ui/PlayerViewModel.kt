@@ -9,8 +9,9 @@ import androidx.lifecycle.viewModelScope
 import com.tepmex.sttplayerdroid.BookDocument
 import com.tepmex.sttplayerdroid.SttLanguage
 import com.tepmex.sttplayerdroid.SttPlayerApplication
-import com.tepmex.sttplayerdroid.model.ModelState
-import com.tepmex.sttplayerdroid.sync.SyncState
+import com.tepmex.sttplayerdroid.util.ErrorCode
+import com.tepmex.sttplayerdroid.util.appError
+import com.tepmex.sttplayerdroid.util.logError
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -39,12 +40,38 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
 
     init {
         viewModelScope.launch {
+            container.playback.errors.collect { playbackError ->
+                mutableError.value = playbackError
+            }
+        }
+        viewModelScope.launch {
             val recent = container.bookRepository.recentBooks.first().firstOrNull() ?: return@launch
             runCatching { container.bookRepository.restore(Uri.parse(recent.uri)) }
-                .onSuccess {
-                    mutableDocument.value = it
-                    mutableLanguage.value = recent.language
-                    mutableChapterId.value = recent.selectedChapterId
+                .onSuccess { restored ->
+                    if (restored == null) {
+                        val error = appError(
+                            code = ErrorCode.BOOK_RESTORE_FAILED,
+                            userMessage = "Не удалось восстановить последнюю книгу. Откройте файл снова.",
+                            debugMessage = "Startup restore returned null for recent uri=${recent.uri}",
+                            context = mapOf("uri" to recent.uri, "title" to recent.title),
+                        )
+                        logError("PlayerViewModel", error)
+                        mutableError.value = error.userMessage
+                    } else {
+                        mutableDocument.value = restored
+                        mutableLanguage.value = recent.language
+                        mutableChapterId.value = recent.selectedChapterId
+                    }
+                }
+                .onFailure { error ->
+                    val appError = logError(
+                        "PlayerViewModel",
+                        error,
+                        mapOf("uri" to recent.uri, "stage" to "startup_restore"),
+                        ErrorCode.BOOK_RESTORE_FAILED,
+                        "Не удалось восстановить последнюю книгу. Откройте файл снова.",
+                    )
+                    mutableError.value = appError.userMessage
                 }
         }
     }
@@ -59,30 +86,92 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
                 mutableDocument.value = it
                 mutableChapterId.value = null
             }
-            .onFailure { mutableError.value = it.message }
+            .onFailure { error ->
+                val appError = logError(
+                    "PlayerViewModel",
+                    error,
+                    mapOf("uri" to uri.toString(), "stage" to "open_book"),
+                    ErrorCode.BOOK_CORRUPT,
+                    "Не удалось открыть книгу. Проверьте формат файла.",
+                )
+                mutableError.value = appError.userMessage
+            }
     }
 
     fun openAudio(uri: Uri) = viewModelScope.launch {
-        container.playback.open(uri, displayName(uri))
+        mutableError.value = null
+        runCatching { container.playback.open(uri, displayName(uri)) }
+            .onFailure { error ->
+                val appError = logError(
+                    "PlayerViewModel",
+                    error,
+                    mapOf("uri" to uri.toString(), "stage" to "open_audio"),
+                    ErrorCode.PLAYBACK_OPEN_FAILED,
+                    "Не удалось открыть аудиофайл. Выберите корректный MP3.",
+                )
+                mutableError.value = appError.userMessage
+            }
     }
 
     fun openRecentBook(uri: String) = viewModelScope.launch {
         mutableError.value = null
         runCatching { container.bookRepository.restore(Uri.parse(uri)) }
             .onSuccess { restored ->
-                mutableDocument.value = restored
-                val saved = recentBooks.value.firstOrNull { it.uri == uri }
-                if (saved != null) {
-                    mutableLanguage.value = saved.language
-                    mutableChapterId.value = saved.selectedChapterId
+                if (restored == null) {
+                    val error = appError(
+                        code = ErrorCode.BOOK_RESTORE_FAILED,
+                        userMessage = "Эта недавняя книга больше недоступна. Выберите файл снова.",
+                        debugMessage = "restore() returned null for recent book uri=$uri",
+                        context = mapOf("uri" to uri),
+                    )
+                    logError("PlayerViewModel", error)
+                    mutableError.value = error.userMessage
+                } else {
+                    mutableDocument.value = restored
+                    val saved = recentBooks.value.firstOrNull { it.uri == uri }
+                    if (saved != null) {
+                        mutableLanguage.value = saved.language
+                        mutableChapterId.value = saved.selectedChapterId
+                    }
                 }
             }
-            .onFailure { mutableError.value = it.message }
+            .onFailure { error ->
+                val appError = logError(
+                    "PlayerViewModel",
+                    error,
+                    mapOf("uri" to uri, "stage" to "open_recent_book"),
+                    ErrorCode.BOOK_RESTORE_FAILED,
+                    "Не удалось открыть недавнюю книгу. Выберите файл снова.",
+                )
+                mutableError.value = appError.userMessage
+            }
     }
 
     fun openRecentAudio(uri: String) = viewModelScope.launch {
-        val saved = recentAudio.value.firstOrNull { it.uri == uri } ?: return@launch
-        container.playback.open(Uri.parse(uri), saved.displayName)
+        mutableError.value = null
+        val saved = recentAudio.value.firstOrNull { it.uri == uri }
+        if (saved == null) {
+            val error = appError(
+                code = ErrorCode.PLAYBACK_OPEN_FAILED,
+                userMessage = "Этот недавний аудиофайл больше недоступен. Выберите MP3 снова.",
+                debugMessage = "Recent audio metadata missing for uri=$uri",
+                context = mapOf("uri" to uri),
+            )
+            logError("PlayerViewModel", error)
+            mutableError.value = error.userMessage
+            return@launch
+        }
+        runCatching { container.playback.open(Uri.parse(uri), saved.displayName) }
+            .onFailure { error ->
+                val appError = logError(
+                    "PlayerViewModel",
+                    error,
+                    mapOf("uri" to uri, "stage" to "open_recent_audio"),
+                    ErrorCode.PLAYBACK_OPEN_FAILED,
+                    "Не удалось открыть недавний MP3. Выберите файл снова.",
+                )
+                mutableError.value = appError.userMessage
+            }
     }
 
     fun selectLanguage(value: SttLanguage) {
@@ -100,7 +189,17 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
     fun seekTo(ms: Long) = container.playback.seekTo(ms)
     fun canSync(): Boolean = container.syncCoordinator.canSync && mutableDocument.value != null
     fun sync() {
-        val document = mutableDocument.value ?: return
+        val document = mutableDocument.value
+        if (document == null) {
+            val error = appError(
+                code = ErrorCode.SYNC_FAILED,
+                userMessage = "Сначала откройте книгу, чтобы искать фрагмент в тексте.",
+                debugMessage = "sync() called without an open book document",
+            )
+            logError("PlayerViewModel", error)
+            mutableError.value = error.userMessage
+            return
+        }
         val currentBook = recentBooks.value.firstOrNull { it.uri == document.sourceUri.toString() }
         container.syncCoordinator.sync(
             document.sourceUri.toString(), mutableLanguage.value, mutableChapterId.value, currentBook?.anchorChunkId,
