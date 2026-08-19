@@ -82,6 +82,68 @@ fun describeCause(cause: Throwable?): String {
     return if (message != null) "$name: $message" else name
 }
 
+/** Full cause chain + stack frames for on-device debugging. */
+fun formatThrowableDetails(error: Throwable?, maxFramesPerThrowable: Int = 48): String {
+    if (error == null) return "(no throwable)"
+    return buildString {
+        var current: Throwable? = error
+        var depth = 0
+        val seen = mutableSetOf<Throwable>()
+        while (current != null && depth < 12 && seen.add(current)) {
+            if (depth > 0) appendLine("--- caused by ---")
+            when (current) {
+                is AppException -> {
+                    appendLine("${current.javaClass.name}")
+                    appendLine("code=${current.code}")
+                    appendLine("user=${current.userMessage}")
+                    appendLine("debug=${current.debugMessage}")
+                    if (current.context.isNotEmpty()) appendLine("context=${current.context}")
+                }
+                else -> {
+                    appendLine("${current.javaClass.name}: ${current.message.orEmpty()}")
+                }
+            }
+            current.stackTrace.take(maxFramesPerThrowable).forEach { frame ->
+                appendLine("  at $frame")
+            }
+            if (current.stackTrace.size > maxFramesPerThrowable) {
+                appendLine("  ... ${current.stackTrace.size - maxFramesPerThrowable} more")
+            }
+            current = current.cause
+            depth++
+        }
+    }.trimEnd()
+}
+
+/**
+ * One block for snackbar/dialog: short user text, then structured debug and stack.
+ * Always starts with the user-facing line so UI can show a summary.
+ */
+fun formatErrorReport(
+    summary: String,
+    error: Throwable?,
+    extras: Map<String, Any?> = emptyMap(),
+): String = buildString {
+    appendLine(summary)
+    appendLine()
+    appendLine("=== details ===")
+    if (extras.isNotEmpty()) {
+        extras.forEach { (key, value) -> appendLine("$key=$value") }
+        appendLine()
+    }
+    if (error is AppException) {
+        appendLine("appCode=${error.code}")
+        appendLine("debug=${error.debugMessage}")
+        if (error.context.isNotEmpty()) {
+            error.context.forEach { (key, value) -> appendLine("ctx.$key=$value") }
+        }
+        appendLine()
+        append(formatThrowableDetails(error.cause ?: error))
+    } else {
+        append(formatThrowableDetails(error))
+    }
+}.trimEnd()
+
 fun getUserMessage(
     error: Throwable?,
     fallback: String = "Что-то пошло не так. Попробуйте ещё раз.",

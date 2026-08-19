@@ -11,6 +11,7 @@ import com.tepmex.sttplayerdroid.SttLanguage
 import com.tepmex.sttplayerdroid.SttPlayerApplication
 import com.tepmex.sttplayerdroid.util.ErrorCode
 import com.tepmex.sttplayerdroid.util.appError
+import com.tepmex.sttplayerdroid.util.formatErrorReport
 import com.tepmex.sttplayerdroid.util.logError
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -56,7 +57,7 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
                             context = mapOf("uri" to recent.uri, "title" to recent.title),
                         )
                         logError("PlayerViewModel", error)
-                        mutableError.value = error.userMessage
+                        mutableError.value = formatErrorReport(error.userMessage, error)
                     } else {
                         mutableDocument.value = restored
                         mutableLanguage.value = recent.language
@@ -71,7 +72,7 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
                         ErrorCode.BOOK_RESTORE_FAILED,
                         "Не удалось восстановить последнюю книгу. Откройте файл снова.",
                     )
-                    mutableError.value = appError.userMessage
+                    mutableError.value = formatErrorReport(appError.userMessage, appError)
                 }
         }
     }
@@ -94,7 +95,7 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
                     ErrorCode.BOOK_CORRUPT,
                     "Не удалось открыть книгу. Проверьте формат файла.",
                 )
-                mutableError.value = appError.userMessage
+                mutableError.value = formatErrorReport(appError.userMessage, appError)
             }
     }
 
@@ -109,7 +110,7 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
                     ErrorCode.PLAYBACK_OPEN_FAILED,
                     "Не удалось открыть аудиофайл. Выберите корректный MP3.",
                 )
-                mutableError.value = appError.userMessage
+                mutableError.value = formatErrorReport(appError.userMessage, appError, mapOf("uri" to uri.toString()))
             }
     }
 
@@ -125,7 +126,7 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
                         context = mapOf("uri" to uri),
                     )
                     logError("PlayerViewModel", error)
-                    mutableError.value = error.userMessage
+                    mutableError.value = formatErrorReport(error.userMessage, error)
                 } else {
                     mutableDocument.value = restored
                     val saved = recentBooks.value.firstOrNull { it.uri == uri }
@@ -143,7 +144,7 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
                     ErrorCode.BOOK_RESTORE_FAILED,
                     "Не удалось открыть недавнюю книгу. Выберите файл снова.",
                 )
-                mutableError.value = appError.userMessage
+                mutableError.value = formatErrorReport(appError.userMessage, appError)
             }
     }
 
@@ -158,7 +159,7 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
                 context = mapOf("uri" to uri),
             )
             logError("PlayerViewModel", error)
-            mutableError.value = error.userMessage
+            mutableError.value = formatErrorReport(error.userMessage, error)
             return@launch
         }
         runCatching { container.playback.open(Uri.parse(uri), saved.displayName) }
@@ -170,7 +171,7 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
                     ErrorCode.PLAYBACK_OPEN_FAILED,
                     "Не удалось открыть недавний MP3. Выберите файл снова.",
                 )
-                mutableError.value = appError.userMessage
+                mutableError.value = formatErrorReport(appError.userMessage, appError)
             }
     }
 
@@ -197,7 +198,7 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
                 debugMessage = "sync() called without an open book document",
             )
             logError("PlayerViewModel", error)
-            mutableError.value = error.userMessage
+            mutableError.value = formatErrorReport(error.userMessage, error)
             return
         }
         val currentBook = recentBooks.value.firstOrNull { it.uri == document.sourceUri.toString() }

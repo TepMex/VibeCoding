@@ -2,6 +2,7 @@ package com.tepmex.sttplayerdroid.playback
 
 import android.content.Context
 import android.net.Uri
+import android.util.Log
 import androidx.annotation.OptIn
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
@@ -101,8 +102,16 @@ internal object PlaybackSessionCallback : MediaSession.Callback {
 }
 
 internal fun restorePlayableMediaItem(item: MediaItem): MediaItem {
-    if (item.localConfiguration?.uri != null) return item
-    val uri = resolvePlaybackUri(item) ?: return item
+    if (item.localConfiguration?.uri != null) {
+        Log.i(TAG, "MediaItem already playable localUri=${item.localConfiguration?.uri} mediaId=${item.mediaId}")
+        return item
+    }
+    val uri = resolvePlaybackUri(item)
+    if (uri == null) {
+        Log.e(TAG, "Cannot restore MediaItem URI mediaId=${item.mediaId} requestUri=${item.requestMetadata.mediaUri}")
+        return item
+    }
+    Log.i(TAG, "Restored MediaItem URI uri=$uri mediaId=${item.mediaId} requestUri=${item.requestMetadata.mediaUri}")
     return item.buildUpon()
         .setUri(uri)
         .setMimeType(item.localConfiguration?.mimeType ?: MimeTypes.AUDIO_MPEG)
@@ -118,3 +127,5 @@ internal fun resolvePlaybackUri(item: MediaItem): Uri? {
     }
     return null
 }
+
+private const val TAG = "SttPlayerPlayback"

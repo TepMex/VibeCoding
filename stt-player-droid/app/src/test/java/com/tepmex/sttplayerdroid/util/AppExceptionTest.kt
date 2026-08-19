@@ -62,4 +62,32 @@ class AppExceptionTest {
         assertEquals(1, error.context["a"])
         assertEquals(2, error.context["b"])
     }
+
+    @Test
+    fun `formatThrowableDetails includes cause chain and stack frames`() {
+        val root = IllegalStateException("root boom")
+        val wrapped = RuntimeException("wrapper", root)
+        val text = formatThrowableDetails(wrapped)
+        assertTrue(text.contains("RuntimeException: wrapper"))
+        assertTrue(text.contains("caused by"))
+        assertTrue(text.contains("IllegalStateException: root boom"))
+        assertTrue(text.contains(" at "))
+    }
+
+    @Test
+    fun `formatErrorReport starts with summary and includes details`() {
+        val error = appError(
+            code = ErrorCode.PLAYBACK_ERROR,
+            userMessage = "Ошибка воспроизведения",
+            debugMessage = "ExoPlayer failed",
+            cause = IllegalArgumentException("bad uri"),
+            context = mapOf("errorCode" to 2000),
+        )
+        val report = formatErrorReport(error.userMessage, error, mapOf("stage" to "play"))
+        assertTrue(report.startsWith("Ошибка воспроизведения"))
+        assertTrue(report.contains("=== details ==="))
+        assertTrue(report.contains("stage=play"))
+        assertTrue(report.contains("appCode=PLAYBACK_ERROR"))
+        assertTrue(report.contains("IllegalArgumentException"))
+    }
 }

@@ -16,7 +16,9 @@ import com.tepmex.sttplayerdroid.data.LibraryDao
 import com.tepmex.sttplayerdroid.util.ErrorCode
 import com.tepmex.sttplayerdroid.util.appError
 import com.tepmex.sttplayerdroid.util.describeCause
+import com.tepmex.sttplayerdroid.util.formatErrorReport
 import com.tepmex.sttplayerdroid.util.logError
+import android.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -64,11 +66,20 @@ class PlaybackController(private val context: Context, private val libraryDao: L
                             cause = error,
                         ),
                     )
-                    scope.launch { mutableErrors.emit(appError.userMessage) }
+                    scope.launch {
+                        mutableErrors.emit(
+                            formatErrorReport(appError.userMessage, appError, mapOf("stage" to "media_controller_connect")),
+                        )
+                    }
                 }
                 .getOrNull()
             controller?.addListener(listener)
-            pendingItem?.let { (item, position) -> controller?.setMediaItem(item, position); controller?.prepare(); pendingItem = null }
+            pendingItem?.let { (item, position) ->
+                Log.i(TAG, "Applying pending MediaItem mediaId=${item.mediaId} localUri=${item.localConfiguration?.uri} requestUri=${item.requestMetadata.mediaUri}")
+                controller?.setMediaItem(item, position)
+                controller?.prepare()
+                pendingItem = null
+            }
             update()
         }, MoreExecutors.directExecutor())
         scope.launch {
@@ -113,9 +124,20 @@ class PlaybackController(private val context: Context, private val libraryDao: L
             pendingItem = item to position
             return
         }
+        Log.i(
+            TAG,
+            "open() uri=$uri name=$displayName positionMs=$position mediaId=${item.mediaId} " +
+                "localUri=${item.localConfiguration?.uri} requestUri=${item.requestMetadata.mediaUri} " +
+                "controllerConnected=true",
+        )
         try {
             active.setMediaItem(item, position)
             active.prepare()
+            Log.i(
+                TAG,
+                "after prepare playerError=${active.playerError} mediaItemId=${active.currentMediaItem?.mediaId} " +
+                    "playbackState=${active.playbackState}",
+            )
         } catch (error: Exception) {
             throw logError(
                 "PlaybackController",
@@ -138,6 +160,24 @@ class PlaybackController(private val context: Context, private val libraryDao: L
     private val listener = object : Player.Listener {
         override fun onEvents(player: Player, events: Player.Events) = update()
         override fun onPlayerError(error: PlaybackException) {
+            val player = controller
+            val mediaItem = player?.currentMediaItem
+            val extras = linkedMapOf<String, Any?>(
+                "errorCode" to error.errorCode,
+                "errorCodeName" to error.errorCodeName,
+                "errorMessage" to error.message,
+                "timestampMs" to error.timestampMs,
+                "uiUri" to mutableState.value.uri,
+                "uiTitle" to mutableState.value.title,
+                "mediaId" to mediaItem?.mediaId,
+                "localUri" to mediaItem?.localConfiguration?.uri?.toString(),
+                "requestUri" to mediaItem?.requestMetadata?.mediaUri?.toString(),
+                "mimeType" to mediaItem?.localConfiguration?.mimeType,
+                "playbackState" to player?.playbackState,
+                "playWhenReady" to player?.playWhenReady,
+                "currentPositionMs" to player?.currentPosition,
+                "durationMs" to player?.duration,
+            )
             val appError = logError(
                 "PlaybackController",
                 appError(
@@ -145,15 +185,12 @@ class PlaybackController(private val context: Context, private val libraryDao: L
                     userMessage = userMessageForPlayback(error),
                     debugMessage = "ExoPlayer error code=${error.errorCode} name=${error.errorCodeName} message=${error.message} cause=${describeCause(error.cause)}",
                     cause = error,
-                    context = mapOf(
-                        "errorCode" to error.errorCode,
-                        "errorCodeName" to error.errorCodeName,
-                        "uri" to mutableState.value.uri,
-                        "title" to mutableState.value.title,
-                    ),
+                    context = extras,
                 ),
             )
-            scope.launch { mutableErrors.emit(appError.userMessage) }
+            val report = formatErrorReport(appError.userMessage, appError, extras)
+            Log.e(TAG, report)
+            scope.launch { mutableErrors.emit(report) }
         }
     }
 
@@ -202,5 +239,9 @@ class PlaybackController(private val context: Context, private val libraryDao: L
             lastPersistAt = now
             libraryDao.savePosition(current.uri, current.positionMs, current.durationMs)
         }
+    }
+
+    private companion object {
+        const val TAG = "SttPlayerPlayback"
     }
 }

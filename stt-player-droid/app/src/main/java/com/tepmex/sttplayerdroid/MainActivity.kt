@@ -33,6 +33,9 @@ import androidx.compose.material.icons.filled.Forward10
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Replay10
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
@@ -49,6 +52,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -59,9 +63,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.tepmex.sttplayerdroid.model.ModelState
 import com.tepmex.sttplayerdroid.sync.SyncState
 import com.tepmex.sttplayerdroid.ui.PlayerViewModel
@@ -126,8 +134,10 @@ private fun PlayerContent(viewModel: PlayerViewModel) {
     val recentAudio by viewModel.recentAudio.collectAsState()
     var showLogs by remember { mutableStateOf(false) }
     var showRecent by remember { mutableStateOf(false) }
+    var errorDialog by remember { mutableStateOf<String?>(null) }
     val snackbar = remember { SnackbarHostState() }
     val listState = rememberLazyListState()
+    val clipboard = LocalClipboardManager.current
     val highlighted = (sync as? SyncState.Matched)?.result?.chunkId
     val chunks = document?.chunks.orEmpty()
 
@@ -138,12 +148,53 @@ private fun PlayerContent(viewModel: PlayerViewModel) {
         if (index >= 0) listState.animateScrollToItem(index)
     }
     LaunchedEffect(sync, localError) {
-        val message = when (val state = sync) {
-            is SyncState.Error -> state.message
-            is SyncState.Matched -> "Найдено за ${state.timing.totalMs} мс: «${state.transcript}»"
-            else -> localError
+        when (val state = sync) {
+            is SyncState.Error -> {
+                errorDialog = state.message
+                snackbar.showSnackbar(state.message.lineSequence().firstOrNull().orEmpty())
+            }
+            is SyncState.Matched -> snackbar.showSnackbar("Найдено за ${state.timing.totalMs} мс: «${state.transcript}»")
+            else -> {
+                val message = localError
+                if (message != null) {
+                    errorDialog = message
+                    snackbar.showSnackbar(message.lineSequence().firstOrNull().orEmpty())
+                }
+            }
         }
-        if (message != null) snackbar.showSnackbar(message)
+    }
+
+    if (errorDialog != null) {
+        val details = errorDialog!!
+        AlertDialog(
+            onDismissRequest = { errorDialog = null; viewModel.clearMessage() },
+            title = { Text("Ошибка") },
+            text = {
+                Column(Modifier.fillMaxWidth().height(360.dp)) {
+                    Text(
+                        details,
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth()
+                            .verticalScroll(rememberScrollState())
+                            .testTag("error_details"),
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            fontFamily = FontFamily.Monospace,
+                            fontSize = 11.sp,
+                            lineHeight = 14.sp,
+                        ),
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton({
+                    clipboard.setText(AnnotatedString(details))
+                }) { Text("Копировать") }
+            },
+            dismissButton = {
+                TextButton({ errorDialog = null; viewModel.clearMessage() }) { Text("Закрыть") }
+            },
+        )
     }
 
     Scaffold(
