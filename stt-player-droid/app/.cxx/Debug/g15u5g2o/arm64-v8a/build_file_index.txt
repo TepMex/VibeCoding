@@ -1,0 +1,1 @@
+/Users/tepmex/Experiments/VibeCoding/stt-player-droid/app/src/main/cpp/CMakeLists.txt

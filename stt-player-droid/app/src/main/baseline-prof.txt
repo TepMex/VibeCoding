@@ -1,0 +1,4 @@
+HSPLcom/tepmex/sttplayerdroid/MainActivity;-><init>()V
+HSPLcom/tepmex/sttplayerdroid/ui/PlayerViewModel;-><init>(Landroid/app/Application;)V
+HSPLcom/tepmex/sttplayerdroid/playback/PlaybackService;->onCreate()V
+

@@ -1,0 +1,3 @@
+# ninja log v5
+0	572	1787151705230106073	CMakeFiles/tokenizer_jni.dir/tokenizer_jni.cc.o	5cea3968072cecaf
+574	825	1787151705445052848	/Users/tepmex/Experiments/VibeCoding/stt-player-droid/app/build/intermediates/cxx/Debug/g15u5g2o/obj/arm64-v8a/libtokenizer_jni.so	30f79b5c9feadb53

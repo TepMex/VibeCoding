@@ -1,0 +1,3 @@
+/Users/tepmex/Experiments/VibeCoding/stt-player-droid/app/.cxx/RelWithDebInfo/5t6n6p18/arm64-v8a/CMakeFiles/tokenizer_jni.dir
+/Users/tepmex/Experiments/VibeCoding/stt-player-droid/app/.cxx/RelWithDebInfo/5t6n6p18/arm64-v8a/CMakeFiles/edit_cache.dir
+/Users/tepmex/Experiments/VibeCoding/stt-player-droid/app/.cxx/RelWithDebInfo/5t6n6p18/arm64-v8a/CMakeFiles/rebuild_cache.dir

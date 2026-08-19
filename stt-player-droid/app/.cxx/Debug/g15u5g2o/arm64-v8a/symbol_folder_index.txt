@@ -1,0 +1,1 @@
+/Users/tepmex/Experiments/VibeCoding/stt-player-droid/app/build/intermediates/cxx/Debug/g15u5g2o/obj/arm64-v8a

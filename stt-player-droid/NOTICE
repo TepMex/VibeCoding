@@ -1,0 +1,15 @@
+STT Player Droid
+
+This product includes adapted components from Google AI Edge LiteRT Samples,
+Copyright 2026 Google LLC, licensed under the Apache License, Version 2.0:
+https://github.com/google-ai-edge/litert-samples/tree/main/samples/litert/speech_recognition
+
+This product includes tokenizers-cpp/tokenizers C API components,
+Copyright 2023 tokenizers-cpp contributors, licensed under the Apache License,
+Version 2.0.
+
+The bundled tokenizer.json is from openai/whisper-tiny and is distributed
+under the model repository's MIT license.
+
+Apache License 2.0: https://www.apache.org/licenses/LICENSE-2.0
+

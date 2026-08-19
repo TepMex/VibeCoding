@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">STT Player</string>
+    <string name="model_channel_name">Установка модели</string>
+    <string name="model_channel_description">Загрузка локальной модели Whisper Tiny</string>
+    <string name="model_downloading">Загрузка Whisper Tiny</string>
+</resources>
+
