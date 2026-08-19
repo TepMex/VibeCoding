@@ -3,9 +3,7 @@ package com.tepmex.sttplayerdroid.playback
 import android.content.ComponentName
 import android.content.Context
 import android.net.Uri
-import androidx.media3.common.MediaItem
-import androidx.media3.common.MediaMetadata
-import androidx.media3.common.MimeTypes
+import android.util.Log
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.session.MediaController
@@ -16,6 +14,7 @@ import com.tepmex.sttplayerdroid.data.LibraryDao
 import com.tepmex.sttplayerdroid.util.ErrorCode
 import com.tepmex.sttplayerdroid.util.appError
 import com.tepmex.sttplayerdroid.util.describeCause
+import com.tepmex.sttplayerdroid.util.formatErrorReport
 import com.tepmex.sttplayerdroid.util.logError
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -46,7 +45,6 @@ class PlaybackController(private val context: Context, private val libraryDao: L
     val errors: SharedFlow<String> = mutableErrors.asSharedFlow()
     val recentAudio = libraryDao.observeAudio()
     private var controller: MediaController? = null
-    private var pendingItem: Pair<MediaItem, Long>? = null
     private var lastPersistAt = 0L
 
     init {
@@ -64,11 +62,14 @@ class PlaybackController(private val context: Context, private val libraryDao: L
                             cause = error,
                         ),
                     )
-                    scope.launch { mutableErrors.emit(appError.userMessage) }
+                    scope.launch {
+                        mutableErrors.emit(
+                            formatErrorReport(appError.userMessage, appError, mapOf("stage" to "media_controller_connect")),
+                        )
+                    }
                 }
                 .getOrNull()
             controller?.addListener(listener)
-            pendingItem?.let { (item, position) -> controller?.setMediaItem(item, position); controller?.prepare(); pendingItem = null }
             update()
         }, MoreExecutors.directExecutor())
         scope.launch {
@@ -96,38 +97,13 @@ class PlaybackController(private val context: Context, private val libraryDao: L
         }
         val saved = libraryDao.audio(uri.toString())
         libraryDao.putAudio(AudioFileEntity(uri.toString(), displayName, saved?.positionMs ?: 0, saved?.durationMs ?: 0))
-        // mediaId + requestMetadata.mediaUri survive the MediaController → MediaSession binder;
-        // localConfiguration.uri is stripped and restored in PlaybackSessionCallback.
-        val item = MediaItem.Builder()
-            .setUri(uri)
-            .setMediaId(uri.toString())
-            .setMimeType(MimeTypes.AUDIO_MPEG)
-            .setRequestMetadata(
-                MediaItem.RequestMetadata.Builder().setMediaUri(uri).build(),
-            )
-            .setMediaMetadata(MediaMetadata.Builder().setTitle(displayName).build())
-            .build()
         val position = saved?.positionMs ?: 0
-        val active = controller
-        if (active == null) {
-            pendingItem = item to position
-            return
-        }
-        try {
-            active.setMediaItem(item, position)
-            active.prepare()
-        } catch (error: Exception) {
-            throw logError(
-                "PlaybackController",
-                appError(
-                    code = ErrorCode.PLAYBACK_OPEN_FAILED,
-                    userMessage = "Не удалось открыть аудиофайл. Выберите корректный MP3.",
-                    debugMessage = "setMediaItem/prepare failed for uri=$uri name=$displayName: ${describeCause(error)}",
-                    cause = error,
-                    context = mapOf("uri" to uri.toString(), "displayName" to displayName, "positionMs" to position),
-                ),
-            )
-        }
+        Log.i(TAG, "open() via service intent uri=$uri name=$displayName positionMs=$position")
+        // Open directly inside PlaybackService so prepare() does not go through MediaController.
+        // Immediate failures on every SAF MP3 pointed at setMediaItem/prepare on the controller path.
+        PlaybackService.startOpen(context, uri, displayName, position)
+        // Optimistic UI title while the service applies the item.
+        mutableState.value = mutableState.value.copy(title = displayName, uri = uri.toString(), positionMs = position)
     }
 
     fun playPause() { controller?.let { if (it.isPlaying) it.pause() else it.play() } }
@@ -138,6 +114,24 @@ class PlaybackController(private val context: Context, private val libraryDao: L
     private val listener = object : Player.Listener {
         override fun onEvents(player: Player, events: Player.Events) = update()
         override fun onPlayerError(error: PlaybackException) {
+            val player = controller
+            val mediaItem = player?.currentMediaItem
+            val extras = linkedMapOf<String, Any?>(
+                "errorCode" to error.errorCode,
+                "errorCodeName" to error.errorCodeName,
+                "errorMessage" to error.message,
+                "timestampMs" to error.timestampMs,
+                "uiUri" to mutableState.value.uri,
+                "uiTitle" to mutableState.value.title,
+                "mediaId" to mediaItem?.mediaId,
+                "localUri" to mediaItem?.localConfiguration?.uri?.toString(),
+                "requestUri" to mediaItem?.requestMetadata?.mediaUri?.toString(),
+                "mimeType" to mediaItem?.localConfiguration?.mimeType,
+                "playbackState" to player?.playbackState,
+                "playWhenReady" to player?.playWhenReady,
+                "currentPositionMs" to player?.currentPosition,
+                "durationMs" to player?.duration,
+            )
             val appError = logError(
                 "PlaybackController",
                 appError(
@@ -145,15 +139,12 @@ class PlaybackController(private val context: Context, private val libraryDao: L
                     userMessage = userMessageForPlayback(error),
                     debugMessage = "ExoPlayer error code=${error.errorCode} name=${error.errorCodeName} message=${error.message} cause=${describeCause(error.cause)}",
                     cause = error,
-                    context = mapOf(
-                        "errorCode" to error.errorCode,
-                        "errorCodeName" to error.errorCodeName,
-                        "uri" to mutableState.value.uri,
-                        "title" to mutableState.value.title,
-                    ),
+                    context = extras,
                 ),
             )
-            scope.launch { mutableErrors.emit(appError.userMessage) }
+            val report = formatErrorReport(appError.userMessage, appError, extras)
+            Log.e(TAG, report)
+            scope.launch { mutableErrors.emit(report) }
         }
     }
 
@@ -202,5 +193,9 @@ class PlaybackController(private val context: Context, private val libraryDao: L
             lastPersistAt = now
             libraryDao.savePosition(current.uri, current.positionMs, current.durationMs)
         }
+    }
+
+    private companion object {
+        const val TAG = "SttPlayerPlayback"
     }
 }
