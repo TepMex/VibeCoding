@@ -47,11 +47,13 @@ class ModelDownloadWorker(context: Context, params: WorkerParameters) : Coroutin
         val temporary = File(destination.parentFile, destination.name + ".download")
         try {
             if (runAttemptCount == 0) temporary.delete()
-            val existing = temporary.takeIf(File::exists)?.length() ?: 0L
             var lastError: AppException? = null
+            var downloaded = false
             for (url in DefaultModelManager.MODEL_URLS) {
+                val resumeFrom = temporary.takeIf(File::exists)?.length() ?: 0L
                 try {
-                    downloadTo(temporary, url, existing)
+                    downloadTo(temporary, url, resumeFrom)
+                    downloaded = true
                     lastError = null
                     break
                 } catch (error: Exception) {
@@ -65,12 +67,11 @@ class ModelDownloadWorker(context: Context, params: WorkerParameters) : Coroutin
                         mapOf("url" to url, "attempt" to runAttemptCount, "partialBytes" to temporary.length()),
                     )
                     lastError = appError
-                    // Incomplete/corrupt partial from this URL — restart for the next mirror.
-                    temporary.delete()
+                    // Keep partial bytes so the next mirror / WorkManager retry can Range-resume.
                 }
             }
-            if (lastError != null) {
-                return@withContext if (runAttemptCount < MAX_RETRIES) Result.retry() else Result.failure(errorData(lastError))
+            if (!downloaded) {
+                return@withContext if (runAttemptCount < MAX_RETRIES) Result.retry() else Result.failure(errorData(lastError!!))
             }
             val checksum = temporary.inputStream().use(Hashing::sha256)
             if (checksum != DefaultModelManager.MODEL_SHA256) {
