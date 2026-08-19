@@ -12,6 +12,11 @@ apply(from = rootProject.file("../android/sideload-signing.gradle.kts"))
 
 val autoVersionCode: Int = extra["autoVersionCode"] as Int
 val useCustomSigning: Boolean = extra["useCustomSigning"] as Boolean
+// Capture on the project before android {} — nested DSL receivers shadow `extra` on AGP 9.
+val sideloadStoreFile: File? = if (useCustomSigning) extra["sideloadStoreFile"] as File else null
+val sideloadStorePassword: String? = if (useCustomSigning) extra["sideloadStorePassword"] as String else null
+val sideloadKeyAlias: String? = if (useCustomSigning) extra["sideloadKeyAlias"] as String else null
+val sideloadKeyPassword: String? = if (useCustomSigning) extra["sideloadKeyPassword"] as String else null
 
 android {
     namespace = "com.tepmex.sttplayerdroid"
@@ -21,10 +26,10 @@ android {
     signingConfigs {
         if (useCustomSigning) {
             create("sideload") {
-                storeFile = extra["sideloadStoreFile"] as File
-                storePassword = extra["sideloadStorePassword"] as String
-                keyAlias = extra["sideloadKeyAlias"] as String
-                keyPassword = extra["sideloadKeyPassword"] as String
+                storeFile = sideloadStoreFile
+                storePassword = sideloadStorePassword
+                keyAlias = sideloadKeyAlias
+                keyPassword = sideloadKeyPassword
             }
         }
     }
