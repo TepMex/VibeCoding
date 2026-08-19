@@ -1,10 +1,12 @@
 package com.tepmex.sttplayerdroid.playback
 
 import android.content.Context
+import android.net.Uri
 import androidx.annotation.OptIn
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
+import androidx.media3.common.MimeTypes
 import androidx.media3.common.Player
 import androidx.media3.common.TrackSelectionParameters.AudioOffloadPreferences
 import androidx.media3.common.util.UnstableApi
@@ -14,6 +16,8 @@ import androidx.media3.exoplayer.audio.AudioSink
 import androidx.media3.exoplayer.audio.DefaultAudioSink
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
+import com.google.common.util.concurrent.Futures
+import com.google.common.util.concurrent.ListenableFuture
 import com.tepmex.sttplayerdroid.SttPlayerApplication
 
 @OptIn(UnstableApi::class)
@@ -49,7 +53,9 @@ class PlaybackService : MediaSessionService() {
                 override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) = capture.clear()
             })
         }
-        session = MediaSession.Builder(this, player).build()
+        session = MediaSession.Builder(this, player)
+            .setCallback(PlaybackSessionCallback)
+            .build()
     }
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? = session
@@ -63,4 +69,52 @@ class PlaybackService : MediaSessionService() {
         player.release()
         super.onDestroy()
     }
+}
+
+/**
+ * MediaController strips [MediaItem.localConfiguration] (the playable URI) when items cross the
+ * session binder — even for same-app controllers. Rebuild a playable item from mediaId /
+ * requestMetadata before handing it to ExoPlayer.
+ */
+internal object PlaybackSessionCallback : MediaSession.Callback {
+    override fun onAddMediaItems(
+        mediaSession: MediaSession,
+        controller: MediaSession.ControllerInfo,
+        mediaItems: List<MediaItem>,
+    ): ListenableFuture<List<MediaItem>> =
+        Futures.immediateFuture(mediaItems.map(::restorePlayableMediaItem))
+
+    override fun onSetMediaItems(
+        mediaSession: MediaSession,
+        controller: MediaSession.ControllerInfo,
+        mediaItems: List<MediaItem>,
+        startIndex: Int,
+        startPositionMs: Long,
+    ): ListenableFuture<MediaSession.MediaItemsWithStartPosition> =
+        Futures.immediateFuture(
+            MediaSession.MediaItemsWithStartPosition(
+                mediaItems.map(::restorePlayableMediaItem),
+                startIndex,
+                startPositionMs,
+            ),
+        )
+}
+
+internal fun restorePlayableMediaItem(item: MediaItem): MediaItem {
+    if (item.localConfiguration?.uri != null) return item
+    val uri = resolvePlaybackUri(item) ?: return item
+    return item.buildUpon()
+        .setUri(uri)
+        .setMimeType(item.localConfiguration?.mimeType ?: MimeTypes.AUDIO_MPEG)
+        .build()
+}
+
+internal fun resolvePlaybackUri(item: MediaItem): Uri? {
+    item.localConfiguration?.uri?.let { return it }
+    item.requestMetadata.mediaUri?.let { return it }
+    val mediaId = item.mediaId
+    if (mediaId.isNotBlank() && mediaId != MediaItem.DEFAULT_MEDIA_ID) {
+        return Uri.parse(mediaId)
+    }
+    return null
 }

@@ -5,6 +5,7 @@ import android.content.Context
 import android.net.Uri
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
+import androidx.media3.common.MimeTypes
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.session.MediaController
@@ -95,8 +96,17 @@ class PlaybackController(private val context: Context, private val libraryDao: L
         }
         val saved = libraryDao.audio(uri.toString())
         libraryDao.putAudio(AudioFileEntity(uri.toString(), displayName, saved?.positionMs ?: 0, saved?.durationMs ?: 0))
-        val item = MediaItem.Builder().setUri(uri).setMediaId(uri.toString())
-            .setMediaMetadata(MediaMetadata.Builder().setTitle(displayName).build()).build()
+        // mediaId + requestMetadata.mediaUri survive the MediaController → MediaSession binder;
+        // localConfiguration.uri is stripped and restored in PlaybackSessionCallback.
+        val item = MediaItem.Builder()
+            .setUri(uri)
+            .setMediaId(uri.toString())
+            .setMimeType(MimeTypes.AUDIO_MPEG)
+            .setRequestMetadata(
+                MediaItem.RequestMetadata.Builder().setMediaUri(uri).build(),
+            )
+            .setMediaMetadata(MediaMetadata.Builder().setTitle(displayName).build())
+            .build()
         val position = saved?.positionMs ?: 0
         val active = controller
         if (active == null) {
@@ -150,6 +160,8 @@ class PlaybackController(private val context: Context, private val libraryDao: L
     private fun mapPlaybackError(error: PlaybackException): ErrorCode = when (error.errorCode) {
         PlaybackException.ERROR_CODE_IO_FILE_NOT_FOUND,
         PlaybackException.ERROR_CODE_IO_NO_PERMISSION,
+        PlaybackException.ERROR_CODE_IO_UNSPECIFIED,
+        PlaybackException.ERROR_CODE_IO_READ_POSITION_OUT_OF_RANGE,
         PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED,
         PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_TIMEOUT,
         -> ErrorCode.PLAYBACK_OPEN_FAILED
