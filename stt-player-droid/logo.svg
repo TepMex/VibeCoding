@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 72 72" fill="none" role="img" aria-label="STT Player Droid">
+  <rect width="72" height="72" rx="16" fill="#315DA8"/>
+  <path d="M18 36h4v8h-4zM26 28h4v24h-4zM34 20h4v40h-4zM42 30h4v20h-4zM50 34h4v12h-4z" fill="#fff"/>
+  <circle cx="54" cy="22" r="6" fill="#fff" opacity=".9"/>
+  <path d="M51.5 22h5M54 19.5v5" stroke="#315DA8" stroke-width="1.6" stroke-linecap="round"/>
+</svg>
