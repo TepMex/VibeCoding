@@ -283,12 +283,26 @@ private fun BookOptions(document: BookDocument?, language: SttLanguage, chapterI
 
 @Composable
 private fun PlayerBar(playback: com.tepmex.sttplayerdroid.playback.PlaybackUiState, sync: SyncState, viewModel: PlayerViewModel) {
+    var scrubbing by remember { mutableStateOf(false) }
+    var scrubPositionMs by remember { mutableStateOf(0f) }
+    val sliderPosition = if (scrubbing) {
+        scrubPositionMs
+    } else {
+        playback.positionMs.toFloat().coerceAtMost(playback.durationMs.toFloat().coerceAtLeast(0f))
+    }
     Surface(shadowElevation = 8.dp) {
         Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp)) {
             Text(playback.title.ifBlank { "MP3 не выбран" }, maxLines = 1)
             Slider(
-                value = playback.positionMs.toFloat().coerceAtMost(playback.durationMs.toFloat()),
-                onValueChange = { viewModel.seekTo(it.toLong()) },
+                value = sliderPosition,
+                onValueChange = { value ->
+                    scrubbing = true
+                    scrubPositionMs = value
+                },
+                onValueChangeFinished = {
+                    viewModel.seekTo(scrubPositionMs.toLong())
+                    scrubbing = false
+                },
                 valueRange = 0f..playback.durationMs.coerceAtLeast(1).toFloat(),
                 enabled = playback.durationMs > 0,
                 modifier = Modifier.testTag("seek"),

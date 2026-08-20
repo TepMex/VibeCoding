@@ -14,18 +14,25 @@ import com.tepmex.sttplayerdroid.data.AudioFileEntity
 import com.tepmex.sttplayerdroid.data.LibraryDao
 import com.tepmex.sttplayerdroid.data.PlaybackEventEntity
 import com.tepmex.sttplayerdroid.data.PlaybackEventKind
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
 /**
- * Owns Room writes for listening progress: periodic 30s flushes, pause bookmarks, and large-seek origins.
+ * Owns Room writes for listening progress: periodic 30s flushes, pause bookmarks, and seek destinations.
  * Attached to the ExoPlayer inside [PlaybackService] so persistence works without the UI process path.
+ *
+ * Player getters must be read on the application thread; only Room I/O runs on [Dispatchers.IO].
  */
 class PlaybackProgressTracker(
     private val libraryDao: LibraryDao,
-    private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO),
+    private val scope: CoroutineScope = CoroutineScope(
+        SupervisorJob() + Dispatchers.IO + CoroutineExceptionHandler { _, error ->
+            Log.e(TAG, "PlaybackProgressTracker async failure", error)
+        },
+    ),
 ) : Player.Listener {
     private val mainHandler = Handler(Looper.getMainLooper())
     private var player: Player? = null
@@ -76,24 +83,30 @@ class PlaybackProgressTracker(
         ) {
             return
         }
+        val current = player ?: return
+        val uri = currentUri(current) ?: return
         val fromMs = oldPosition.positionMs.coerceAtLeast(0)
         val toMs = newPosition.positionMs.coerceAtLeast(0)
-        if (!PlaybackPersistencePolicy.isLargeSeek(fromMs, toMs)) return
-        val uri = currentUri(player) ?: return
-        val pausedAt = System.currentTimeMillis()
-        Log.i(TAG, "Large seek origin uri=$uri fromMs=$fromMs toMs=$toMs")
+        // Snapshot player fields on the application thread — never touch Player from Dispatchers.IO.
+        val durationMs = current.duration.coerceAtLeast(0)
+        val now = System.currentTimeMillis()
+        val largeSeek = PlaybackPersistencePolicy.isLargeSeek(fromMs, toMs)
+        if (largeSeek) {
+            Log.i(TAG, "Large seek origin uri=$uri fromMs=$fromMs toMs=$toMs")
+        }
         scope.launch {
-            libraryDao.putPlaybackEvent(
-                PlaybackEventEntity(
-                    audioUri = uri,
-                    kind = PlaybackEventKind.SEEK_ORIGIN,
-                    positionMs = fromMs,
-                    createdAt = pausedAt,
-                ),
-            )
-            // Keep resume position at the destination of the jump.
-            val duration = player?.duration?.coerceAtLeast(0) ?: 0
-            libraryDao.savePosition(uri, toMs, duration, pausedAt)
+            if (largeSeek) {
+                libraryDao.putPlaybackEvent(
+                    PlaybackEventEntity(
+                        audioUri = uri,
+                        kind = PlaybackEventKind.SEEK_ORIGIN,
+                        positionMs = fromMs,
+                        createdAt = now,
+                    ),
+                )
+            }
+            // Always persist the seek destination so in-app and notification seeks resume correctly.
+            libraryDao.savePosition(uri, toMs, durationMs, now)
             lastPeriodicPersistAt = SystemClock.elapsedRealtime()
         }
     }

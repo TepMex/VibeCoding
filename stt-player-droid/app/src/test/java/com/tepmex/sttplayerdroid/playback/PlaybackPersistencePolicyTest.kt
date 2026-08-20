@@ -45,6 +45,14 @@ class PlaybackPersistencePolicyTest {
         assertTrue(PlaybackPersistencePolicy.isLargeSeek(0, 5 * 60 * 1000L))
         assertTrue(PlaybackPersistencePolicy.isLargeSeek(20 * 60 * 1000L, 10 * 60 * 1000L))
     }
+
+    @Test
+    fun `short timeline taps are not large seeks but still require destination persist`() {
+        // Regression guard for seek crash fix: destination must be saved for every seek;
+        // only the origin bookmark is gated by the 5-minute threshold.
+        assertFalse(PlaybackPersistencePolicy.isLargeSeek(60_000, 90_000))
+        assertFalse(PlaybackPersistencePolicy.isLargeSeek(10 * 60 * 1000L, 10 * 60 * 1000L + 15_000L))
+    }
 }
 
 @RunWith(RobolectricTestRunner::class)
