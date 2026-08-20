@@ -48,4 +48,28 @@ class PcmMathTest {
         assertTrue(snap != null && snap.isNotEmpty())
         assertEquals(1_600, snap!!.size) // 100 ms at 16 kHz
     }
+
+    @Test fun `clear during concurrent handleBuffer does not throw`() {
+        val capture = CaptureAudioProcessor(targetRate = 16_000, seconds = 2)
+        capture.flush(48_000, 2, androidx.media3.common.C.ENCODING_PCM_16BIT)
+        val bytes = ByteArray(4_800 * 2 * 2)
+        val writers = (0 until 4).map {
+            Thread {
+                repeat(50) {
+                    capture.handleBuffer(
+                        java.nio.ByteBuffer.wrap(bytes).order(java.nio.ByteOrder.LITTLE_ENDIAN),
+                    )
+                }
+            }
+        }
+        val clearer = Thread {
+            repeat(100) { capture.clear() }
+        }
+        writers.forEach { it.start() }
+        clearer.start()
+        writers.forEach { it.join() }
+        clearer.join()
+        capture.clear()
+        assertNull(capture.snapshot(1))
+    }
 }

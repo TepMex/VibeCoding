@@ -17,20 +17,25 @@ class CaptureAudioProcessor(
     private val targetRate: Int = 16_000,
     seconds: Int = 10,
 ) : TeeAudioProcessor.AudioBufferSink, PcmSnapshotProvider {
+    private val lock = Any()
     private val ring = FloatRingBuffer(targetRate * seconds)
     private var sourceRate = targetRate
     private var channels = 1
     private var encoding = C.ENCODING_PCM_16BIT
     private var resampler = StreamingLinearResampler(targetRate, targetRate)
 
-    override val bufferedSeconds: Float get() = ring.size().toFloat() / targetRate
+    override val bufferedSeconds: Float
+        get() = synchronized(lock) { ring.size().toFloat() / targetRate }
 
     override fun flush(sampleRateHz: Int, channelCount: Int, encoding: Int) {
-        sourceRate = sampleRateHz.coerceAtLeast(1)
-        channels = channelCount.coerceAtLeast(1)
-        this.encoding = encoding
-        resampler = StreamingLinearResampler(sourceRate, targetRate)
-        clear()
+        synchronized(lock) {
+            sourceRate = sampleRateHz.coerceAtLeast(1)
+            channels = channelCount.coerceAtLeast(1)
+            this.encoding = encoding
+            resampler = StreamingLinearResampler(sourceRate, targetRate)
+            ring.clear()
+            resampler.reset()
+        }
         Log.i(TAG, "capture flush sampleRate=$sourceRate channels=$channels encoding=$encoding")
     }
 
@@ -42,16 +47,22 @@ class CaptureAudioProcessor(
     }
 
     private fun capture(readable: ByteBuffer) {
-        when (encoding) {
-            C.ENCODING_PCM_16BIT -> capturePcm16(readable.order(ByteOrder.LITTLE_ENDIAN))
-            C.ENCODING_PCM_FLOAT -> capturePcmFloat(readable.order(ByteOrder.nativeOrder()))
+        val encodingSnapshot: Int
+        val channelsSnapshot: Int
+        synchronized(lock) {
+            encodingSnapshot = encoding
+            channelsSnapshot = channels
+        }
+        when (encodingSnapshot) {
+            C.ENCODING_PCM_16BIT -> capturePcm16(readable.order(ByteOrder.LITTLE_ENDIAN), channelsSnapshot)
+            C.ENCODING_PCM_FLOAT -> capturePcmFloat(readable.order(ByteOrder.nativeOrder()), channelsSnapshot)
             else -> {
                 // Unknown encoding: skip capture, TeeAudioProcessor still plays audio.
             }
         }
     }
 
-    private fun capturePcm16(readable: ByteBuffer) {
+    private fun capturePcm16(readable: ByteBuffer, channels: Int) {
         val frameBytes = 2 * channels
         if (frameBytes <= 0 || readable.remaining() < frameBytes) return
         val aligned = readable.remaining() - (readable.remaining() % frameBytes)
@@ -61,10 +72,10 @@ class CaptureAudioProcessor(
         val samples = FloatArray(aligned / 2)
         for (i in samples.indices) samples[i] = readable.short / 32768f
         readable.limit(limit)
-        writeMono(samples)
+        writeMono(samples, channels)
     }
 
-    private fun capturePcmFloat(readable: ByteBuffer) {
+    private fun capturePcmFloat(readable: ByteBuffer, channels: Int) {
         val frameBytes = 4 * channels
         if (frameBytes <= 0 || readable.remaining() < frameBytes) return
         val aligned = readable.remaining() - (readable.remaining() % frameBytes)
@@ -74,18 +85,31 @@ class CaptureAudioProcessor(
         val samples = FloatArray(aligned / 4)
         for (i in samples.indices) samples[i] = readable.float
         readable.limit(limit)
-        writeMono(samples)
+        writeMono(samples, channels)
     }
 
-    private fun writeMono(interleaved: FloatArray) {
+    private fun writeMono(interleaved: FloatArray, channels: Int) {
         if (interleaved.isEmpty()) return
         if (interleaved.size % channels != 0) return
         val mono = PcmMath.downmix(interleaved, channels)
-        ring.write(resampler.process(mono))
+        synchronized(lock) {
+            ring.write(resampler.process(mono))
+        }
     }
 
-    override fun snapshot(seconds: Int): FloatArray? = ring.latest(seconds * targetRate)
-    override fun clear() { ring.clear(); resampler.reset() }
+    override fun snapshot(seconds: Int): FloatArray? =
+        synchronized(lock) { ring.latest(seconds * targetRate) }
+
+    /**
+     * Safe to call from the player application thread on seek while the audio thread may still be
+     * writing; [lock] serializes clear against [writeMono]/[StreamingLinearResampler].
+     */
+    override fun clear() {
+        synchronized(lock) {
+            ring.clear()
+            resampler.reset()
+        }
+    }
 
     fun asTeeProcessor(): TeeAudioProcessor = TeeAudioProcessor(this)
 
