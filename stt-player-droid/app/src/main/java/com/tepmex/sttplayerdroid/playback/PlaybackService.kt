@@ -1,5 +1,6 @@
 package com.tepmex.sttplayerdroid.playback
 
+import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -21,32 +22,43 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.audio.AudioSink
 import androidx.media3.exoplayer.audio.DefaultAudioSink
 import androidx.media3.session.CommandButton
+import androidx.media3.session.MediaLibraryService
+import androidx.media3.session.MediaLibraryService.MediaLibrarySession
 import androidx.media3.session.MediaSession
-import androidx.media3.session.MediaSessionService
 import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
 import com.google.common.util.concurrent.SettableFuture
+import com.tepmex.sttplayerdroid.MainActivity
 import com.tepmex.sttplayerdroid.SttPlayerApplication
 import com.tepmex.sttplayerdroid.data.LibraryDao
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import java.util.concurrent.Executors
 
+/**
+ * Media playback foreground service.
+ *
+ * Uses [MediaLibraryService] (not plain [androidx.media3.session.MediaSessionService]) so Android
+ * System UI can discover the app via the MediaBrowserService contract after reboot and restore the
+ * last session. Bluetooth headset play after process death still goes through
+ * [androidx.media3.session.MediaButtonReceiver] + [MediaSession.Callback.onPlaybackResumption].
+ */
 @OptIn(UnstableApi::class)
-class PlaybackService : MediaSessionService() {
+class PlaybackService : MediaLibraryService() {
     private lateinit var player: ExoPlayer
-    private var session: MediaSession? = null
+    private var session: MediaLibrarySession? = null
     private val mainHandler = Handler(Looper.getMainLooper())
     private var progressTracker: PlaybackProgressTracker? = null
 
     private val libraryDao: LibraryDao
-        get() = (application as SttPlayerApplication).container.database.library()
+        get() = (application as SttPlayerApplication).database.library()
 
     override fun onCreate() {
         super.onCreate()
         // Must not touch Application.container here: MediaController bind can run while
         // AppContainer is still constructing, which would re-enter the lazy initializer.
+        // Room is available via Application.database without pulling UI/model dependencies.
         val capture = (application as SttPlayerApplication).captureProcessor
         val renderersFactory = object : DefaultRenderersFactory(this) {
             override fun buildAudioSink(
@@ -91,7 +103,6 @@ class PlaybackService : MediaSessionService() {
                     }
                 })
             }
-        // Progress tracker touches Room lazily after AppContainer exists.
         mainHandler.post {
             runCatching {
                 val tracker = PlaybackProgressTracker(libraryDao)
@@ -99,11 +110,24 @@ class PlaybackService : MediaSessionService() {
                 progressTracker = tracker
             }.onFailure { Log.e(TAG, "Failed to attach PlaybackProgressTracker", it) }
         }
-        session = MediaSession.Builder(this, player)
-            .setCallback(PlaybackSessionCallback { loadResumptionPlaylist() })
+        session = MediaLibrarySession.Builder(this, player, PlaybackSessionCallback { loadResumptionPlaylist() })
+            .setSessionActivity(sessionActivityPendingIntent())
             .setMediaButtonPreferences(seekMediaButtonPreferences())
             .build()
+        setListener(MediaSessionServiceListener())
         Log.i(TAG, "PlaybackService created player=${player.hashCode()}")
+    }
+
+    private fun sessionActivityPendingIntent(): PendingIntent {
+        val intent = Intent(this, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        return PendingIntent.getActivity(
+            this,
+            /* requestCode= */ 0,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
     }
 
     private fun seekMediaButtonPreferences(): ImmutableList<CommandButton> = ImmutableList.of(
@@ -136,6 +160,11 @@ class PlaybackService : MediaSessionService() {
     }
 
     private fun openOnPlayer(uri: Uri, displayName: String, positionMs: Long) {
+        // Do not clobber headset / System UI resumption that already started playback.
+        if (shouldSkipOpenForActivePlayback(player.playWhenReady, player.isPlaying, player.currentMediaItem?.mediaId, uri)) {
+            Log.i(TAG, "openOnPlayer skipped; already playing uri=$uri")
+            return
+        }
         Log.i(TAG, "openOnPlayer uri=$uri name=$displayName positionMs=$positionMs")
         val item = MediaItem.Builder()
             .setUri(uri)
@@ -175,18 +204,30 @@ class PlaybackService : MediaSessionService() {
         )
     }
 
-    override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? = session
+    override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaLibrarySession? = session
 
     override fun onTaskRemoved(rootIntent: Intent?) {
         if (!::player.isInitialized || !player.playWhenReady) stopSelf()
     }
 
     override fun onDestroy() {
+        clearListener()
         progressTracker?.detach()
         progressTracker = null
         session?.release(); session = null
         if (::player.isInitialized) player.release()
         super.onDestroy()
+    }
+
+    /**
+     * When Android 12+ blocks starting this service into the foreground from the background,
+     * Media3 invokes this instead of crashing immediately. Headset BT play after reboot is
+     * usually exempt; other resume paths may still hit this.
+     */
+    private inner class MediaSessionServiceListener : Listener {
+        override fun onForegroundServiceStartNotAllowedException() {
+            Log.e(TAG, "Foreground service start not allowed during media resume")
+        }
     }
 
     companion object {
@@ -229,12 +270,13 @@ class PlaybackService : MediaSessionService() {
  * Rebuild a playable item if a controller somehow omitted localConfiguration.
  * Media3 1.10+ usually includes it via toBundleIncludeLocalConfiguration.
  *
- * Also implements Media3 playback resumption (System UI / Bluetooth cold start).
+ * Also implements Media3 playback resumption (System UI / Bluetooth cold start), including
+ * post-reboot System UI discovery via [MediaLibrarySession].
  */
 @OptIn(UnstableApi::class)
 internal class PlaybackSessionCallback(
     private val loadResumption: () -> MediaSession.MediaItemsWithStartPosition?,
-) : MediaSession.Callback {
+) : MediaLibrarySession.Callback {
     private val resumptionExecutor = Executors.newSingleThreadExecutor { runnable ->
         Thread(runnable, "stt-playback-resumption").apply { isDaemon = true }
     }
@@ -304,5 +346,13 @@ internal fun resolvePlaybackUri(item: MediaItem): Uri? {
     }
     return null
 }
+
+/** True when ACTION_OPEN must not replace an item that headset/System UI resumption already plays. */
+internal fun shouldSkipOpenForActivePlayback(
+    playWhenReady: Boolean,
+    isPlaying: Boolean,
+    currentMediaId: String?,
+    openUri: Uri,
+): Boolean = (playWhenReady || isPlaying) && currentMediaId == openUri.toString()
 
 private const val TAG_RESTORE = "SttPlayerPlayback"

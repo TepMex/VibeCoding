@@ -5,9 +5,11 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.MimeTypes
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -66,5 +68,42 @@ class PlaybackMediaItemRestoreTest {
         val item = MediaItem.Builder().setUri(uri).setMediaId("other").build()
         assertNotNull(item.localConfiguration)
         assertEquals(uri, resolvePlaybackUri(item))
+    }
+
+    @Test
+    fun `shouldSkipOpenForActivePlayback protects headset resumption from ACTION_OPEN race`() {
+        val uri = Uri.parse("content://com.example/audio/1")
+        assertTrue(
+            shouldSkipOpenForActivePlayback(
+                playWhenReady = true,
+                isPlaying = false,
+                currentMediaId = uri.toString(),
+                openUri = uri,
+            ),
+        )
+        assertTrue(
+            shouldSkipOpenForActivePlayback(
+                playWhenReady = false,
+                isPlaying = true,
+                currentMediaId = uri.toString(),
+                openUri = uri,
+            ),
+        )
+        assertFalse(
+            shouldSkipOpenForActivePlayback(
+                playWhenReady = false,
+                isPlaying = false,
+                currentMediaId = uri.toString(),
+                openUri = uri,
+            ),
+        )
+        assertFalse(
+            shouldSkipOpenForActivePlayback(
+                playWhenReady = true,
+                isPlaying = true,
+                currentMediaId = "content://other",
+                openUri = uri,
+            ),
+        )
     }
 }

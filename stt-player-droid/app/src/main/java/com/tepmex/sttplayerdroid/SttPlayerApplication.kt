@@ -19,6 +19,13 @@ class SttPlayerApplication : Application() {
      */
     val captureProcessor = CaptureAudioProcessor()
 
+    /**
+     * Room only — used by [com.tepmex.sttplayerdroid.playback.PlaybackService] for progress
+     * tracking and Media3 playback resumption after reboot / process death.
+     * Must not pull in [AppContainer] (UI MediaController, model, sync).
+     */
+    val database by lazy { AppDatabase.create(this) }
+
     val container by lazy { AppContainer(this) }
 
     override fun onTrimMemory(level: Int) {
@@ -30,7 +37,7 @@ class SttPlayerApplication : Application() {
 }
 
 class AppContainer(application: SttPlayerApplication) {
-    val database = AppDatabase.create(application)
+    val database = application.database
     val captureProcessor = application.captureProcessor
     val modelManager = DefaultModelManager(application)
     val locator = IndexedTextLocator(application, database.metadata())
