@@ -15,7 +15,7 @@
 ## Media
 
 - Playback в фоне и при выключенном экране; уведомление и lock-screen metadata/actions.
-- Bluetooth play/pause и seek; системные ±15 секунд.
+- Bluetooth play/pause и seek; системные ±10 секунд в уведомлении / lock screen.
 - Cold start / playback resumption: после убийства сервиса или reboot System UI / BT play поднимает `PlaybackService` через `MediaButtonReceiver` + `onPlaybackResumption` и продолжает с сохранённой позиции (если это было последнее аудиоприложение).
 - Позиция пишется в Room раз в 30 с во время play; каждая пауза — сразу с `lastPausedAt` и событием `pause`; любой seek сохраняет destination; seek ≥ 5 минут дополнительно пишет событие `seek_origin` с начальной точкой.
 - Seek по таймлайну в UI и seek из system notification / lock screen не должны ронять процесс; после перезапуска позиция = точка seek.
