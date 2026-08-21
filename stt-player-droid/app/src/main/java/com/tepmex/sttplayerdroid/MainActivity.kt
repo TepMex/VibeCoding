@@ -71,6 +71,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tepmex.sttplayerdroid.model.ModelState
+import com.tepmex.sttplayerdroid.playback.PlaybackService
 import com.tepmex.sttplayerdroid.sync.SyncState
 import com.tepmex.sttplayerdroid.ui.PlayerViewModel
 
@@ -308,9 +309,13 @@ private fun PlayerBar(playback: com.tepmex.sttplayerdroid.playback.PlaybackUiSta
                 modifier = Modifier.testTag("seek"),
             )
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
-                IconButton({ viewModel.seekBy(-15_000) }) { Icon(Icons.Default.Replay10, "Назад 15 секунд") }
+                IconButton({ viewModel.seekBy(-PlaybackService.SEEK_INCREMENT_MS) }, Modifier.testTag("seek_back_10")) {
+                    Icon(Icons.Default.Replay10, "Назад 10 секунд")
+                }
                 IconButton(viewModel::playPause, Modifier.testTag("play_pause")) { Icon(if (playback.isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow, "Воспроизведение") }
-                IconButton({ viewModel.seekBy(15_000) }) { Icon(Icons.Default.Forward10, "Вперёд 15 секунд") }
+                IconButton({ viewModel.seekBy(PlaybackService.SEEK_INCREMENT_MS) }, Modifier.testTag("seek_forward_10")) {
+                    Icon(Icons.Default.Forward10, "Вперёд 10 секунд")
+                }
                 Button(
                     viewModel::sync,
                     enabled = viewModel.canSync() && sync !is SyncState.Preparing && sync !is SyncState.Transcribing && sync !is SyncState.Searching,

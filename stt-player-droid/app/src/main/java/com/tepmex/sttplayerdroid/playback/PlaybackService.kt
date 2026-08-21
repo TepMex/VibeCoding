@@ -20,8 +20,10 @@ import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.audio.AudioSink
 import androidx.media3.exoplayer.audio.DefaultAudioSink
+import androidx.media3.session.CommandButton
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
+import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
 import com.google.common.util.concurrent.SettableFuture
@@ -61,6 +63,8 @@ class PlaybackService : MediaSessionService() {
         val attributes = AudioAttributes.Builder().setUsage(C.USAGE_MEDIA).setContentType(C.AUDIO_CONTENT_TYPE_MUSIC).build()
         player = ExoPlayer.Builder(applicationContext, renderersFactory)
             .setAudioAttributes(attributes, true)
+            .setSeekBackIncrementMs(SEEK_INCREMENT_MS)
+            .setSeekForwardIncrementMs(SEEK_INCREMENT_MS)
             .build()
             .apply {
                 trackSelectionParameters = trackSelectionParameters.buildUpon().setAudioOffloadPreferences(
@@ -97,9 +101,23 @@ class PlaybackService : MediaSessionService() {
         }
         session = MediaSession.Builder(this, player)
             .setCallback(PlaybackSessionCallback { loadResumptionPlaylist() })
+            .setMediaButtonPreferences(seekMediaButtonPreferences())
             .build()
         Log.i(TAG, "PlaybackService created player=${player.hashCode()}")
     }
+
+    private fun seekMediaButtonPreferences(): ImmutableList<CommandButton> = ImmutableList.of(
+        CommandButton.Builder(CommandButton.ICON_SKIP_BACK_10)
+            .setPlayerCommand(Player.COMMAND_SEEK_BACK)
+            .setSlots(CommandButton.SLOT_BACK)
+            .setDisplayName(getString(com.tepmex.sttplayerdroid.R.string.seek_back_10))
+            .build(),
+        CommandButton.Builder(CommandButton.ICON_SKIP_FORWARD_10)
+            .setPlayerCommand(Player.COMMAND_SEEK_FORWARD)
+            .setSlots(CommandButton.SLOT_FORWARD)
+            .setDisplayName(getString(com.tepmex.sttplayerdroid.R.string.seek_forward_10))
+            .build(),
+    )
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == ACTION_OPEN) {
@@ -175,6 +193,8 @@ class PlaybackService : MediaSessionService() {
         const val ACTION_OPEN = "com.tepmex.sttplayerdroid.playback.OPEN"
         const val EXTRA_DISPLAY_NAME = "display_name"
         const val EXTRA_POSITION_MS = "position_ms"
+        /** In-app and system notification / lock-screen seek step. */
+        const val SEEK_INCREMENT_MS = 10_000L
         private const val TAG = "SttPlayerPlayback"
 
         fun openAudioIntent(

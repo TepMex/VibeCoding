@@ -5,7 +5,7 @@
 ## Возможности
 
 - Android 12+ (`minSdk 31`), Kotlin, Compose Material 3, только `arm64-v8a`.
-- MP3 через Media3 `MediaSessionService`: фон, системное media-уведомление, lock screen и Bluetooth controls.
+- MP3 через Media3 `MediaSessionService`: фон, системное media-уведомление с ±10 с, lock screen и Bluetooth controls.
 - Playback resumption (как системный cold start): `MediaButtonReceiver` + `onPlaybackResumption` поднимают последний трек с сохранённой позиции.
 - Прогресс в Room: раз в 30 с во время play, сразу на паузе (с timestamp), на каждом seek (destination), и origin при seek ≥ 5 минут.
 - SAF без копирования аудиокниги, persistable URI, недавние книги/MP3 и восстановление позиции.
