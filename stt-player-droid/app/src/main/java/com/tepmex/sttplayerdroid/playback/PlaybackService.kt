@@ -4,6 +4,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
@@ -25,13 +26,17 @@ import androidx.media3.session.CommandButton
 import androidx.media3.session.MediaLibraryService
 import androidx.media3.session.MediaLibraryService.MediaLibrarySession
 import androidx.media3.session.MediaSession
+import androidx.media3.session.SessionCommand
+import androidx.media3.session.SessionResult
 import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
 import com.google.common.util.concurrent.SettableFuture
 import com.tepmex.sttplayerdroid.MainActivity
+import com.tepmex.sttplayerdroid.R
 import com.tepmex.sttplayerdroid.SttPlayerApplication
 import com.tepmex.sttplayerdroid.data.LibraryDao
+import com.tepmex.sttplayerdroid.sync.LockScreenFindInText
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import java.util.concurrent.Executors
@@ -50,6 +55,7 @@ class PlaybackService : MediaLibraryService() {
     private var session: MediaLibrarySession? = null
     private val mainHandler = Handler(Looper.getMainLooper())
     private var progressTracker: PlaybackProgressTracker? = null
+    private var lockScreenFindInText: LockScreenFindInText? = null
 
     private val libraryDao: LibraryDao
         get() = (application as SttPlayerApplication).database.library()
@@ -110,9 +116,20 @@ class PlaybackService : MediaLibraryService() {
                 progressTracker = tracker
             }.onFailure { Log.e(TAG, "Failed to attach PlaybackProgressTracker", it) }
         }
-        session = MediaLibrarySession.Builder(this, player, PlaybackSessionCallback { loadResumptionPlaylist() })
+        lockScreenFindInText = LockScreenFindInText(
+            application as SttPlayerApplication,
+            pausePlayer = { mainHandler.post { if (::player.isInitialized) player.pause() } },
+        )
+        session = MediaLibrarySession.Builder(
+            this,
+            player,
+            PlaybackSessionCallback(
+                loadResumption = { loadResumptionPlaylist() },
+                onFindInText = { lockScreenFindInText?.trigger() },
+            ),
+        )
             .setSessionActivity(sessionActivityPendingIntent())
-            .setMediaButtonPreferences(seekMediaButtonPreferences())
+            .setMediaButtonPreferences(mediaButtonPreferences())
             .build()
         setListener(MediaSessionServiceListener())
         Log.i(TAG, "PlaybackService created player=${player.hashCode()}")
@@ -130,16 +147,22 @@ class PlaybackService : MediaLibraryService() {
         )
     }
 
-    private fun seekMediaButtonPreferences(): ImmutableList<CommandButton> = ImmutableList.of(
+    private fun mediaButtonPreferences(): ImmutableList<CommandButton> = ImmutableList.of(
         CommandButton.Builder(CommandButton.ICON_SKIP_BACK_10)
             .setPlayerCommand(Player.COMMAND_SEEK_BACK)
             .setSlots(CommandButton.SLOT_BACK)
-            .setDisplayName(getString(com.tepmex.sttplayerdroid.R.string.seek_back_10))
+            .setDisplayName(getString(R.string.seek_back_10))
             .build(),
         CommandButton.Builder(CommandButton.ICON_SKIP_FORWARD_10)
             .setPlayerCommand(Player.COMMAND_SEEK_FORWARD)
             .setSlots(CommandButton.SLOT_FORWARD)
-            .setDisplayName(getString(com.tepmex.sttplayerdroid.R.string.seek_forward_10))
+            .setDisplayName(getString(R.string.seek_forward_10))
+            .build(),
+        CommandButton.Builder(CommandButton.ICON_UNDEFINED)
+            .setCustomIconResId(R.drawable.ic_book)
+            .setSessionCommand(SessionCommand(ACTION_FIND_IN_TEXT, Bundle.EMPTY))
+            .setSlots(CommandButton.SLOT_OVERFLOW)
+            .setDisplayName(getString(R.string.find_in_text_notification))
             .build(),
     )
 
@@ -214,6 +237,7 @@ class PlaybackService : MediaLibraryService() {
         clearListener()
         progressTracker?.detach()
         progressTracker = null
+        lockScreenFindInText = null
         session?.release(); session = null
         if (::player.isInitialized) player.release()
         super.onDestroy()
@@ -232,6 +256,8 @@ class PlaybackService : MediaLibraryService() {
 
     companion object {
         const val ACTION_OPEN = "com.tepmex.sttplayerdroid.playback.OPEN"
+        /** Custom media-notification action: STT + fuzzy find without unlocking. */
+        const val ACTION_FIND_IN_TEXT = "com.tepmex.sttplayerdroid.playback.FIND_IN_TEXT"
         const val EXTRA_DISPLAY_NAME = "display_name"
         const val EXTRA_POSITION_MS = "position_ms"
         /** In-app and system notification / lock-screen seek step. */
@@ -276,9 +302,36 @@ class PlaybackService : MediaLibraryService() {
 @OptIn(UnstableApi::class)
 internal class PlaybackSessionCallback(
     private val loadResumption: () -> MediaSession.MediaItemsWithStartPosition?,
+    private val onFindInText: () -> Unit,
 ) : MediaLibrarySession.Callback {
     private val resumptionExecutor = Executors.newSingleThreadExecutor { runnable ->
         Thread(runnable, "stt-playback-resumption").apply { isDaemon = true }
+    }
+
+    override fun onConnect(
+        session: MediaSession,
+        controller: MediaSession.ControllerInfo,
+    ): MediaSession.ConnectionResult {
+        val sessionCommands = MediaSession.ConnectionResult.DEFAULT_SESSION_AND_LIBRARY_COMMANDS.buildUpon()
+            .add(SessionCommand(PlaybackService.ACTION_FIND_IN_TEXT, Bundle.EMPTY))
+            .build()
+        return MediaSession.ConnectionResult.AcceptedResultBuilder(session)
+            .setAvailableSessionCommands(sessionCommands)
+            .build()
+    }
+
+    override fun onCustomCommand(
+        session: MediaSession,
+        controller: MediaSession.ControllerInfo,
+        customCommand: SessionCommand,
+        args: Bundle,
+    ): ListenableFuture<SessionResult> {
+        if (customCommand.customAction == PlaybackService.ACTION_FIND_IN_TEXT) {
+            Log.i(TAG_RESTORE, "FIND_IN_TEXT from ${controller.packageName}")
+            onFindInText()
+            return Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
+        }
+        return super.onCustomCommand(session, controller, customCommand, args)
     }
 
     override fun onAddMediaItems(

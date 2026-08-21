@@ -5,13 +5,15 @@
 ## Возможности
 
 - Android 12+ (`minSdk 31`), Kotlin, Compose Material 3, только `arm64-v8a`.
-- MP3 через Media3 `MediaLibraryService`: фон, системное media-уведомление с ±10 с, lock screen и Bluetooth controls.
+- MP3 через Media3 `MediaLibraryService`: фон, системное media-уведомление с ±10 с и кнопкой «книжка» (поиск в тексте), lock screen и Bluetooth controls.
+- Кнопка «книжка» в media-уведомлении / на lock screen: тот же pipeline, что «Найти в тексте», без разблокировки; найденный фрагмент (с соседним контекстом) показывается как публичное разворачиваемое BigText-уведомление.
 - Playback resumption после kill и reboot: `MediaLibraryService` + `MediaBrowserService` для System UI, `MediaButtonReceiver` + `onPlaybackResumption` для BT play; последний трек с сохранённой позиции.
 - Прогресс в Room: раз в 30 с во время play, сразу на паузе (с timestamp), на каждом seek (destination), и origin при seek ≥ 5 минут.
 - SAF без копирования аудиокниги, persistable URI, недавние книги/MP3 и восстановление позиции.
 - TXT (UTF-8/BOM), HTML, EPUB (OPF/spine) и FB2; главы и ленивый список chunks.
 - Собственный Media3 `AudioProcessor`: stereo downmix, потоковый ресемплинг 16 кГц, 10-секундный ring buffer; offload отключён.
 - Кнопка «Найти в тексте»: pause → последние 5 секунд PCM → log-Mel → LiteRT `encode`/`decode` → fuzzy search → scroll/highlight. Автовозобновления нет.
+- Тот же поиск с lock screen / media-уведомления (иконка книги) → публичное expandable-уведомление с текстом фрагмента, без разблокировки экрана.
 - Whisper Tiny INT8 загружается foreground `CoroutineWorker`, поддерживает retry/range resume, проверку SHA-256 и атомарную установку в `noBackupFilesDir/models`.
 - LiteRT 2.1.6 `CompiledModel`, CPU-only, один прогретый instance, greedy decoding до 96 tokens; English и Polski.
 - Встроенные `tokenizer.json` и arm64 Hugging Face tokenizer JNI.
