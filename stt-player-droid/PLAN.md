@@ -6,7 +6,7 @@
 
 - Kotlin, Jetpack Compose Material 3, Coroutines/Flow.
 - Android 12+, только `arm64-v8a`; package `com.tepmex.sttplayerdroid`.
-- Media3 1.10.1: ExoPlayer внутри `MediaSessionService`, фон, уведомление, Bluetooth и экран блокировки.
+- Media3 1.10.1: ExoPlayer внутри `MediaLibraryService`, фон, уведомление, Bluetooth, экран блокировки и System UI resumption после reboot.
 - Room 2.8.4 для недавних файлов, выбранных языков, позиции воспроизведения и метаданных индекса.
 - LiteRT 2.1.6 `CompiledModel API`, только CPU в v1.
 - Полностью локальная обработка после однократной загрузки модели; аналитики и серверного STT нет.

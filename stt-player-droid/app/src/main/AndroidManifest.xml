@@ -28,12 +28,18 @@
             </intent-filter>
         </activity>
 
+        <!--
+          MediaLibraryService (not plain MediaSessionService): System UI discovers the app via the
+          MediaBrowserService contract after reboot and can restore the last media session.
+          MediaButtonReceiver still handles Bluetooth headset cold-start play.
+        -->
         <service
             android:name=".playback.PlaybackService"
             android:exported="true"
             android:foregroundServiceType="mediaPlayback">
             <intent-filter>
-                <action android:name="androidx.media3.session.MediaSessionService" />
+                <action android:name="androidx.media3.session.MediaLibraryService" />
+                <action android:name="android.media.browse.MediaBrowserService" />
             </intent-filter>
         </service>
 
