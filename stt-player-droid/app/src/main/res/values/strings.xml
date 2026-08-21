@@ -5,5 +5,13 @@
     <string name="model_downloading">Загрузка Whisper Tiny</string>
     <string name="seek_back_10">Назад 10 секунд</string>
     <string name="seek_forward_10">Вперёд 10 секунд</string>
+    <string name="find_in_text_notification">Найти в тексте</string>
+    <string name="text_match_channel_name">Текст книги</string>
+    <string name="text_match_channel_description">Найденные фрагменты книги на экране блокировки</string>
+    <string name="text_match_searching_title">Ищем в тексте…</string>
+    <string name="text_match_searching_body">Распознаём последние секунды и ищем фрагмент</string>
+    <string name="text_match_found_title">Найденный фрагмент</string>
+    <string name="text_match_expand_hint">Разверните, чтобы прочитать</string>
+    <string name="text_match_error_title">Поиск не удался</string>
 </resources>
 
