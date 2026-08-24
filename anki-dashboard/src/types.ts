@@ -19,7 +19,13 @@ export interface LeechCard {
   reviewCount: number
 }
 
-export type IPlusOneSource = 'HSK 2.0' | 'HSK 3.0' | 'SUBTLEX-CH'
+type Hsk2Level = 1 | 2 | 3 | 4 | 5 | 6
+type Hsk3Level = Hsk2Level | '7–9'
+
+export type IPlusOneSource =
+  | `HSK ${Hsk2Level} (2.0)`
+  | `HSK ${Hsk3Level} (3.0)`
+  | `SUBTLEX-CH ${number}–${number}`
 
 export interface IPlusOneWord {
   word: string
