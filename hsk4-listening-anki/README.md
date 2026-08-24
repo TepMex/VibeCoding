@@ -32,7 +32,7 @@ python3 build_deck.py --limit 2
 python3 -m unittest discover -s tests
 ```
 
-JSON загружается из зафиксированной ревизии `5fe9a65173a4b9aa8aae7c513ea279b10bc64023` репозитория [Make-dream-clear/hsk4-mock-exam](https://github.com/Make-dream-clear/hsk4-mock-exam). Аудио скачивается по URL из JSON и преобразуется в моно MP3 48 кбит/с.
+JSON загружается из зафиксированной ревизии `5fe9a65173a4b9aa8aae7c513ea279b10bc64023` репозитория [Make-dream-clear/hsk4-mock-exam](https://github.com/Make-dream-clear/hsk4-mock-exam). Аудио скачивается по URL из JSON и преобразуется в моно MP3 40 кбит/с.
 
 Тесты 13–19 содержат одну непрерывную запись секции без таймкодов отдельных вопросов. Эти вопросы, а также 10 вопросов из тестов 1, 3 и 7 без покарточной записи, намеренно не включены: повторять полную экзаменационную запись на каждой карточке было бы некорректно.
 

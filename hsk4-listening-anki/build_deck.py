@@ -34,6 +34,9 @@ ALLOWED_AUDIO_HOST = "media.mandarinzone.com"
 DECK_NAME = "HSK 4 Listening"
 OUTPUT_NAME = "hsk4-listening.apkg"
 QUESTION_TYPES = {"listening_true_false", "listening_choice"}
+AUDIO_BITRATE = "40k"
+AUDIO_SAMPLE_RATE = 32000
+AUDIO_CACHE_VERSION = "mp3-mono-32khz-40k"
 
 TRUE_FALSE_MODEL_ID = 2059400101
 CHOICE_MODEL_ID = 2059400102
@@ -646,6 +649,12 @@ def collect_cards(
         "source_repository": SOURCE_REPOSITORY,
         "source_commit": SOURCE_COMMIT,
         "source_license": "CC BY-NC-SA 4.0",
+        "audio_encoding": {
+            "codec": "MP3",
+            "channels": 1,
+            "sample_rate_hz": AUDIO_SAMPLE_RATE,
+            "bitrate": AUDIO_BITRATE,
+        },
         "source_listening_questions": source_listening_total,
         "included_cards": len(cards),
         "included_by_note_type": {
@@ -721,11 +730,11 @@ def prepare_audio(card: ListeningCard, media_dir: Path) -> Path:
                 "-ac",
                 "1",
                 "-ar",
-                "32000",
+                str(AUDIO_SAMPLE_RATE),
                 "-codec:a",
                 "libmp3lame",
                 "-b:a",
-                "48k",
+                AUDIO_BITRATE,
                 str(encoded),
             ],
             check=True,
@@ -903,7 +912,9 @@ def main() -> None:
             for test_number, count in sorted(limited_tests.items())
         }
 
-    media_files = prepare_all_audio(cards, args.cache_dir / "media", args.workers)
+    media_files = prepare_all_audio(
+        cards, args.cache_dir / AUDIO_CACHE_VERSION, args.workers
+    )
     write_package(cards, media_files, args.output, report)
     print(
         f"Built {args.output} with {len(cards)} cards "
