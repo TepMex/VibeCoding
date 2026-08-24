@@ -41,6 +41,8 @@ import { IPlusOneContent } from './IPlusOneContent'
 interface Props {
   data: DashboardData
   selectedDecks: string[]
+  iPlusOneFields: Record<string, string>
+  onIPlusOneFieldChange: (deck: string, field: string) => void
 }
 
 function StatCard({
@@ -265,7 +267,12 @@ function Leeches({
   )
 }
 
-export function DashboardContent({ data, selectedDecks }: Props) {
+export function DashboardContent({
+  data,
+  selectedDecks,
+  iPlusOneFields,
+  onIPlusOneFieldChange,
+}: Props) {
   const theme = useTheme()
   const [activeTab, setActiveTab] = useState(0)
   const progress = data.totalCards
@@ -483,7 +490,12 @@ export function DashboardContent({ data, selectedDecks }: Props) {
       <Leeches data={data} selectedDecks={selectedDecks} />
         </>
       ) : (
-        <IPlusOneContent data={data} />
+        <IPlusOneContent
+          data={data}
+          selectedDecks={selectedDecks}
+          fields={iPlusOneFields}
+          onFieldChange={onIPlusOneFieldChange}
+        />
       )}
     </Stack>
   )

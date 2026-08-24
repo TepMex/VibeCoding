@@ -11,9 +11,13 @@ import {
   CardActionArea,
   CardContent,
   Chip,
+  FormControl,
   InputAdornment,
+  InputLabel,
   Link,
+  MenuItem,
   Pagination,
+  Select,
   Stack,
   TextField,
   Typography,
@@ -27,9 +31,34 @@ function plecoUrl(word: string) {
   return `plecoapi://x-callback-url/s?q=${encodeURIComponent(word)}`
 }
 
-export function IPlusOneContent({ data }: { data: DashboardData }) {
+interface Props {
+  data: DashboardData
+  selectedDecks: string[]
+  fields: Record<string, string>
+  onFieldChange: (deck: string, field: string) => void
+}
+
+export function IPlusOneContent({
+  data,
+  selectedDecks,
+  fields,
+  onFieldChange,
+}: Props) {
   const [query, setQuery] = useState('')
   const [page, setPage] = useState(1)
+  const effectiveFields = useMemo(
+    () =>
+      Object.fromEntries(
+        selectedDecks.map((deck) => {
+          const options = data.fieldOptions[deck] ?? []
+          return [
+            deck,
+            options.includes(fields[deck]) ? fields[deck] : (options[0] ?? ''),
+          ]
+        }),
+      ),
+    [data.fieldOptions, fields, selectedDecks],
+  )
   const filteredWords = useMemo(() => {
     const normalizedQuery = query.trim()
     if (!normalizedQuery) return data.iPlusOneWords
@@ -48,6 +77,50 @@ export function IPlusOneContent({ data }: { data: DashboardData }) {
 
   return (
     <Stack sx={{ gap: 2.5 }}>
+      <Card variant="outlined">
+        <CardContent>
+          <Typography variant="h6" sx={{ fontWeight: 700 }}>
+            Vocabulary fields
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Choose the field that contains Chinese words in each deck.
+          </Typography>
+          <Stack
+            direction={{ xs: 'column', sm: 'row' }}
+            sx={{ gap: 1.5, flexWrap: 'wrap' }}
+          >
+            {selectedDecks.map((deck, index) => {
+              const options = data.fieldOptions[deck] ?? []
+              const labelId = `i-plus-one-field-${index}`
+              return (
+                <FormControl
+                  size="small"
+                  key={deck}
+                  disabled={options.length === 0}
+                  sx={{ minWidth: 180, flex: { sm: '1 1 220px' } }}
+                >
+                  <InputLabel id={labelId}>{deck}</InputLabel>
+                  <Select
+                    labelId={labelId}
+                    label={deck}
+                    value={effectiveFields[deck] ?? ''}
+                    onChange={(event) =>
+                      onFieldChange(deck, event.target.value)
+                    }
+                  >
+                    {options.map((field) => (
+                      <MenuItem value={field} key={field}>
+                        {field}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              )
+            })}
+          </Stack>
+        </CardContent>
+      </Card>
+
       <Box
         sx={{
           display: 'grid',

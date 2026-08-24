@@ -285,7 +285,10 @@ function emptyDashboard(): DashboardData {
   }
 }
 
-function analyze(selectedDecks: string[]): DashboardData {
+function analyze(
+  selectedDecks: string[],
+  iPlusOneFields: Record<string, string> = {},
+): DashboardData {
   if (!db) throw new Error('Collection is not loaded')
   const deckIds = resolveDeckIds(selectedDecks)
   if (!deckIds.length) return emptyDashboard()
@@ -392,16 +395,44 @@ function analyze(selectedDecks: string[]): DashboardData {
       )
       .map((row) => Number(row[5])),
   )
-  const collectionWords = new Set<string>()
-  const wellKnownHanziSet = new Set<string>()
+  const fieldOptions: Record<string, string[]> = Object.fromEntries(
+    selectedDecks.map((name) => [name, []]),
+  )
   const noteRows = rows(`
-    SELECT DISTINCT n.id, n.sfld
+    SELECT DISTINCT n.id, c.did, n.mid, n.flds
     FROM notes n
     JOIN cards c ON c.nid = n.id
     WHERE c.did IN (${idList})
   `)
-  for (const [noteIdValue, sortField] of noteRows) {
-    const noteWords = extractHanziWords(sortField)
+  for (const [, deckIdValue, modelIdValue] of noteRows) {
+    const deckName = selectedDeckFor(
+      decks.get(Number(deckIdValue)) ?? '',
+      selectedDecks,
+    )
+    const names = fieldsByModel.get(Number(modelIdValue)) ?? []
+    fieldOptions[deckName] = [
+      ...new Set([...(fieldOptions[deckName] ?? []), ...names]),
+    ].sort()
+  }
+
+  const collectionWords = new Set<string>()
+  const wellKnownHanziSet = new Set<string>()
+  for (const [noteIdValue, deckIdValue, modelIdValue, fieldValues] of noteRows) {
+    const deckName = selectedDeckFor(
+      decks.get(Number(deckIdValue)) ?? '',
+      selectedDecks,
+    )
+    const names = fieldsByModel.get(Number(modelIdValue)) ?? []
+    const options = fieldOptions[deckName] ?? []
+    const configuredField = iPlusOneFields[deckName]
+    const fieldName = options.includes(configuredField)
+      ? configuredField
+      : options[0]
+    const fieldIndex = names.indexOf(fieldName)
+    if (fieldIndex < 0) continue
+
+    const values = String(fieldValues ?? '').split(FIELD_SEPARATOR)
+    const noteWords = extractHanziWords(values[fieldIndex])
     for (const word of noteWords) collectionWords.add(word)
     if (!wellKnownNoteIds.has(Number(noteIdValue))) continue
     for (const character of noteWords.flatMap((word) => [...word])) {
@@ -416,9 +447,6 @@ function analyze(selectedDecks: string[]): DashboardData {
     collectionWords,
   )
 
-  const fieldOptions: Record<string, string[]> = Object.fromEntries(
-    selectedDecks.map((name) => [name, []]),
-  )
   const leeches: LeechCard[] = []
   const leechRows = rows(`
     SELECT c.id, c.did, n.mid, n.flds
@@ -437,9 +465,6 @@ function analyze(selectedDecks: string[]): DashboardData {
     const fields = Object.fromEntries(
       names.map((name, index) => [name, values[index] ?? '']),
     )
-    fieldOptions[deckName] = [
-      ...new Set([...(fieldOptions[deckName] ?? []), ...names]),
-    ].sort()
     const id = Number(cardIdValue)
     leeches.push({
       id,
