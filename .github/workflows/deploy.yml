@@ -15,7 +15,7 @@ permissions:
   contents: write
 
 env:
-  ANDROID_APPS: stt-player-droid
+  ANDROID_APPS: stt-player-droid anki-dashboard
 
 jobs:
   detect:
@@ -24,6 +24,7 @@ jobs:
       has_previous: ${{ steps.plan.outputs.has_previous }}
       full_deploy: ${{ steps.plan.outputs.full_deploy }}
       build_stt_player_droid: ${{ steps.plan.outputs.build_stt_player_droid }}
+      build_anki_dashboard: ${{ steps.plan.outputs.build_anki_dashboard }}
       refresh_android_landings: ${{ steps.plan.outputs.refresh_android_landings }}
       any_android_apk_build: ${{ steps.plan.outputs.any_android_apk_build }}
       any_android_landing: ${{ steps.plan.outputs.any_android_landing }}
@@ -41,6 +42,8 @@ jobs:
           filters: |
             stt-player-droid:
               - 'stt-player-droid/**'
+            anki-dashboard:
+              - 'anki-dashboard/**'
             shared-android-signing:
               - 'android/sideload-signing.gradle.kts'
               - 'android/verify-apk-sideload-cert.sh'
@@ -67,6 +70,7 @@ jobs:
           FULL_DEPLOY_INPUT: ${{ github.event_name == 'workflow_dispatch' && inputs.full_deploy }}
           HAS_PREVIOUS: ${{ steps.previous.outcome == 'success' }}
           CHANGED_STT_PLAYER_DROID: ${{ steps.changes.outputs.stt-player-droid }}
+          CHANGED_ANKI_DASHBOARD: ${{ steps.changes.outputs.anki-dashboard }}
           CHANGED_ANDROID_SIGNING: ${{ steps.changes.outputs.shared-android-signing }}
           CHANGED_ANDROID_LANDING: ${{ steps.changes.outputs.shared-android-landing }}
           CHANGED_SCRIPTS: ${{ steps.changes.outputs.shared-scripts }}
@@ -88,14 +92,18 @@ jobs:
           fi
 
           build_stt_player_droid=false
+          build_anki_dashboard=false
           refresh_android_landings=false
 
           if $full_deploy; then
             build_stt_player_droid=true
+            build_anki_dashboard=true
           else
             is_true "$CHANGED_STT_PLAYER_DROID" && build_stt_player_droid=true
+            is_true "$CHANGED_ANKI_DASHBOARD" && build_anki_dashboard=true
             if is_true "$CHANGED_ANDROID_SIGNING"; then
               build_stt_player_droid=true
+              build_anki_dashboard=true
             fi
             if is_true "$CHANGED_ANDROID_LANDING" || is_true "$CHANGED_SCRIPTS"; then
               refresh_android_landings=true
@@ -104,6 +112,7 @@ jobs:
 
           any_android_apk_build=false
           $build_stt_player_droid && any_android_apk_build=true
+          $build_anki_dashboard && any_android_apk_build=true
 
           any_android_landing=false
           $any_android_apk_build || $refresh_android_landings && any_android_landing=true
@@ -112,6 +121,7 @@ jobs:
             echo "has_previous=$HAS_PREVIOUS"
             echo "full_deploy=$full_deploy"
             echo "build_stt_player_droid=$build_stt_player_droid"
+            echo "build_anki_dashboard=$build_anki_dashboard"
             echo "refresh_android_landings=$refresh_android_landings"
             echo "any_android_apk_build=$any_android_apk_build"
             echo "any_android_landing=$any_android_landing"
@@ -142,6 +152,8 @@ jobs:
       - name: Log deploy plan
         run: |
           echo "full_deploy=${{ needs.detect.outputs.full_deploy }}"
+          echo "build_stt_player_droid=${{ needs.detect.outputs.build_stt_player_droid }}"
+          echo "build_anki_dashboard=${{ needs.detect.outputs.build_anki_dashboard }}"
           echo "any_android_apk_build=${{ needs.detect.outputs.any_android_apk_build }}"
           echo "refresh_android_landings=${{ needs.detect.outputs.refresh_android_landings }}"
 
@@ -182,10 +194,27 @@ jobs:
         working-directory: stt-player-droid
         run: chmod +x gradlew && ./gradlew --no-daemon --stacktrace assembleRelease
 
+      - name: Build Anki Dashboard web app
+        if: needs.detect.outputs.build_anki_dashboard == 'true' || needs.detect.outputs.refresh_android_landings == 'true'
+        working-directory: anki-dashboard
+        run: |
+          bun install --frozen-lockfile
+          bun run build
+
+      - name: Build Anki Dashboard APK
+        if: needs.detect.outputs.build_anki_dashboard == 'true'
+        working-directory: anki-dashboard
+        run: |
+          bunx cap sync android
+          chmod +x android/gradlew
+          cd android
+          ./gradlew --no-daemon --stacktrace assembleRelease
+
       - name: Verify APK sideload signing
         if: needs.detect.outputs.any_android_apk_build == 'true'
         env:
           BUILD_STT_PLAYER_DROID: ${{ needs.detect.outputs.build_stt_player_droid }}
+          BUILD_ANKI_DASHBOARD: ${{ needs.detect.outputs.build_anki_dashboard }}
         run: |
           set -euo pipefail
           chmod +x android/verify-apk-sideload-cert.sh
@@ -193,11 +222,15 @@ jobs:
           if is_true "$BUILD_STT_PLAYER_DROID"; then
             android/verify-apk-sideload-cert.sh stt-player-droid/app/build/outputs/apk/release/app-release.apk
           fi
+          if is_true "$BUILD_ANKI_DASHBOARD"; then
+            android/verify-apk-sideload-cert.sh anki-dashboard/android/app/build/outputs/apk/release/app-release.apk
+          fi
 
       - name: Prepare GitHub Pages site
         env:
           HAS_PREVIOUS: ${{ needs.detect.outputs.has_previous }}
           BUILD_STT_PLAYER_DROID: ${{ needs.detect.outputs.build_stt_player_droid }}
+          BUILD_ANKI_DASHBOARD: ${{ needs.detect.outputs.build_anki_dashboard }}
           REFRESH_ANDROID_LANDINGS: ${{ needs.detect.outputs.refresh_android_landings }}
         run: |
           set -euo pipefail
@@ -224,14 +257,22 @@ jobs:
           copy_android_landing() {
             local app="$1"
             mkdir -p "deploy/$app"
-            cp -r "$app/site/." "deploy/$app/"
-            cp android/landing/styles.css "deploy/$app/styles.css"
+            if [[ "$app" == "anki-dashboard" ]]; then
+              cp -r "$app/dist/." "deploy/$app/"
+            else
+              cp -r "$app/site/." "deploy/$app/"
+              cp android/landing/styles.css "deploy/$app/styles.css"
+            fi
           }
 
           copy_android_apk() {
             local app="$1"
             local apk_name="$1.apk"
-            cp "$app/app/build/outputs/apk/release/app-release.apk" "deploy/$app/$apk_name"
+            if [[ "$app" == "anki-dashboard" ]]; then
+              cp "$app/android/app/build/outputs/apk/release/app-release.apk" "deploy/$app/$apk_name"
+            else
+              cp "$app/app/build/outputs/apk/release/app-release.apk" "deploy/$app/$apk_name"
+            fi
           }
 
           # Mirror Whisper Tiny next to the APK so the app can download without Hugging Face.
@@ -264,15 +305,18 @@ jobs:
           android_should_build() {
             case "$1" in
               stt-player-droid) is_true "$BUILD_STT_PLAYER_DROID" ;;
+              anki-dashboard) is_true "$BUILD_ANKI_DASHBOARD" ;;
               *) return 1 ;;
             esac
           }
 
-          for app in stt-player-droid; do
+          for app in stt-player-droid anki-dashboard; do
             if android_should_build "$app"; then
               copy_android_landing "$app"
               copy_android_apk "$app"
-              mirror_stt_player_droid_model
+              if [[ "$app" == "stt-player-droid" ]]; then
+                mirror_stt_player_droid_model
+              fi
             elif is_true "$REFRESH_ANDROID_LANDINGS"; then
               copy_android_landing "$app"
               apk_file="deploy/$app/$app.apk"
@@ -280,7 +324,9 @@ jobs:
                 echo "Missing APK for $app during landing refresh" >&2
                 exit 1
               fi
-              mirror_stt_player_droid_model
+              if [[ "$app" == "stt-player-droid" ]]; then
+                mirror_stt_player_droid_model
+              fi
             else
               require_dir "$app"
               apk_file="deploy/$app/$app.apk"
@@ -288,8 +334,10 @@ jobs:
                 echo "Missing APK for $app" >&2
                 exit 1
               fi
-              # Keep / refresh model mirror even when APK is reused from previous gh-pages.
-              mirror_stt_player_droid_model
+              if [[ "$app" == "stt-player-droid" ]]; then
+                # Keep / refresh model mirror even when APK is reused from previous gh-pages.
+                mirror_stt_player_droid_model
+              fi
             fi
           done
 
@@ -309,6 +357,7 @@ jobs:
             <h1>VibeCoding</h1>
             <ul>
               <li><a href="stt-player-droid/">STT Player Droid</a></li>
+              <li><a href="anki-dashboard/">Anki Dashboard</a></li>
             </ul>
           </body>
           </html>
