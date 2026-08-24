@@ -2,9 +2,7 @@
 
 import initSqlJs, { type Database, type SqlValue } from 'sql.js'
 import wasmUrl from 'sql.js/dist/sql-wasm.wasm?url'
-import hsk2Words from '../data/cjk-lists/hsk2-words.json'
-import hsk3Words from '../data/cjk-lists/hsk3-words.json'
-import subtlexChWords from '../data/cjk-lists/subtlex-ch-words.json'
+import iPlusOneLists from '../data/cjk-lists/i-plus-one-lists.json'
 import type {
   CollectionMetadata,
   DashboardData,
@@ -26,11 +24,10 @@ const FIELD_SEPARATOR = '\u001f'
 const I_PLUS_ONE_LISTS: ReadonlyArray<{
   source: IPlusOneSource
   words: readonly string[]
-}> = [
-  { source: 'HSK 2.0', words: hsk2Words },
-  { source: 'HSK 3.0', words: hsk3Words },
-  { source: 'SUBTLEX-CH', words: subtlexChWords },
-]
+}> = iPlusOneLists.map(({ source, words }) => ({
+  source: source as IPlusOneSource,
+  words,
+}))
 
 function extractHanziWords(value: unknown) {
   return String(value ?? '').match(/\p{Script=Han}+/gu) ?? []

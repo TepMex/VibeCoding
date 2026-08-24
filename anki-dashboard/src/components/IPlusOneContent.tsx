@@ -292,9 +292,9 @@ export function IPlusOneContent({
       )}
 
       <Stack direction="row" sx={{ gap: 1, flexWrap: 'wrap' }}>
-        <Chip label="HSK 2.0" size="small" variant="outlined" />
-        <Chip label="HSK 3.0" size="small" variant="outlined" />
-        <Chip label="SUBTLEX-CH top 10,000" size="small" variant="outlined" />
+        <Chip label="HSK 1–6 (2.0)" size="small" variant="outlined" />
+        <Chip label="HSK 1–6, 7–9 (3.0)" size="small" variant="outlined" />
+        <Chip label="SUBTLEX-CH ranks 1–10,000" size="small" variant="outlined" />
       </Stack>
       <Typography variant="caption" color="text.secondary">
         Lists from{' '}
