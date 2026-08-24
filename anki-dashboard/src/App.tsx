@@ -56,6 +56,7 @@ const SyncDialog = lazy(() =>
 
 const SELECTED_DECKS_KEY = 'anki-dashboard.selected-decks'
 const SOURCE_LABEL_KEY = 'anki-dashboard.source-label'
+const I_PLUS_ONE_FIELDS_KEY = 'anki-dashboard.i-plus-one-fields'
 
 const theme = createTheme({
   colorSchemes: { dark: true },
@@ -96,6 +97,16 @@ function readSelectedDecks() {
   }
 }
 
+function readIPlusOneFields() {
+  try {
+    return JSON.parse(
+      localStorage.getItem(I_PLUS_ONE_FIELDS_KEY) ?? '{}',
+    ) as Record<string, string>
+  } catch {
+    return {}
+  }
+}
+
 function App() {
   const [metadata, setMetadata] = useState<CollectionMetadata | null>(null)
   const [dashboard, setDashboard] = useState<DashboardData | null>(null)
@@ -108,6 +119,7 @@ function App() {
   const [sourceLabel, setSourceLabel] = useState(
     () => localStorage.getItem(SOURCE_LABEL_KEY) ?? '',
   )
+  const [iPlusOneFields, setIPlusOneFields] = useState(readIPlusOneFields)
 
   const refreshSyncStatus = useCallback(async () => {
     setSyncStatus(await getSyncStatus())
@@ -176,7 +188,7 @@ function App() {
     let cancelled = false
     setLoadingDashboard(true)
     getCollectionWorker()
-      .analyze(selectedDecks)
+      .analyze(selectedDecks, iPlusOneFields)
       .then((result) => {
         if (!cancelled) {
           setDashboard(result)
@@ -194,7 +206,11 @@ function App() {
     return () => {
       cancelled = true
     }
-  }, [metadata, selectedDecks])
+  }, [iPlusOneFields, metadata, selectedDecks])
+
+  useEffect(() => {
+    localStorage.setItem(I_PLUS_ONE_FIELDS_KEY, JSON.stringify(iPlusOneFields))
+  }, [iPlusOneFields])
 
   const deckNames = useMemo(
     () => metadata?.decks.map((deck) => deck.name) ?? [],
@@ -350,6 +366,13 @@ function App() {
                   <DashboardContent
                     data={dashboard}
                     selectedDecks={selectedDecks}
+                    iPlusOneFields={iPlusOneFields}
+                    onIPlusOneFieldChange={(deck, field) =>
+                      setIPlusOneFields((current) => ({
+                        ...current,
+                        [deck]: field,
+                      }))
+                    }
                   />
                 </Suspense>
               ) : null}

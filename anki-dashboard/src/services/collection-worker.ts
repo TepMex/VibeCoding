@@ -54,8 +54,11 @@ class CollectionWorker {
     return this.request('loadCollection', [buffer], [buffer])
   }
 
-  analyze(selectedDecks: string[]): Promise<DashboardData> {
-    return this.request('analyze', [selectedDecks])
+  analyze(
+    selectedDecks: string[],
+    iPlusOneFields: Record<string, string>,
+  ): Promise<DashboardData> {
+    return this.request('analyze', [selectedDecks, iPlusOneFields])
   }
 
   terminate() {
