@@ -37,6 +37,7 @@ QUESTION_TYPES = {"listening_true_false", "listening_choice"}
 AUDIO_BITRATE = "40k"
 AUDIO_SAMPLE_RATE = 32000
 AUDIO_CACHE_VERSION = "mp3-mono-32khz-40k"
+GITHUB_MAX_FILE_BYTES = 100 * 1024 * 1024
 
 TRUE_FALSE_MODEL_ID = 2059400101
 CHOICE_MODEL_ID = 2059400102
@@ -847,6 +848,11 @@ def write_package(
     package = genanki.Package(list(decks.values()))
     package.media_files = [str(path) for path in media_files]
     package.write_to_file(str(output))
+    if output.stat().st_size >= GITHUB_MAX_FILE_BYTES:
+        raise RuntimeError(
+            f"{output} is {output.stat().st_size} bytes and exceeds GitHub's "
+            f"{GITHUB_MAX_FILE_BYTES}-byte per-file limit"
+        )
     report["output_file"] = output.name
     report["output_bytes"] = output.stat().st_size
     report_path = output.with_suffix(".report.json")
