@@ -660,8 +660,23 @@ def collect_cards(
     return cards, report
 
 
+def encode_url(url: str) -> str:
+    parsed_url = urllib.parse.urlsplit(url)
+    return urllib.parse.urlunsplit(
+        (
+            parsed_url.scheme,
+            parsed_url.netloc,
+            urllib.parse.quote(urllib.parse.unquote(parsed_url.path), safe="/:@"),
+            parsed_url.query,
+            parsed_url.fragment,
+        )
+    )
+
+
 def download_file(url: str, destination: Path) -> None:
-    request = urllib.request.Request(url, headers={"User-Agent": "VibeCoding-HSK4-Anki/1.0"})
+    request = urllib.request.Request(
+        encode_url(url), headers={"User-Agent": "VibeCoding-HSK4-Anki/1.0"}
+    )
     last_error: Exception | None = None
     for attempt in range(4):
         try:

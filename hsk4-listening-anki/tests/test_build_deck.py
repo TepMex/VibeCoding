@@ -44,6 +44,13 @@ def source_test() -> dict:
 
 
 class BuildDeckTests(unittest.TestCase):
+    def test_encodes_non_ascii_audio_paths_without_double_encoding(self) -> None:
+        raw = "https://media.mandarinzone.com/audio/41002-38题.mp3"
+        encoded = "https://media.mandarinzone.com/audio/41002-38%E9%A2%98.mp3"
+
+        self.assertEqual(build_deck.encode_url(raw), encoded)
+        self.assertEqual(build_deck.encode_url(encoded), encoded)
+
     def test_collects_only_listening_cards_with_per_question_audio(self) -> None:
         no_audio = source_test()
         no_audio["_collection_test_number"] = 13
