@@ -17,6 +17,8 @@ import {
   MenuItem,
   Select,
   Stack,
+  Tab,
+  Tabs,
   Typography,
   useTheme,
 } from '@mui/material'
@@ -34,6 +36,7 @@ import {
   YAxis,
 } from 'recharts'
 import type { DashboardData, DayCount } from '../types'
+import { IPlusOneContent } from './IPlusOneContent'
 
 interface Props {
   data: DashboardData
@@ -264,6 +267,7 @@ function Leeches({
 
 export function DashboardContent({ data, selectedDecks }: Props) {
   const theme = useTheme()
+  const [activeTab, setActiveTab] = useState(0)
   const progress = data.totalCards
     ? (data.memorized / data.totalCards) * 100
     : 0
@@ -273,6 +277,20 @@ export function DashboardContent({ data, selectedDecks }: Props) {
 
   return (
     <Stack sx={{ gap: 2.5 }}>
+      <Card variant="outlined">
+        <Tabs
+          value={activeTab}
+          onChange={(_, value: number) => setActiveTab(value)}
+          variant="fullWidth"
+          aria-label="Dashboard sections"
+        >
+          <Tab label="Dashboard" />
+          <Tab label={`i + 1 (${data.iPlusOneWords.length})`} />
+        </Tabs>
+      </Card>
+
+      {activeTab === 0 ? (
+        <>
       <Box
         sx={{
           display: 'grid',
@@ -463,6 +481,10 @@ export function DashboardContent({ data, selectedDecks }: Props) {
       )}
 
       <Leeches data={data} selectedDecks={selectedDecks} />
+        </>
+      ) : (
+        <IPlusOneContent data={data} />
+      )}
     </Stack>
   )
 }

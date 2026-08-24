@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "sync:cjk-lists": "node scripts/sync-cjk-lists.mjs",
     "android:sync": "bun run build && cap sync android",
     "android:debug": "bun run android:sync && cd android && ./gradlew assembleDebug",
     "android:release": "bun run android:sync && cd android && ./gradlew assembleRelease",

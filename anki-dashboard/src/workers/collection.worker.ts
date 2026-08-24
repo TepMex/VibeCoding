@@ -2,11 +2,16 @@
 
 import initSqlJs, { type Database, type SqlValue } from 'sql.js'
 import wasmUrl from 'sql.js/dist/sql-wasm.wasm?url'
+import hsk2Words from '../data/cjk-lists/hsk2-words.json'
+import hsk3Words from '../data/cjk-lists/hsk3-words.json'
+import subtlexChWords from '../data/cjk-lists/subtlex-ch-words.json'
 import type {
   CollectionMetadata,
   DashboardData,
   DayCount,
   DeckSummary,
+  IPlusOneSource,
+  IPlusOneWord,
   LeechCard,
 } from '../types'
 
@@ -18,6 +23,45 @@ let revlogHasType = false
 
 const DAY_MS = 86_400_000
 const FIELD_SEPARATOR = '\u001f'
+const I_PLUS_ONE_LISTS: ReadonlyArray<{
+  source: IPlusOneSource
+  words: readonly string[]
+}> = [
+  { source: 'HSK 2.0', words: hsk2Words },
+  { source: 'HSK 3.0', words: hsk3Words },
+  { source: 'SUBTLEX-CH', words: subtlexChWords },
+]
+
+function extractHanziWords(value: unknown) {
+  return String(value ?? '').match(/\p{Script=Han}+/gu) ?? []
+}
+
+function buildIPlusOneWords(
+  wellKnownHanzi: Set<string>,
+  collectionWords: Set<string>,
+): IPlusOneWord[] {
+  const candidates = new Map<string, IPlusOneWord>()
+
+  for (const { source, words } of I_PLUS_ONE_LISTS) {
+    for (const word of words) {
+      if (
+        collectionWords.has(word) ||
+        ![...word].every((character) => wellKnownHanzi.has(character))
+      ) {
+        continue
+      }
+
+      const existing = candidates.get(word)
+      if (existing) {
+        existing.sources.push(source)
+      } else {
+        candidates.set(word, { word, sources: [source] })
+      }
+    }
+  }
+
+  return [...candidates.values()]
+}
 
 function rows(sql: string): SqlValue[][] {
   if (!db) throw new Error('Collection is not loaded')
@@ -236,6 +280,8 @@ function emptyDashboard(): DashboardData {
     mistakeHeatmap: [],
     leeches: [],
     fieldOptions: {},
+    wellKnownHanzi: [],
+    iPlusOneWords: [],
   }
 }
 
@@ -246,7 +292,7 @@ function analyze(selectedDecks: string[]): DashboardData {
   const idList = deckIds.join(',')
 
   const cardRows = rows(
-    `SELECT id, did, ivl, queue, due FROM cards WHERE did IN (${idList})`,
+    `SELECT id, did, ivl, queue, due, nid FROM cards WHERE did IN (${idList})`,
   )
   const totalCards = cardRows.length
   const cardIds = new Set(cardRows.map((row) => Number(row[0])))
@@ -338,6 +384,37 @@ function analyze(selectedDecks: string[]): DashboardData {
   const longMemory = [...reviewsByCard.values()].filter(
     (cardReviews) => (cardReviews.at(-1)?.interval ?? 0) > 360,
   ).length
+  const wellKnownNoteIds = new Set(
+    cardRows
+      .filter(
+        (row) =>
+          (reviewsByCard.get(Number(row[0]))?.at(-1)?.interval ?? 0) > 360,
+      )
+      .map((row) => Number(row[5])),
+  )
+  const collectionWords = new Set<string>()
+  const wellKnownHanziSet = new Set<string>()
+  const noteRows = rows(`
+    SELECT DISTINCT n.id, n.sfld
+    FROM notes n
+    JOIN cards c ON c.nid = n.id
+    WHERE c.did IN (${idList})
+  `)
+  for (const [noteIdValue, sortField] of noteRows) {
+    const noteWords = extractHanziWords(sortField)
+    for (const word of noteWords) collectionWords.add(word)
+    if (!wellKnownNoteIds.has(Number(noteIdValue))) continue
+    for (const character of noteWords.flatMap((word) => [...word])) {
+      wellKnownHanziSet.add(character)
+    }
+  }
+  const wellKnownHanzi = [...wellKnownHanziSet].sort((a, b) =>
+    a.localeCompare(b, 'zh-Hans'),
+  )
+  const iPlusOneWords = buildIPlusOneWords(
+    wellKnownHanziSet,
+    collectionWords,
+  )
 
   const fieldOptions: Record<string, string[]> = Object.fromEntries(
     selectedDecks.map((name) => [name, []]),
@@ -391,6 +468,8 @@ function analyze(selectedDecks: string[]): DashboardData {
     mistakeHeatmap: heatmapDays.map((day) => [day, mistakeDays.get(day) ?? 0]),
     leeches: leeches.sort((a, b) => b.reviewCount - a.reviewCount),
     fieldOptions,
+    wellKnownHanzi,
+    iPlusOneWords,
   }
 }
 
