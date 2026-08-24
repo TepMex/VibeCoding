@@ -18,7 +18,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material'
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import type { DashboardData } from '../types'
 
 const PAGE_SIZE = 60
@@ -40,18 +40,11 @@ export function IPlusOneContent({ data }: { data: DashboardData }) {
     )
   }, [data.iPlusOneWords, query])
   const pageCount = Math.max(1, Math.ceil(filteredWords.length / PAGE_SIZE))
+  const currentPage = Math.min(page, pageCount)
   const visibleWords = filteredWords.slice(
-    (page - 1) * PAGE_SIZE,
-    page * PAGE_SIZE,
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE,
   )
-
-  useEffect(() => {
-    setPage(1)
-  }, [query])
-
-  useEffect(() => {
-    if (page > pageCount) setPage(pageCount)
-  }, [page, pageCount])
 
   return (
     <Stack sx={{ gap: 2.5 }}>
@@ -128,7 +121,10 @@ export function IPlusOneContent({ data }: { data: DashboardData }) {
       <TextField
         label="Search i + 1 words"
         value={query}
-        onChange={(event) => setQuery(event.target.value)}
+        onChange={(event) => {
+          setQuery(event.target.value)
+          setPage(1)
+        }}
         fullWidth
         slotProps={{
           input: {
@@ -203,7 +199,7 @@ export function IPlusOneContent({ data }: { data: DashboardData }) {
             <Stack sx={{ alignItems: 'center' }}>
               <Pagination
                 count={pageCount}
-                page={page}
+                page={currentPage}
                 onChange={(_, nextPage) => {
                   setPage(nextPage)
                   window.scrollTo({ top: 0, behavior: 'smooth' })
