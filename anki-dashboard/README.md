@@ -11,6 +11,8 @@ runs on the web and in the signed Android APK.
 - Deck and subdeck selection, retention, review speed, study time, long-memory
   cards, current/historical review debt, review/mistake heatmaps, vocabulary
   charts, and configurable leech fields.
+- An i + 1 vocabulary tab built from well-known hanzi and HSK 2.0, HSK 3.0,
+  and SUBTLEX-CH lists, with one-tap Pleco lookups.
 - Browser import of `collection.anki2`; direct AnkiWeb sync stays native because
   AnkiWeb does not allow browser CORS requests.
 - Material UI responsive layout, dark mode, and Android-first sizing.
@@ -49,3 +51,8 @@ The deploy workflow publishes both artifacts under:
 The AnkiWeb sync flow is adapted from the MIT-licensed
 `CloudAgenticCoding/anki-dashboard-apk` implementation. The dashboard is based
 on `TepMex/anki-dashboard`.
+
+Chinese vocabulary lists come from
+[`TepMex/cjk-lists`](https://github.com/TepMex/cjk-lists). SUBTLEX-CH data is
+from Cai, Q., & Brysbaert, M. (2010), *PLOS ONE*, 5(6), e10729
+([CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)).

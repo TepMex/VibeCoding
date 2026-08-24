@@ -19,6 +19,13 @@ export interface LeechCard {
   reviewCount: number
 }
 
+export type IPlusOneSource = 'HSK 2.0' | 'HSK 3.0' | 'SUBTLEX-CH'
+
+export interface IPlusOneWord {
+  word: string
+  sources: IPlusOneSource[]
+}
+
 export interface DashboardData {
   totalCards: number
   memorized: number
@@ -35,6 +42,8 @@ export interface DashboardData {
   mistakeHeatmap: DayCount[]
   leeches: LeechCard[]
   fieldOptions: Record<string, string[]>
+  wellKnownHanzi: string[]
+  iPlusOneWords: IPlusOneWord[]
 }
 
 export interface SyncStatus {
