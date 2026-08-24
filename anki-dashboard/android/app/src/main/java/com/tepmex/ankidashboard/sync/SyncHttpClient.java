@@ -56,9 +56,7 @@ public final class SyncHttpClient {
     }
 
     public String login(String username, String password) throws IOException {
-        JSONObject body = new JSONObject();
-        body.put("u", username);
-        body.put("p", password);
+        JSONObject body = jsonObject("u", username, "p", password);
         String text = new String(
             post("hostKey", "login", body, false, null),
             StandardCharsets.UTF_8
@@ -87,9 +85,7 @@ public final class SyncHttpClient {
         if (hkey.isBlank()) {
             throw error("meta", "meta", "Missing AnkiWeb session", null, null, null);
         }
-        JSONObject body = new JSONObject();
-        body.put("v", SYNC_VERSION);
-        body.put("cv", CLIENT_VERSION);
+        JSONObject body = jsonObject("v", SYNC_VERSION, "cv", CLIENT_VERSION);
         String text = new String(post("meta", "meta", body, false, null), StandardCharsets.UTF_8);
         try {
             JSONObject result = new JSONObject(text);
@@ -119,11 +115,16 @@ public final class SyncHttpClient {
         while (true) {
             hostChangedOnLastRequest = false;
             String requestUrl = baseUrl + "sync/" + method;
-            JSONObject syncHeader = new JSONObject();
-            syncHeader.put("v", SYNC_VERSION);
-            syncHeader.put("k", hkey);
-            syncHeader.put("s", useSession ? sessionKey : "");
-            syncHeader.put("c", CLIENT_VERSION);
+            JSONObject syncHeader = jsonObject(
+                "v",
+                SYNC_VERSION,
+                "k",
+                hkey,
+                "s",
+                useSession ? sessionKey : "",
+                "c",
+                CLIENT_VERSION
+            );
 
             Request request = new Request.Builder()
                 .url(requestUrl)
@@ -374,5 +375,17 @@ public final class SyncHttpClient {
 
     private static String truncate(String value, int max) {
         return value.length() <= max ? value : value.substring(0, max);
+    }
+
+    private static JSONObject jsonObject(Object... pairs) throws IOException {
+        JSONObject result = new JSONObject();
+        try {
+            for (int index = 0; index < pairs.length; index += 2) {
+                result.put(String.valueOf(pairs[index]), pairs[index + 1]);
+            }
+            return result;
+        } catch (JSONException exception) {
+            throw new IOException("Cannot encode AnkiWeb sync request", exception);
+        }
     }
 }

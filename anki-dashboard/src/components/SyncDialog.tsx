@@ -15,7 +15,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import {
   DEFAULT_ENDPOINT,
   isNative,
@@ -48,21 +48,12 @@ export function SyncDialog({
   onCollection,
   onStatusChanged,
 }: Props) {
-  const [username, setUsername] = useState('')
+  const [username, setUsername] = useState(status.username)
   const [password, setPassword] = useState('')
-  const [endpoint, setEndpoint] = useState(DEFAULT_ENDPOINT)
+  const [endpoint, setEndpoint] = useState(status.endpoint || DEFAULT_ENDPOINT)
   const [progress, setProgress] = useState<SyncProgress | null>(null)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
-
-  useEffect(() => {
-    if (!open) return
-    setUsername(status.username)
-    setEndpoint(status.endpoint || DEFAULT_ENDPOINT)
-    setPassword('')
-    setError('')
-    setProgress(null)
-  }, [open, status])
 
   const sync = async () => {
     setBusy(true)
@@ -117,7 +108,7 @@ export function SyncDialog({
     <Dialog open={open} onClose={busy ? undefined : onClose} fullWidth maxWidth="sm">
       <DialogTitle>Collection source</DialogTitle>
       <DialogContent>
-        <Stack gap={2} sx={{ pt: 1 }}>
+        <Stack sx={{ gap: 2, pt: 1 }}>
           <Alert severity="info">
             Sync is download-only. The app never uploads changes to AnkiWeb and
             never stores your password.
@@ -160,7 +151,7 @@ export function SyncDialog({
             </Typography>
           )}
           {progress && (
-            <Stack gap={0.75}>
+            <Stack sx={{ gap: 0.75 }}>
               <Typography variant="body2">{progressLabel(progress)}</Typography>
               <LinearProgress
                 variant={progress.total ? 'determinate' : 'indeterminate'}

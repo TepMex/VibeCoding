@@ -20,7 +20,7 @@ import {
   Typography,
   useTheme,
 } from '@mui/material'
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import {
   Area,
   Bar,
@@ -54,12 +54,15 @@ function StatCard({
   return (
     <Card variant="outlined">
       <CardContent>
-        <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
+        <Stack
+          direction="row"
+          sx={{ justifyContent: 'space-between', alignItems: 'flex-start' }}
+        >
           <Box>
             <Typography color="text.secondary" variant="body2">
               {label}
             </Typography>
-            <Typography variant="h5" fontWeight={750} sx={{ mt: 0.5 }}>
+            <Typography variant="h5" sx={{ mt: 0.5, fontWeight: 750 }}>
               {value}
             </Typography>
             <Typography color="text.secondary" variant="caption">
@@ -87,7 +90,7 @@ function ChartCard({
   return (
     <Card variant="outlined">
       <CardContent>
-        <Typography variant="h6" fontWeight={700}>
+        <Typography variant="h6" sx={{ fontWeight: 700 }}>
           {title}
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
@@ -171,26 +174,29 @@ function Leeches({
     }
   })
 
-  useEffect(() => {
-    setFields((current) => {
-      const next: Record<string, string> = {}
-      for (const deck of selectedDecks) {
-        const options = data.fieldOptions[deck] ?? []
-        next[deck] = options.includes(current[deck])
-          ? current[deck]
-          : (options[0] ?? '')
-      }
-      localStorage.setItem('anki-dashboard.leech-fields', JSON.stringify(next))
-      return next
-    })
-  }, [data.fieldOptions, selectedDecks])
+  const effectiveFields = useMemo(
+    () =>
+      Object.fromEntries(
+        selectedDecks.map((deck) => {
+          const options = data.fieldOptions[deck] ?? []
+          return [
+            deck,
+            options.includes(fields[deck]) ? fields[deck] : (options[0] ?? ''),
+          ]
+        }),
+      ),
+    [data.fieldOptions, fields, selectedDecks],
+  )
 
   return (
     <ChartCard
       title="Leeches"
       subtitle="Cards tagged as leeches, ordered by review count"
     >
-      <Stack direction={{ xs: 'column', sm: 'row' }} gap={1.5} sx={{ mb: 2 }}>
+      <Stack
+        direction={{ xs: 'column', sm: 'row' }}
+        sx={{ gap: 1.5, mb: 2 }}
+      >
         {selectedDecks.map((deck) => {
           const options = data.fieldOptions[deck] ?? []
           return (
@@ -198,7 +204,7 @@ function Leeches({
               <InputLabel>{deck}</InputLabel>
               <Select
                 label={deck}
-                value={fields[deck] ?? ''}
+                value={effectiveFields[deck] ?? ''}
                 onChange={(event) => {
                   const next = { ...fields, [deck]: event.target.value }
                   setFields(next)
@@ -221,9 +227,9 @@ function Leeches({
       {data.leeches.length === 0 ? (
         <Typography color="text.secondary">No leeches in selected decks.</Typography>
       ) : (
-        <Stack gap={1}>
+        <Stack sx={{ gap: 1 }}>
           {data.leeches.map((card) => {
-            const field = fields[card.deckName]
+            const field = effectiveFields[card.deckName]
             const text = stripHtml(card.fields[field] ?? '') || 'Untitled card'
             return (
               <Box
@@ -266,7 +272,7 @@ export function DashboardContent({ data, selectedDecks }: Props) {
   const debt = data.debtHistory.map(([date, count]) => ({ date, count }))
 
   return (
-    <Stack gap={2.5}>
+    <Stack sx={{ gap: 2.5 }}>
       <Box
         sx={{
           display: 'grid',
@@ -311,9 +317,12 @@ export function DashboardContent({ data, selectedDecks }: Props) {
 
       <Card variant="outlined">
         <CardContent>
-          <Stack direction="row" justifyContent="space-between" sx={{ mb: 1 }}>
-            <Typography fontWeight={700}>Vocabulary retained</Typography>
-            <Typography color="primary.main" fontWeight={750}>
+          <Stack
+            direction="row"
+            sx={{ justifyContent: 'space-between', mb: 1 }}
+          >
+            <Typography sx={{ fontWeight: 700 }}>Vocabulary retained</Typography>
+            <Typography color="primary.main" sx={{ fontWeight: 750 }}>
               {progress.toFixed(1)}%
             </Typography>
           </Stack>
@@ -444,7 +453,10 @@ export function DashboardContent({ data, selectedDecks }: Props) {
       </Box>
 
       {data.totalCards === 0 && (
-        <Stack direction="row" gap={1} color="warning.main">
+        <Stack
+          direction="row"
+          sx={{ gap: 1, color: 'warning.main' }}
+        >
           <ErrorOutlineRounded />
           <Typography>No cards found in the selected decks.</Typography>
         </Stack>

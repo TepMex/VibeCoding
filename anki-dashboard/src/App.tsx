@@ -26,9 +26,14 @@ import {
   Typography,
   createTheme,
 } from '@mui/material'
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { DashboardContent } from './components/DashboardContent'
-import { SyncDialog } from './components/SyncDialog'
+import {
+  Suspense,
+  lazy,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react'
 import { getSyncStatus, isNative } from './services/anki-web'
 import { loadCollection, saveCollection } from './services/collection-store'
 import { getCollectionWorker } from './services/collection-worker'
@@ -37,6 +42,17 @@ import type {
   DashboardData,
   SyncStatus,
 } from './types'
+
+const DashboardContent = lazy(() =>
+  import('./components/DashboardContent').then((module) => ({
+    default: module.DashboardContent,
+  })),
+)
+const SyncDialog = lazy(() =>
+  import('./components/SyncDialog').then((module) => ({
+    default: module.SyncDialog,
+  })),
+)
 
 const SELECTED_DECKS_KEY = 'anki-dashboard.selected-decks'
 const SOURCE_LABEL_KEY = 'anki-dashboard.source-label'
@@ -202,7 +218,11 @@ function App() {
       >
         <Toolbar>
           <DashboardRounded color="primary" sx={{ mr: 1.25 }} />
-          <Typography variant="h6" component="h1" fontWeight={800} sx={{ flex: 1 }}>
+          <Typography
+            variant="h6"
+            component="h1"
+            sx={{ flex: 1, fontWeight: 800 }}
+          >
             Anki Dashboard
           </Typography>
           {syncStatus.connected && (
@@ -227,7 +247,7 @@ function App() {
       </AppBar>
 
       <Container component="main" maxWidth="xl" sx={{ py: { xs: 2, sm: 4 } }}>
-        <Stack gap={3}>
+        <Stack sx={{ gap: 3 }}>
           <Box>
             <Typography variant="h4">Your learning, in focus</Typography>
             <Typography color="text.secondary" sx={{ mt: 0.5 }}>
@@ -258,14 +278,14 @@ function App() {
           {error && <Alert severity="error">{error}</Alert>}
 
           {loadingCollection ? (
-            <Stack alignItems="center" gap={2} sx={{ py: 10 }}>
+            <Stack sx={{ alignItems: 'center', gap: 2, py: 10 }}>
               <CircularProgress />
               <Typography color="text.secondary">Opening your collection…</Typography>
             </Stack>
           ) : !metadata ? (
             <Card variant="outlined" sx={{ maxWidth: 640 }}>
               <CardContent>
-                <Typography variant="h5" fontWeight={750}>
+                <Typography variant="h5" sx={{ fontWeight: 750 }}>
                   Connect your collection
                 </Typography>
                 <Typography color="text.secondary" sx={{ mt: 1 }}>
@@ -289,11 +309,10 @@ function App() {
                 <CardContent>
                   <Stack
                     direction={{ xs: 'column', md: 'row' }}
-                    gap={2}
-                    alignItems={{ md: 'center' }}
+                    sx={{ gap: 2, alignItems: { md: 'center' } }}
                   >
                     <Box sx={{ flex: 1 }}>
-                      <Typography variant="h6" fontWeight={700}>
+                      <Typography variant="h6" sx={{ fontWeight: 700 }}>
                         Decks
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
@@ -320,14 +339,19 @@ function App() {
                   Select one or more decks to calculate your statistics.
                 </Alert>
               ) : loadingDashboard ? (
-                <Stack alignItems="center" gap={2} sx={{ py: 10 }}>
+                <Stack sx={{ alignItems: 'center', gap: 2, py: 10 }}>
                   <CircularProgress />
                   <Typography color="text.secondary">
                     Calculating review history…
                   </Typography>
                 </Stack>
               ) : dashboard ? (
-                <DashboardContent data={dashboard} selectedDecks={selectedDecks} />
+                <Suspense fallback={<CircularProgress />}>
+                  <DashboardContent
+                    data={dashboard}
+                    selectedDecks={selectedDecks}
+                  />
+                </Suspense>
               ) : null}
             </>
           )}
@@ -340,13 +364,17 @@ function App() {
         </Typography>
       </Box>
 
-      <SyncDialog
-        open={settingsOpen}
-        status={syncStatus}
-        onClose={() => setSettingsOpen(false)}
-        onCollection={installCollection}
-        onStatusChanged={refreshSyncStatus}
-      />
+      {settingsOpen && (
+        <Suspense fallback={null}>
+          <SyncDialog
+            open
+            status={syncStatus}
+            onClose={() => setSettingsOpen(false)}
+            onCollection={installCollection}
+            onStatusChanged={refreshSyncStatus}
+          />
+        </Suspense>
+      )}
     </ThemeProvider>
   )
 }

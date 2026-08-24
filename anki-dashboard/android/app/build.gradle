@@ -61,7 +61,8 @@ dependencies {
     implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
     implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
     implementation project(':capacitor-android')
-    implementation "com.squareup.okhttp3:okhttp-android:5.5.0"
+    // 5.5.0 requires compileSdk 37; 5.4.0 is the newest release compatible with SDK 36.
+    implementation "com.squareup.okhttp3:okhttp-android:5.4.0"
     implementation "com.github.luben:zstd-jni:1.5.7-12@aar"
     testImplementation "junit:junit:$junitVersion"
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
