@@ -34,16 +34,16 @@ val useOverrideSigning = overrideStoreFile != null &&
 
 val sideloadProps = Properties()
 val sideloadPropsFile = rootProject.file("sideload-signing.properties")
-val sideloadKs = rootProject.file("sideload.keystore")
-if (!useOverrideSigning && sideloadPropsFile.exists() && sideloadKs.exists()) {
+if (!useOverrideSigning && sideloadPropsFile.exists()) {
     sideloadPropsFile.inputStream().use { sideloadProps.load(it) }
 }
 
 fun propSideload(name: String): String? =
     sideloadProps.getProperty(name)?.trim()?.takeIf { it.isNotEmpty() }
 
+val committedStoreFile = propSideload("storeFile")?.let(rootProject::file)
 val useCommittedSideload = !useOverrideSigning &&
-    sideloadKs.exists() &&
+    committedStoreFile?.exists() == true &&
     propSideload("storeFile") != null &&
     propSideload("storePassword") != null &&
     propSideload("keyAlias") != null &&
@@ -54,7 +54,7 @@ val useCustomSigning: Boolean = useOverrideSigning || useCommittedSideload
 val sideloadStoreFile: File? = when {
     !useCustomSigning -> null
     useOverrideSigning -> rootProject.file(overrideStoreFile!!)
-    else -> rootProject.file(propSideload("storeFile")!!)
+    else -> committedStoreFile
 }
 val sideloadStorePassword: String? = when {
     !useCustomSigning -> null

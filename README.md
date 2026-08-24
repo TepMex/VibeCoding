@@ -9,3 +9,4 @@ Release APKs are published by `.github/workflows/deploy.yml` to project GitHub P
 | Folder | Live site | Description |
 | ------ | --------- | ----------- |
 | `stt-player-droid` | [stt-player-droid](https://tepmex.github.io/VibeCoding/stt-player-droid/) | STT Player Droid · offline Whisper Tiny audiobook text sync (APK) |
+| `anki-dashboard` | [anki-dashboard](https://tepmex.github.io/VibeCoding/anki-dashboard/) | Anki Dashboard · local review analytics and download-only AnkiWeb sync (web + APK) |
