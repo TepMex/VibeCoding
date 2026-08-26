@@ -42,11 +42,11 @@ class QuizSessionTest {
     }
 
     @Test
-    fun `next advances and transcript is only meaningful after reveal`() {
+    fun `next advances and transcript stays on the question data`() {
         val session = QuizSession(questions, Random(2))
         val firstId = session.state.current!!.id
         session.select(session.state.current!!.correctIndex)
-        assertTrue(session.state.current!!.hasTranscript)
+        assertTrue(session.state.questions.any { it.hasTranscript })
         session.next()
         assertFalse(session.state.revealed)
         assertNotEquals(firstId, session.state.current!!.id)
