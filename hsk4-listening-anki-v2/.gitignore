@@ -1,0 +1,12 @@
+.gradle/
+.idea/
+**/build/
+.cache/
+.venv/
+__pycache__/
+local.properties
+*.iml
+captures/
+app/src/main/assets/audio/
+app/src/main/assets/questions.json
+app/src/main/assets/pack.report.json

@@ -15,7 +15,7 @@ permissions:
   contents: write
 
 env:
-  ANDROID_APPS: stt-player-droid anki-dashboard
+  ANDROID_APPS: stt-player-droid anki-dashboard hsk4-listening-anki-v2
 
 jobs:
   detect:
@@ -25,11 +25,10 @@ jobs:
       full_deploy: ${{ steps.plan.outputs.full_deploy }}
       build_stt_player_droid: ${{ steps.plan.outputs.build_stt_player_droid }}
       build_anki_dashboard: ${{ steps.plan.outputs.build_anki_dashboard }}
-      build_hsk4_listening_anki: ${{ steps.plan.outputs.build_hsk4_listening_anki }}
+      build_hsk4_listening_anki_v2: ${{ steps.plan.outputs.build_hsk4_listening_anki_v2 }}
       refresh_android_landings: ${{ steps.plan.outputs.refresh_android_landings }}
       any_android_apk_build: ${{ steps.plan.outputs.any_android_apk_build }}
       any_android_landing: ${{ steps.plan.outputs.any_android_landing }}
-      any_anki_deck_build: ${{ steps.plan.outputs.any_anki_deck_build }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -46,8 +45,8 @@ jobs:
               - 'stt-player-droid/**'
             anki-dashboard:
               - 'anki-dashboard/**'
-            hsk4-listening-anki:
-              - 'hsk4-listening-anki/**'
+            hsk4-listening-anki-v2:
+              - 'hsk4-listening-anki-v2/**'
             shared-android-signing:
               - 'android/sideload-signing.gradle.kts'
               - 'android/verify-apk-sideload-cert.sh'
@@ -75,7 +74,7 @@ jobs:
           HAS_PREVIOUS: ${{ steps.previous.outcome == 'success' }}
           CHANGED_STT_PLAYER_DROID: ${{ steps.changes.outputs.stt-player-droid }}
           CHANGED_ANKI_DASHBOARD: ${{ steps.changes.outputs.anki-dashboard }}
-          CHANGED_HSK4_LISTENING_ANKI: ${{ steps.changes.outputs.hsk4-listening-anki }}
+          CHANGED_HSK4_LISTENING_ANKI_V2: ${{ steps.changes.outputs.hsk4-listening-anki-v2 }}
           CHANGED_ANDROID_SIGNING: ${{ steps.changes.outputs.shared-android-signing }}
           CHANGED_ANDROID_LANDING: ${{ steps.changes.outputs.shared-android-landing }}
           CHANGED_SCRIPTS: ${{ steps.changes.outputs.shared-scripts }}
@@ -98,20 +97,21 @@ jobs:
 
           build_stt_player_droid=false
           build_anki_dashboard=false
-          build_hsk4_listening_anki=false
+          build_hsk4_listening_anki_v2=false
           refresh_android_landings=false
 
           if $full_deploy; then
             build_stt_player_droid=true
             build_anki_dashboard=true
-            build_hsk4_listening_anki=true
+            build_hsk4_listening_anki_v2=true
           else
             is_true "$CHANGED_STT_PLAYER_DROID" && build_stt_player_droid=true
             is_true "$CHANGED_ANKI_DASHBOARD" && build_anki_dashboard=true
-            is_true "$CHANGED_HSK4_LISTENING_ANKI" && build_hsk4_listening_anki=true
+            is_true "$CHANGED_HSK4_LISTENING_ANKI_V2" && build_hsk4_listening_anki_v2=true
             if is_true "$CHANGED_ANDROID_SIGNING"; then
               build_stt_player_droid=true
               build_anki_dashboard=true
+              build_hsk4_listening_anki_v2=true
             fi
             if is_true "$CHANGED_ANDROID_LANDING" || is_true "$CHANGED_SCRIPTS"; then
               refresh_android_landings=true
@@ -121,23 +121,20 @@ jobs:
           any_android_apk_build=false
           $build_stt_player_droid && any_android_apk_build=true
           $build_anki_dashboard && any_android_apk_build=true
+          $build_hsk4_listening_anki_v2 && any_android_apk_build=true
 
           any_android_landing=false
           $any_android_apk_build || $refresh_android_landings && any_android_landing=true
-
-          any_anki_deck_build=false
-          $build_hsk4_listening_anki && any_anki_deck_build=true
 
           {
             echo "has_previous=$HAS_PREVIOUS"
             echo "full_deploy=$full_deploy"
             echo "build_stt_player_droid=$build_stt_player_droid"
             echo "build_anki_dashboard=$build_anki_dashboard"
-            echo "build_hsk4_listening_anki=$build_hsk4_listening_anki"
+            echo "build_hsk4_listening_anki_v2=$build_hsk4_listening_anki_v2"
             echo "refresh_android_landings=$refresh_android_landings"
             echo "any_android_apk_build=$any_android_apk_build"
             echo "any_android_landing=$any_android_landing"
-            echo "any_anki_deck_build=$any_anki_deck_build"
           } >> "$GITHUB_OUTPUT"
 
           echo "Deploy plan:"
@@ -167,9 +164,8 @@ jobs:
           echo "full_deploy=${{ needs.detect.outputs.full_deploy }}"
           echo "build_stt_player_droid=${{ needs.detect.outputs.build_stt_player_droid }}"
           echo "build_anki_dashboard=${{ needs.detect.outputs.build_anki_dashboard }}"
-          echo "build_hsk4_listening_anki=${{ needs.detect.outputs.build_hsk4_listening_anki }}"
+          echo "build_hsk4_listening_anki_v2=${{ needs.detect.outputs.build_hsk4_listening_anki_v2 }}"
           echo "any_android_apk_build=${{ needs.detect.outputs.any_android_apk_build }}"
-          echo "any_anki_deck_build=${{ needs.detect.outputs.any_anki_deck_build }}"
           echo "refresh_android_landings=${{ needs.detect.outputs.refresh_android_landings }}"
 
       - name: Setup Bun
@@ -195,29 +191,45 @@ jobs:
 
       - name: Install Android SDK packages
         if: needs.detect.outputs.any_android_apk_build == 'true'
+        env:
+          BUILD_STT_PLAYER_DROID: ${{ needs.detect.outputs.build_stt_player_droid }}
         run: |
           set -euo pipefail
           yes | sdkmanager --licenses >/dev/null || true
-          sdkmanager \
-            "platforms;android-36" \
-            "build-tools;35.0.0" \
-            "ndk;28.2.13676358" \
-            "cmake;3.22.1"
+          packages=(
+            "platforms;android-36"
+            "build-tools;35.0.0"
+          )
+          if [[ "${BUILD_STT_PLAYER_DROID}" == "true" ]]; then
+            packages+=(
+              "ndk;28.2.13676358"
+              "cmake;3.22.1"
+            )
+          fi
+          sdkmanager "${packages[@]}"
 
       - name: Setup Python
-        if: needs.detect.outputs.any_anki_deck_build == 'true'
+        if: needs.detect.outputs.build_hsk4_listening_anki_v2 == 'true'
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-          cache: pip
-          cache-dependency-path: hsk4-listening-anki/requirements.txt
 
-      - name: Install Anki deck build tools
-        if: needs.detect.outputs.any_anki_deck_build == 'true'
+      - name: Cache HSK 4 listening media
+        if: needs.detect.outputs.build_hsk4_listening_anki_v2 == 'true'
+        uses: actions/cache@v4
+        with:
+          path: hsk4-listening-anki-v2/.cache
+          key: hsk4-listening-anki-v2-${{ hashFiles('hsk4-listening-anki-v2/pack_assets.py') }}
+          restore-keys: hsk4-listening-anki-v2-
+
+      - name: Pack HSK 4 Listening Android assets
+        if: needs.detect.outputs.build_hsk4_listening_anki_v2 == 'true'
+        working-directory: hsk4-listening-anki-v2
         run: |
           set -euo pipefail
-          python -m pip install -r hsk4-listening-anki/requirements.txt
           command -v ffmpeg || (sudo apt-get update && sudo apt-get install -y ffmpeg)
+          python -m unittest discover -s tests
+          python pack_assets.py
 
       - name: Build STT Player Droid APK
         if: needs.detect.outputs.build_stt_player_droid == 'true'
@@ -240,18 +252,17 @@ jobs:
           cd android
           ./gradlew --no-daemon --stacktrace assembleRelease
 
-      - name: Build HSK 4 Listening Anki deck
-        if: needs.detect.outputs.build_hsk4_listening_anki == 'true'
-        working-directory: hsk4-listening-anki
-        run: |
-          python -m unittest discover -s tests
-          python build_deck.py
+      - name: Build HSK 4 Listening v2 APK
+        if: needs.detect.outputs.build_hsk4_listening_anki_v2 == 'true'
+        working-directory: hsk4-listening-anki-v2
+        run: chmod +x gradlew && ./gradlew --no-daemon --stacktrace test assembleRelease
 
       - name: Verify APK sideload signing
         if: needs.detect.outputs.any_android_apk_build == 'true'
         env:
           BUILD_STT_PLAYER_DROID: ${{ needs.detect.outputs.build_stt_player_droid }}
           BUILD_ANKI_DASHBOARD: ${{ needs.detect.outputs.build_anki_dashboard }}
+          BUILD_HSK4_LISTENING_ANKI_V2: ${{ needs.detect.outputs.build_hsk4_listening_anki_v2 }}
         run: |
           set -euo pipefail
           chmod +x android/verify-apk-sideload-cert.sh
@@ -262,13 +273,16 @@ jobs:
           if is_true "$BUILD_ANKI_DASHBOARD"; then
             android/verify-apk-sideload-cert.sh anki-dashboard/android/app/build/outputs/apk/release/app-release.apk
           fi
+          if is_true "$BUILD_HSK4_LISTENING_ANKI_V2"; then
+            android/verify-apk-sideload-cert.sh hsk4-listening-anki-v2/app/build/outputs/apk/release/app-release.apk
+          fi
 
       - name: Prepare GitHub Pages site
         env:
           HAS_PREVIOUS: ${{ needs.detect.outputs.has_previous }}
           BUILD_STT_PLAYER_DROID: ${{ needs.detect.outputs.build_stt_player_droid }}
           BUILD_ANKI_DASHBOARD: ${{ needs.detect.outputs.build_anki_dashboard }}
-          BUILD_HSK4_LISTENING_ANKI: ${{ needs.detect.outputs.build_hsk4_listening_anki }}
+          BUILD_HSK4_LISTENING_ANKI_V2: ${{ needs.detect.outputs.build_hsk4_listening_anki_v2 }}
           REFRESH_ANDROID_LANDINGS: ${{ needs.detect.outputs.refresh_android_landings }}
         run: |
           set -euo pipefail
@@ -344,11 +358,12 @@ jobs:
             case "$1" in
               stt-player-droid) is_true "$BUILD_STT_PLAYER_DROID" ;;
               anki-dashboard) is_true "$BUILD_ANKI_DASHBOARD" ;;
+              hsk4-listening-anki-v2) is_true "$BUILD_HSK4_LISTENING_ANKI_V2" ;;
               *) return 1 ;;
             esac
           }
 
-          for app in stt-player-droid anki-dashboard; do
+          for app in stt-player-droid anki-dashboard hsk4-listening-anki-v2; do
             if android_should_build "$app"; then
               copy_android_landing "$app"
               copy_android_apk "$app"
@@ -379,17 +394,11 @@ jobs:
             fi
           done
 
-          if is_true "$BUILD_HSK4_LISTENING_ANKI"; then
-            mkdir -p deploy/hsk4-listening-anki
-            cp -r hsk4-listening-anki/site/. deploy/hsk4-listening-anki/
-            cp hsk4-listening-anki/dist/hsk4-listening.apkg deploy/hsk4-listening-anki/
-            cp hsk4-listening-anki/dist/hsk4-listening.report.json deploy/hsk4-listening-anki/
-          else
-            require_dir hsk4-listening-anki
-            if [[ ! -f deploy/hsk4-listening-anki/hsk4-listening.apkg ]]; then
-              echo "Missing HSK 4 Listening Anki deck" >&2
-              exit 1
-            fi
+          # Archived Anki deck: keep the published .apkg, never rebuild it.
+          require_dir hsk4-listening-anki
+          if [[ ! -f deploy/hsk4-listening-anki/hsk4-listening.apkg ]]; then
+            echo "Missing archived HSK 4 Listening Anki deck" >&2
+            exit 1
           fi
 
           cat > deploy/index.html << 'HTML'
@@ -409,7 +418,8 @@ jobs:
             <ul>
               <li><a href="stt-player-droid/">STT Player Droid</a></li>
               <li><a href="anki-dashboard/">Anki Dashboard</a></li>
-              <li><a href="hsk4-listening-anki/">HSK 4 Listening Anki deck</a></li>
+              <li><a href="hsk4-listening-anki-v2/">HSK 4 Listening Android</a></li>
+              <li><a href="hsk4-listening-anki/">HSK 4 Listening Anki deck (archive)</a></li>
             </ul>
           </body>
           </html>
@@ -419,6 +429,7 @@ jobs:
         if: needs.detect.outputs.any_android_landing == 'true'
         env:
           BUILD_STT_PLAYER_DROID: ${{ needs.detect.outputs.build_stt_player_droid }}
+          BUILD_HSK4_LISTENING_ANKI_V2: ${{ needs.detect.outputs.build_hsk4_listening_anki_v2 }}
           REFRESH_ANDROID_LANDINGS: ${{ needs.detect.outputs.refresh_android_landings }}
         run: |
           set -euo pipefail
@@ -428,6 +439,7 @@ jobs:
           }
           pages=()
           should_inject stt-player-droid "$BUILD_STT_PLAYER_DROID" && pages+=(deploy/stt-player-droid/index.html)
+          should_inject hsk4-listening-anki-v2 "$BUILD_HSK4_LISTENING_ANKI_V2" && pages+=(deploy/hsk4-listening-anki-v2/index.html)
           if [[ ${#pages[@]} -eq 0 ]]; then
             echo "No Android landing pages to update"
             exit 0

@@ -1,0 +1,5 @@
+-keepattributes *Annotation*, InnerClasses
+-dontwarn kotlinx.serialization.**
+-keepclassmembers class kotlinx.serialization.json.** { *** Companion; }
+-keep class com.tepmex.hsk4listening.data.** { *; }
+-keep class androidx.media3.** { *; }
